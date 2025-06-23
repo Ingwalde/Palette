@@ -1,0 +1,284 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0e7d5;
+  color: #333;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+body.visible {
+  opacity: 1;
+}
+
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #2a2a2a;
+  color: #f0e7d5;
+  padding: 1rem 2vw;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+header h1 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  color: #f0e7d5;
+  letter-spacing: 0.06em;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+  margin: 0;
+  font-size: clamp(1rem, 4vw, 2rem);
+  text-align: center;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.header-description {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.header-description p {
+  margin: 0 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: #f0e7d5;
+}
+
+.designer-quote-full {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  background: #212842;
+  margin: 0;
+  padding: 0;
+  transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+  opacity: 1;
+  overflow: hidden;
+}
+.designer-quote-full.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.designer-quote-image {
+  flex: 1.054;
+  background-color: #212842;
+  position: relative;
+  overflow: hidden;
+}
+.designer-quote-image::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-image: url('https://travelyourway.com.ua/upload/_files/blog/8-luchshih-italjanskih-kurortov-na-more/8-luchshih-italjanskih-kurortov-na-more-11.jpg');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.4;
+}
+
+.designer-quote-text {
+  flex: 1;
+  background-color: #f0e7d5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  font-family: 'Poppins', sans-serif;
+  box-sizing: border-box;
+}
+
+.designer-quote-text blockquote {
+  font-size: 1.5rem;
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0;
+}
+.designer-quote-reverse {
+  flex-direction: row-reverse;
+  width: 100%;
+  transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
+}
+.designer-quote-reverse.collapsed2 {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+  pointer-events: none;
+}
+
+.palette-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(100px, 1fr));
+  grid-auto-rows: auto;
+  gap: 30px;
+  justify-content: center;
+  padding: 20px 20px 40px; /* з урахуванням fixed header */
+  box-sizing: border-box;
+  margin-bottom: 2rem;
+}
+
+.palette {
+  min-width: 100px;
+  max-width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  transition: transform 0.3s ease, box-shadow 0.2s ease, border 0.2s ease;
+  background-color: #f0e7d5;
+}
+
+.palette.selected {
+  transform: scale(1.05);
+  border: 2px solid #302c2c;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.colors-container {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.palette-title {
+  text-align: center;
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+  color: #212842;
+  user-select: none; /* щоб не виділявся текст випадково */
+}
+
+.color {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 4px;
+}
+
+.preview {
+  text-align: center;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, max-height 0.3s ease;
+}
+.preview.active {
+  opacity: 1;
+  max-height: 400px;
+}
+
+.preview h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.room {
+  display: flex;
+  margin-bottom: 0.5rem;
+}
+
+.room > div {
+  flex-grow: 1;
+  height: 100px;
+  transition: all 0.3s ease;
+  border-radius: 0px;
+}
+
+/* Preview large (опціонально) */
+.room.preview-large > div {
+  flex-grow: 1;
+  min-height: 15vw;
+}
+
+.favorite-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  border: 2px solid transparent; 
+  border-radius: 30px;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  cursor: pointer;
+  transition: background-color 0.4s ease, transform 0.2s ease;
+}
+
+.favorite-button:hover {
+  background-color: #302c2c;
+  border-color: #dfcead;
+  color: #dfcead;  
+}
+
+.favorite-button.added {
+  background-color: #f0e7d5;
+  border-color: #302c2c;
+  color: #302c2c;  
+}
+.favorite-button.added:hover {
+  background-color: #dfcead;
+  border-color: #302c2c;
+  color: #302c2c;  
+}
+
+.favorites-link {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  z-index: 1100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background-color 0.3s ease;
+}
+.favorites-link:hover {
+  background-color: #dfcead;
+  border-color: #302c2c;
+  color: #302c2c;  
+}
+.section-title {
+  width: 100%;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  text-align: center;
+  padding: 1.5rem 0;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  margin-top: 10px;
+}
+
+.section-title h2 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+}
+
+/* Адаптивність */
+@media (max-width: 1080px) {
+  .palette-list {
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .palette-list {
+    grid-template-columns: repeat(1, minmax(100px, 1fr));
+  }
+}

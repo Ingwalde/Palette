@@ -1,0 +1,98 @@
+body {
+  background-color: #f0e7d5;
+  font-family: 'Poppins', sans-serif;
+  padding: 2rem;
+}
+
+h1 {
+  text-align: center;
+  color: #2a2a2a;
+  margin-top: 0.1rem; 
+  margin-bottom: 1.5rem; 
+}
+
+
+.favorites-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+  background-color: #333;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-palette {
+  border: 2px solid #f0e7d5;
+  border-radius: 10px;
+  background-color: #f0e7d5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.favorite-palette:hover {
+  transform: scale(1.03);
+}
+
+.favorite-palette h2 {
+  text-align: center;
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  color: #2a2a2a;
+}
+
+.palette-colors {
+  display: flex;
+  height: 60px;
+}
+
+.palette-colors div {
+  flex: 1;
+}
+
+.remove-btn {
+  display: block;
+  margin: 1rem auto;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  border: 2px solid transparent;
+  border-radius: 30px;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.remove-btn:hover {
+  background-color: #302c2c;
+  border-color: #dfcead;
+  color: #dfcead;  
+}
+
+.back-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  border: 2px solid transparent; 
+  border-radius: 10px;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  cursor: pointer;
+  transition: background-color 0.4s ease, transform 0.2s ease;
+}
+.back-button:hover {
+  background-color: #dfcead;
+  border-color: #302c2c;
+  color: #302c2c;  
+}
+
+.no-favorites-message {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #f0e7d5;
+  grid-column: 1 / -1;
+  padding: 2rem 0;
+}
