@@ -1,2 +1,0 @@
-# Palette
-Palette for colors
