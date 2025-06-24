@@ -35,6 +35,12 @@ h1 {
   margin: 1rem 0;
   color: #2a2a2a;
 }
+.favorite-palette.selected-palette {
+  border-color: #dfcead;
+  box-shadow: 0 0 10px 3px #dfcead;
+  transform: scale(1.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 .palette-colors {
   display: flex;
   height: 60px;
@@ -74,14 +80,15 @@ h1 {
   margin: 0;
   margin-top: 1rem;
   padding: 0.5rem 1rem;
-  font-size: 1rem;
-  font-family: 'Poppins', sans-serif;
-  border: 2px solid transparent; 
-  border-radius: 10px;
   background-color: #302c2c;
   color: #f0e7d5;
-  cursor: pointer;
-  transition: background-color 0.4s ease, transform 0.2s ease;
+  border-radius: 25px;
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background-color 0.3s ease;
+  transform: translateY(-50%);
 }
 .back-button:hover {
   background-color: #dfcead;
@@ -94,6 +101,28 @@ h1 {
   color: #f0e7d5;
   grid-column: 1 / -1;
   padding: 2rem 0;
+}
+.export-button {
+  display: inline-block;
+  width: auto;                  
+  margin: 1rem auto;           
+  padding: 0.7rem 0.8rem;       
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
+  font-family: 'Poppins', sans-serif;
+  border-radius: 25px;
+  border: none;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+.export-button:hover {
+  background-color: #dfcead;
+  border-color: #302c2c;
+  color: #302c2c;
 }
 .theme-toggle {
   margin: 0;
@@ -119,6 +148,17 @@ h1 {
 body.dark .theme-toggle {
   background-color: #f0e7d5;
   color: #2a2a2a;
+}
+body.dark .export-button {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+body.dark .export-button:hover {
+  background-color: #dfcead;
+  border-color: #302c2c;
+  color: #302c2c;
 }
 body.dark {
   background-color: #2a2a2a;

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Експорт палітри</title>
+  <link rel="stylesheet" href="export.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="top-bar">
+  <a href="favorites.html" class="back-button">← Назад</a>
+    <button id="themeToggle" class="theme-toggle">🌙</button>
+  </div>
+  <h1>Експорт палітри</h1>
+  <div class="favorite-palette" id="exportPaletteContainer"></div>
+  <button id="downloadPNG" class="export-button">Експортувати в PNG</button>
+  <button id="downloadJSON" class="export-button">Експортувати в JSON</button>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="export.js"></script>
+</body>
+</html>

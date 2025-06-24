@@ -300,7 +300,6 @@ body.dark .designer-quote-text blockquote small {
   transition: background-color 0.3s ease;
   transform: translateY(-50%);
 }
-
 .favorites-link:hover {
   background-color: #dfcead;
   border-color: #302c2c;

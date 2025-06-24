@@ -54,9 +54,9 @@ function removePaletteFromFavorites(name) {
   saveFavorites(favs);
 }
 // Генерація карток
-function renderPalettes() {
+function renderPalettes(list = palettes) {
   paletteList.innerHTML = "";
-  palettes.forEach(palette => {
+  list.forEach(palette => {
     const div = document.createElement("div");
     div.className = "palette";
     div.title = palette.name;
@@ -73,7 +73,6 @@ function renderPalettes() {
     titleDiv.className = "palette-title";
     titleDiv.textContent = palette.name;
     div.appendChild(titleDiv);
-    // ↓ подія при натисканні — залишити всю наявну
     div.addEventListener("click", () => {
       if (activePalette && activePalette !== div) {
         resetPalette(activePalette);
@@ -135,14 +134,16 @@ function renderPalettes() {
         activePalette = div;
       }
     });
-
     paletteList.appendChild(div);
   });
 }
 renderPalettes(); // ініціалізація
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase();
-  const filtered = palettes.filter(p => p.name.toLowerCase().includes(query));
+  const filtered = palettes.filter(p =>
+    p.name.toLowerCase().includes(query) ||
+    p.tag.toLowerCase().includes(query)
+  );
   renderPalettes(filtered);
 });
 clearBtn.addEventListener("click", () => {
@@ -181,12 +182,9 @@ function updateFavoritesText() {
 }
 window.addEventListener("load", updateFavoritesText);
 window.addEventListener("resize", updateFavoritesText);
-
 const originalPalettes = [...palettes]; // для відновлення
 let sortState = 0; // 0 - за замовчуванням, 1 - A-Z, 2 - Z-A
-
 const sortButton = document.getElementById("sortButton");
-
 sortButton.addEventListener("click", () => {
   sortState = (sortState + 1) % 3;
 
@@ -205,7 +203,6 @@ sortButton.addEventListener("click", () => {
       sortButton.textContent = "За замовчуванням";
       break;
   }
-
   renderPalettes();
 });
 const themeToggle = document.getElementById('themeToggle');
@@ -215,7 +212,6 @@ if (localStorage.getItem('theme') === 'dark') {
   document.body.classList.add('dark');
   themeToggle.textContent = '☀️';
 }
-
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark');
   const isDark = document.body.classList.contains('dark');

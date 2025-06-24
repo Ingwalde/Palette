@@ -9,6 +9,7 @@ function removeFavorite(name) {
   saveFavorites(favs);
   renderFavorites();
 }
+let selectedPaletteName = null; // Зберігаємо вибрану палітру
 function renderFavorites() {
   const container = document.getElementById("favoritesContainer");
   container.innerHTML = "";
@@ -20,6 +21,25 @@ function renderFavorites() {
   favs.forEach(palette => {
     const div = document.createElement("div");
     div.className = "favorite-palette";
+    // Додаємо клас вибраної палітри, якщо вона вибрана
+    if (palette.name === selectedPaletteName) {
+      div.classList.add("selected-palette");
+    }
+    // Обробник кліку по палітрі — вибираємо/знімаємо вибір
+    div.addEventListener("click", () => {
+      if (selectedPaletteName === palette.name) {
+        // Якщо вже вибрана — зняти вибір
+        selectedPaletteName = null;
+        div.classList.remove("selected-palette");
+      } else {
+        // Зняти вибір з попередньої, якщо була
+        const prevSelected = document.querySelector(".favorite-palette.selected-palette");
+        if (prevSelected) prevSelected.classList.remove("selected-palette");
+        // Встановити нову вибрану
+        selectedPaletteName = palette.name;
+        div.classList.add("selected-palette");
+      }
+    });
     const title = document.createElement("h2");
     title.textContent = palette.name;
     div.appendChild(title);
@@ -34,12 +54,33 @@ function renderFavorites() {
     const removeBtn = document.createElement("button");
     removeBtn.className = "remove-btn";
     removeBtn.textContent = "Видалити з обраного";
-    removeBtn.addEventListener("click", () => removeFavorite(palette.name));
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation(); // щоб клік не вибирав палітру при видаленні
+      removeFavorite(palette.name);
+      // Якщо видалили вибрану палітру, скидаємо вибір
+      if (selectedPaletteName === palette.name) {
+        selectedPaletteName = null;
+      }
+    });
     div.appendChild(removeBtn);
-
     container.appendChild(div);
   });
 }
+const exportBtn = document.querySelector(".export-button");
+exportBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (!selectedPaletteName) {
+    alert("Будь ласка, оберіть палітру для експорту.");
+    return;
+  }
+  const palette = getFavorites().find(p => p.name === selectedPaletteName);
+  if (!palette) {
+    alert("Вибрана палітра не знайдена.");
+    return;
+  }
+  localStorage.setItem("paletteToExport", JSON.stringify(palette));
+  window.location.href = "export.html";
+});
 document.addEventListener("DOMContentLoaded", renderFavorites);
 document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("theme") === "dark") {
