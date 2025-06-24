@@ -54,9 +54,9 @@ function removePaletteFromFavorites(name) {
   saveFavorites(favs);
 }
 // Генерація карток
-function renderPalettes(paletteArray) {
+function renderPalettes() {
   paletteList.innerHTML = "";
-  paletteArray.forEach(palette => {
+  palettes.forEach(palette => {
     const div = document.createElement("div");
     div.className = "palette";
     div.title = palette.name;
@@ -73,7 +73,7 @@ function renderPalettes(paletteArray) {
     titleDiv.className = "palette-title";
     titleDiv.textContent = palette.name;
     div.appendChild(titleDiv);
-    
+    // ↓ подія при натисканні — залишити всю наявну
     div.addEventListener("click", () => {
       if (activePalette && activePalette !== div) {
         resetPalette(activePalette);
@@ -134,10 +134,11 @@ function renderPalettes(paletteArray) {
         activePalette = div;
       }
     });
+
     paletteList.appendChild(div);
   });
 }
-renderPalettes(palettes);
+renderPalettes(); // ініціалізація
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.toLowerCase();
   const filtered = palettes.filter(p => p.name.toLowerCase().includes(query));
@@ -179,3 +180,30 @@ function updateFavoritesText() {
 }
 window.addEventListener("load", updateFavoritesText);
 window.addEventListener("resize", updateFavoritesText);
+
+const originalPalettes = [...palettes]; // для відновлення
+let sortState = 0; // 0 - за замовчуванням, 1 - A-Z, 2 - Z-A
+
+const sortButton = document.getElementById("sortButton");
+
+sortButton.addEventListener("click", () => {
+  sortState = (sortState + 1) % 3;
+
+  switch (sortState) {
+    case 1:
+      palettes.sort((a, b) => a.name.localeCompare(b.name));
+      sortButton.textContent = "А-Я";
+      break;
+    case 2:
+      palettes.sort((a, b) => b.name.localeCompare(a.name));
+      sortButton.textContent = "Я-А";
+      break;
+    case 0:
+    default:
+      palettes.splice(0, palettes.length, ...originalPalettes);
+      sortButton.textContent = "За замовчуванням";
+      break;
+  }
+
+  renderPalettes();
+});
