@@ -48,6 +48,67 @@ header h1 {
   font-size: 0.9rem;
   color: #f0e7d5;
 }
+.theme-toggle {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-family: 'Poppins', sans-serif;
+  z-index: 1100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transition: background-color 0.3s ease;
+}
+.theme-toggle:hover {
+  background-color: #dfcead;
+  color: #302c2c;
+}
+body.dark .theme-toggle {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+}
+body.dark {
+  background-color: #2a2a2a;
+  color: #f0e7d5;
+}
+body.dark header,
+body.dark .section-title {
+  background-color: #1a1a1a;
+  color: #f0e7d5;
+}
+body.dark .palette {
+  background-color: #333;
+  color: #f0e7d5;
+}
+body.dark .palette-title {
+  color: #f0e7d5;
+}
+body.dark .favorite-button {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+}
+body.dark .favorite-button.added {
+  background-color: #302c2c;
+  color: #f0e7d5;
+}
+body.dark .designer-quote-full {
+  background-color: #1a1a1a;
+}
+body.dark .designer-quote-image::before {
+  opacity: 0.3;
+}
+body.dark .designer-quote-text {
+  background-color: #2a2a2a;
+  color: #f0e7d5;
+}
+body.dark .designer-quote-text blockquote small {
+  color: #ccc;
+}
 .designer-quote-full {
   display: flex;
   width: 100%;
@@ -149,6 +210,18 @@ header h1 {
   color: #302c2c;
   user-select: none;
 }
+.palette-tag {
+  text-align: center;
+  font-size: 0.85rem;
+  color: #302c2c;
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+  font-family: 'Poppins', sans-serif;
+  background-color: #dfcead;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  align-self: center;
+}
 .color {
   flex: 1;
   min-height: 40px;
@@ -196,7 +269,6 @@ header h1 {
   cursor: pointer;
   transition: background-color 0.4s ease, transform 0.2s ease;
 }
-
 .favorite-button:hover {
   background-color: #302c2c;
   border-color: #dfcead;
@@ -213,7 +285,6 @@ header h1 {
   border-color: #302c2c;
   color: #302c2c;  
 }
-
 .favorites-link {
   position: absolute;
   top: 50%;

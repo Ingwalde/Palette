@@ -3,15 +3,12 @@ body {
   font-family: 'Poppins', sans-serif;
   padding: 2rem;
 }
-
 h1 {
   text-align: center;
   color: #2a2a2a;
   margin-top: 0.1rem; 
   margin-bottom: 1.5rem; 
 }
-
-
 .favorites-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -21,7 +18,6 @@ h1 {
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
-
 .favorite-palette {
   border: 2px solid #f0e7d5;
   border-radius: 10px;
@@ -30,27 +26,32 @@ h1 {
   overflow: hidden;
   transition: transform 0.3s ease;
 }
-
 .favorite-palette:hover {
   transform: scale(1.03);
 }
-
 .favorite-palette h2 {
   text-align: center;
   font-size: 1.2rem;
   margin: 1rem 0;
   color: #2a2a2a;
 }
-
 .palette-colors {
   display: flex;
   height: 60px;
 }
-
 .palette-colors div {
   flex: 1;
 }
-
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  margin-top: -40px;
+}
 .remove-btn {
   display: block;
   margin: 1rem auto;
@@ -64,14 +65,13 @@ h1 {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
 .remove-btn:hover {
   background-color: #302c2c;
   border-color: #dfcead;
   color: #dfcead;  
 }
-
 .back-button {
+  margin: 0;
   margin-top: 1rem;
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -88,11 +88,71 @@ h1 {
   border-color: #302c2c;
   color: #302c2c;  
 }
-
 .no-favorites-message {
   text-align: center;
   font-size: 1.2rem;
   color: #f0e7d5;
   grid-column: 1 / -1;
   padding: 2rem 0;
+}
+.theme-toggle {
+  margin: 0;
+  position: static;
+  top: 1rem;
+  right: 1rem;
+  background-color: #302c2c;
+  color: #f0e7d5;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.8rem;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 1100;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.theme-toggle:hover {
+  background-color: #dfcead;
+  color: #302c2c;
+}
+body.dark .theme-toggle {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+}
+body.dark {
+  background-color: #2a2a2a;
+  color: #f0e7d5;
+}
+body.dark .favorites-container {
+  background-color: #1a1a1a;
+}
+body.dark .favorite-palette {
+  background-color: #333;
+  border-color: #555;
+}
+body.dark .favorite-palette h2 {
+  color: #f0e7d5;
+}
+body.dark .remove-btn {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+}
+body.dark .remove-btn:hover {
+  background-color: #dfcead;
+  color: #302c2c;
+}
+body.dark .no-favorites-message {
+  color: #f0e7d5;
+}
+body.dark .back-button {
+  background-color: #f0e7d5;
+  color: #2a2a2a;
+}
+body.dark .back-button:hover {
+  background-color: #dfcead;
+  color: #302c2c;
+}
+body.dark h1 {
+  color: #f0e7d5;
 }
