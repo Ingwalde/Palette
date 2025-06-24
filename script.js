@@ -27,18 +27,17 @@ const palettes = [
   { name: "Cream Cherry", colors: ["#efdbbf", "#ac3030", "#68181f", "#121211"] }
 ];
 const paletteList = document.getElementById("paletteList");
+const searchInput = document.getElementById("searchInput");
+const clearBtn = document.getElementById("clearSearch");
 let activePreview = null;
 let activePalette = null;
 document.body.classList.add('visible');
-
 function getFavorites() {
   return JSON.parse(localStorage.getItem("favorites")) || [];
 }
-
 function saveFavorites(favs) {
   localStorage.setItem("favorites", JSON.stringify(favs));
 }
-
 function addPaletteToFavorites(palette) {
   const favs = getFavorites();
   if (!favs.find(p => p.name === palette.name)) {
@@ -46,7 +45,6 @@ function addPaletteToFavorites(palette) {
     saveFavorites(favs);
   }
 }
-
 function isPaletteFavorite(name) {
   const favs = getFavorites();
   return favs.some(p => p.name === name);
@@ -55,111 +53,106 @@ function removePaletteFromFavorites(name) {
   const favs = getFavorites().filter(p => p.name !== name);
   saveFavorites(favs);
 }
-
 // Генерація карток
-palettes.forEach(palette => {
-  const div = document.createElement("div");
-  div.className = "palette";
-  div.title = palette.name;
-
-  const colorsContainer = document.createElement("div");
-  colorsContainer.className = "colors-container";
-
-  palette.colors.forEach(color => {
-    const colorDiv = document.createElement("div");
-    colorDiv.className = "color";
-    colorDiv.style.backgroundColor = color;
-    colorsContainer.appendChild(colorDiv);
-  });
-  div.appendChild(colorsContainer);
-
-  const titleDiv = document.createElement("div");
-  titleDiv.className = "palette-title";
-  titleDiv.textContent = palette.name;
-  div.appendChild(titleDiv);
-
-  div.addEventListener("click", () => {
-    if (activePalette && activePalette !== div) {
-      resetPalette(activePalette);
-      activePalette.classList.remove("selected");
-    }
-
-    if (div.classList.contains("selected")) {
-      const colorRow = div.querySelector('.colors-container');
-      if (colorRow) colorRow.style.display = 'flex';
-      const title = div.querySelector('.palette-title');
-      if (title) title.style.display = 'block';
-      const preview = div.querySelector('.preview');
-      if (preview) {
-        preview.classList.remove("active");
-        setTimeout(() => {
-          preview.remove();
-          activePalette = null;
-        }, 300);
-        div.classList.remove("selected");
-      } else {
-        activePalette = null;
+function renderPalettes(paletteArray) {
+  paletteList.innerHTML = "";
+  paletteArray.forEach(palette => {
+    const div = document.createElement("div");
+    div.className = "palette";
+    div.title = palette.name;
+    const colorsContainer = document.createElement("div");
+    colorsContainer.className = "colors-container";
+    palette.colors.forEach(color => {
+      const colorDiv = document.createElement("div");
+      colorDiv.className = "color";
+      colorDiv.style.backgroundColor = color;
+      colorsContainer.appendChild(colorDiv);
+    });
+    div.appendChild(colorsContainer);
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "palette-title";
+    titleDiv.textContent = palette.name;
+    div.appendChild(titleDiv);
+    
+    div.addEventListener("click", () => {
+      if (activePalette && activePalette !== div) {
+        resetPalette(activePalette);
+        activePalette.classList.remove("selected");
       }
-    } else {
-      const colorRow = div.querySelector('.colors-container');
-      if (colorRow) colorRow.style.display = 'none';
-
-      const title = div.querySelector('.palette-title');
-      if (title) title.style.display = 'none';
-
-      div.classList.add("selected");
-
-      const preview = document.createElement("div");
-      preview.className = "preview";
-      preview.innerHTML = `
-        <h2>${palette.name}</h2>
-        <div class="room">
-          ${palette.colors.map(color => `<div style="background-color: ${color};"></div>`).join('')}
-        </div>
-      `;
-
-      const favoriteButton = document.createElement("button");
-      favoriteButton.className = "favorite-button";
-      const alreadyFavorite = isPaletteFavorite(palette.name);
-
-      favoriteButton.textContent = alreadyFavorite ? "Додано до обраного" : "Додати до обраного";
-      if (alreadyFavorite) favoriteButton.classList.add("added");
-
-      favoriteButton.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (!isPaletteFavorite(palette.name)) {
-          addPaletteToFavorites(palette);
-          favoriteButton.textContent = "Додано до обраного";
-          favoriteButton.classList.add("added");
+      if (div.classList.contains("selected")) {
+        const colorRow = div.querySelector('.colors-container');
+        if (colorRow) colorRow.style.display = 'flex';
+        const title = div.querySelector('.palette-title');
+        if (title) title.style.display = 'block';
+        const preview = div.querySelector('.preview');
+        if (preview) {
+          preview.classList.remove("active");
+          setTimeout(() => {
+            preview.remove();
+            activePalette = null;
+          }, 300);
+          div.classList.remove("selected");
         } else {
-          removePaletteFromFavorites(palette.name);
-          favoriteButton.textContent = "Додати до обраного";
-          favoriteButton.classList.remove("added");
+          activePalette = null;
+        }
+      } else {
+        const colorRow = div.querySelector('.colors-container');
+        if (colorRow) colorRow.style.display = 'none';
+        const title = div.querySelector('.palette-title');
+        if (title) title.style.display = 'none';
+        div.classList.add("selected");
+        const preview = document.createElement("div");
+        preview.className = "preview";
+        preview.innerHTML = `
+          <h2>${palette.name}</h2>
+          <div class="room">
+            ${palette.colors.map(color => `<div style="background-color: ${color};"></div>`).join('')}
+          </div>
+        `;
+        const favoriteButton = document.createElement("button");
+        favoriteButton.className = "favorite-button";
+        const alreadyFavorite = isPaletteFavorite(palette.name);
+        favoriteButton.textContent = alreadyFavorite ? "Додано до обраного" : "Додати до обраного";
+        if (alreadyFavorite) favoriteButton.classList.add("added");
+        favoriteButton.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (!isPaletteFavorite(palette.name)) {
+            addPaletteToFavorites(palette);
+            favoriteButton.textContent = "Додано до обраного";
+            favoriteButton.classList.add("added");
+          } else {
+            removePaletteFromFavorites(palette.name);
+            favoriteButton.textContent = "Додати до обраного";
+            favoriteButton.classList.remove("added");
+          }
+        });
+        preview.appendChild(favoriteButton);
+        div.appendChild(preview);
+        requestAnimationFrame(() => {
+          preview.classList.add("active");
+        });
+        activePalette = div;
       }
-      });
-
-      preview.appendChild(favoriteButton);
-      div.appendChild(preview);
-
-      requestAnimationFrame(() => {
-        preview.classList.add("active");
-      });
-
-      activePalette = div;
-    }
+    });
+    paletteList.appendChild(div);
   });
-
-  paletteList.appendChild(div);
+}
+renderPalettes(palettes);
+searchInput.addEventListener("input", () => {
+  const query = searchInput.value.toLowerCase();
+  const filtered = palettes.filter(p => p.name.toLowerCase().includes(query));
+  renderPalettes(filtered);
 });
-
+clearBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  searchInput.dispatchEvent(new Event("input")); // запуск фільтрації
+});
 function resetPalette(div) {
   const paletteIndex = Array.from(paletteList.children).indexOf(div);
   const palette = palettes[paletteIndex];
-
   // Очистити картку
   div.innerHTML = '';
   div.classList.remove("selected");
-
   // Відновити кольори
   const colorsContainer = document.createElement("div");
   colorsContainer.className = "colors-container";
@@ -170,10 +163,19 @@ function resetPalette(div) {
     colorsContainer.appendChild(colorDiv);
   });
   div.appendChild(colorsContainer);
-
   // Відновити назву
   const titleDiv = document.createElement("div");
   titleDiv.className = "palette-title";
   titleDiv.textContent = palette.name;
   div.appendChild(titleDiv);
 }
+function updateFavoritesText() {
+  const favLink = document.querySelector(".favorites-link");
+  if (window.innerWidth <= 700) {
+    favLink.textContent = "Обрані";
+  } else {
+    favLink.textContent = "Обрані палітри";
+  }
+}
+window.addEventListener("load", updateFavoritesText);
+window.addEventListener("resize", updateFavoritesText);

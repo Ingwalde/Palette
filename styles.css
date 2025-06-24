@@ -10,7 +10,6 @@ body {
 body.visible {
   opacity: 1;
 }
-
 header {
   position: fixed;
   top: 0;
@@ -25,7 +24,6 @@ header {
   align-items: center;
   z-index: 1000;
 }
-
 header h1 {
   font-family: 'Poppins', sans-serif;
   font-weight: 700;
@@ -33,27 +31,23 @@ header h1 {
   letter-spacing: 0.06em;
   text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
   margin: 0;
-  font-size: clamp(1rem, 4vw, 2rem);
+  font-size: clamp(1.2rem, 5vw, 2.5rem);
   text-align: center;
 }
-
 .header-content {
   text-align: center;
 }
-
 .header-description {
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 0.5rem;
 }
-
 .header-description p {
   margin: 0 0 0 0.5rem;
   font-size: 0.9rem;
   color: #f0e7d5;
 }
-
 .designer-quote-full {
   display: flex;
   width: 100%;
@@ -87,7 +81,6 @@ header h1 {
   background-position: center;
   opacity: 0.4;
 }
-
 .designer-quote-text {
   flex: 1;
   background-color: #f0e7d5;
@@ -98,7 +91,6 @@ header h1 {
   font-family: 'Poppins', sans-serif;
   box-sizing: border-box;
 }
-
 .designer-quote-text blockquote {
   font-size: 1.5rem;
   font-style: italic;
@@ -116,18 +108,16 @@ header h1 {
   padding: 0;
   pointer-events: none;
 }
-
 .palette-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(100px, 1fr));
   grid-auto-rows: auto;
   gap: 30px;
   justify-content: center;
-  padding: 20px 20px 40px; /* з урахуванням fixed header */
+  padding: 20px 20px 40px;
   box-sizing: border-box;
   margin-bottom: 2rem;
 }
-
 .palette {
   min-width: 100px;
   max-width: 100%;
@@ -141,13 +131,11 @@ header h1 {
   transition: transform 0.3s ease, box-shadow 0.2s ease, border 0.2s ease;
   background-color: #f0e7d5;
 }
-
 .palette.selected {
   transform: scale(1.05);
   border: 2px solid #302c2c;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
-
 .colors-container {
   display: flex;
   gap: 4px;
@@ -158,16 +146,14 @@ header h1 {
   font-size: 1.05rem;
   margin-bottom: 0.5rem;
   font-family: 'Poppins', sans-serif;
-  color: #212842;
-  user-select: none; /* щоб не виділявся текст випадково */
+  color: #302c2c;
+  user-select: none;
 }
-
 .color {
   flex: 1;
   min-height: 40px;
   border-radius: 4px;
 }
-
 .preview {
   text-align: center;
   opacity: 0;
@@ -179,31 +165,25 @@ header h1 {
   opacity: 1;
   max-height: 400px;
 }
-
 .preview h2 {
   font-size: 1rem;
   margin-bottom: 0.5rem;
   font-family: 'Poppins', sans-serif;
 }
-
 .room {
   display: flex;
   margin-bottom: 0.5rem;
 }
-
 .room > div {
   flex-grow: 1;
   height: 100px;
   transition: all 0.3s ease;
   border-radius: 0px;
 }
-
-/* Preview large (опціонально) */
 .room.preview-large > div {
   flex-grow: 1;
   min-height: 15vw;
 }
-
 .favorite-button {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
@@ -235,19 +215,22 @@ header h1 {
 }
 
 .favorites-link {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
+  position: absolute;
+  top: 50%;
+  right: 5%;
   background-color: #302c2c;
   color: #f0e7d5;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 6px;
   text-decoration: none;
   font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.8rem, 2.5vw, 1rem);
   z-index: 1100;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   transition: background-color 0.3s ease;
+  transform: translateY(-50%);
 }
+
 .favorites-link:hover {
   background-color: #dfcead;
   border-color: #302c2c;
@@ -257,17 +240,64 @@ header h1 {
   width: 100%;
   background-color: #302c2c;
   color: #f0e7d5;
-  text-align: center;
-  padding: 1.5rem 0;
-  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  padding: 2.5rem 0vw;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  margin-top: 10px;
+  gap: 1rem;
+  position: relative;
 }
-
+.section-title-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+}
 .section-title h2 {
   margin: 0;
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 4vw, 2rem);
   letter-spacing: 0.05em;
+}
+.search-container {
+  max-width: 300px;
+  position: absolute;
+  right: 2%;
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+#searchInput {
+  width: 100%;
+  padding: 0.4rem 0.5rem 0.4rem 0.7rem;
+  font-size: 1rem;
+  border: 2px solid #dfcead;
+  border-radius: 25px;
+  font-family: 'Poppins', sans-serif;
+  background-color: #302c2c;
+  color: #dfcead;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+.clear-btn {
+  position: absolute;
+  right: 1px;
+  top: 48%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: #dfcead;
+  display: none;
+  user-select: none;
+}
+#searchInput:not(:placeholder-shown) + .clear-btn {
+  display: block;
 }
 
 /* Адаптивність */
@@ -275,10 +305,27 @@ header h1 {
   .palette-list {
     grid-template-columns: repeat(2, minmax(100px, 1fr));
   }
+  header h1 {
+    font-size: 1.3rem;
+  }
+  .favorites-link {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.7rem;
+  }
+  #searchInput {
+    max-width: 200px;
+    font-size: 0.8rem;
+  }
+  .section-title h2 {
+    font-size: 1.5rem;
+  }
 }
-
 @media (max-width: 700px) {
   .palette-list {
     grid-template-columns: repeat(1, minmax(100px, 1fr));
+  }
+  #searchInput {
+    max-width: 150px;
+    font-size: 0.8rem;
   }
 }
