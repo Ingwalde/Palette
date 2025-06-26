@@ -417,11 +417,27 @@ body.dark .designer-quote-text blockquote small {
   }
 }
 @media (max-width: 700px) {
+  header h1 {
+    font-size: 1rem;
+  }
+  .theme-toggle {
+    font-size: 0.7rem;
+  }
   .palette-list {
     grid-template-columns: repeat(1, minmax(100px, 1fr));
   }
   #searchInput {
-    max-width: 150px;
+    max-width: 120px;
     font-size: 0.8rem;
+  }
+  #sortButton {
+    max-width: 115px;
+    font-size: 0.7rem;
+  }
+  .designer-quote-text{
+    font-size: 0.6rem;
+  }
+  .section-title-center{
+    font-size: 0.6rem;
   }
 }
