@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Palette v3.0 — a full-stack color palette web app with FastAPI backend." />
+  <title>Palette v3.0 | Color Palettes</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html" aria-label="Palette home">
+      <span class="logo__mark">P</span>
+      <span class="logo__text">Palette</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="site-nav__link site-nav__link--active" href="index.html">Home</a>
+      <a class="site-nav__link" href="favorites.html">Favorites</a>
+      <a class="site-nav__link" href="export.html">Export</a>
+      <a class="site-nav__link" href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero section" aria-labelledby="hero-title">
+      <div class="hero__content">
+        <p class="eyebrow">Palette v3.0 · Full-stack update</p>
+        <h1 id="hero-title">Find a color palette for your next design project.</h1>
+        <p class="hero__text">
+          Search, filter, save and export palettes. In v3.0 palettes are loaded from a FastAPI backend and stored in SQLite.
+        </p>
+        <div class="hero__actions">
+          <a class="button button--primary" href="#palettes">Browse palettes</a>
+          <button class="button button--secondary" id="randomPaletteBtn" type="button">Random palette</button>
+        </div>
+      </div>
+
+      <div class="hero-preview" aria-hidden="true">
+        <div class="hero-preview__window">
+          <div class="hero-preview__top"></div>
+          <div class="hero-preview__grid">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section toolbar-section" aria-label="Palette tools">
+      <div class="toolbar">
+        <label class="search-field" for="searchInput">
+          <span class="visually-hidden">Search palettes</span>
+          <input id="searchInput" type="search" placeholder="Search by name, description or tag..." autocomplete="off" />
+        </label>
+
+        <select id="sortSelect" class="select" aria-label="Sort palettes">
+          <option value="default">Default order</option>
+          <option value="az">Name A-Z</option>
+          <option value="za">Name Z-A</option>
+        </select>
+      </div>
+
+      <div class="tag-filters" id="tagFilters" aria-label="Filter palettes by tag"></div>
+    </section>
+
+    <section class="section" id="palettes" aria-labelledby="palettes-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Backend data</p>
+          <h2 id="palettes-title">Available palettes</h2>
+        </div>
+        <p class="result-count" id="resultCount" aria-live="polite"></p>
+      </div>
+
+      <div class="palette-grid" id="paletteGrid"></div>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="js/pages/home.js"></script>
+</body>
+</html>

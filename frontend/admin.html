@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Palette v3.0 development admin panel." />
+  <title>Palette v3.0 | Admin</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html" aria-label="Palette home">
+      <span class="logo__mark">P</span>
+      <span class="logo__text">Palette</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="site-nav__link" href="index.html">Home</a>
+      <a class="site-nav__link" href="favorites.html">Favorites</a>
+      <a class="site-nav__link" href="export.html">Export</a>
+      <a class="site-nav__link site-nav__link--active" href="admin.html">Admin</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero section">
+      <p class="eyebrow">Development admin · v3.0.1</p>
+      <h1>Manage palettes</h1>
+      <p>Admin actions are protected with an admin token. Email/password authentication is planned for v3.1.</p>
+    </section>
+
+    <section class="section admin-access" id="adminAccess">
+      <div class="admin-access__card">
+        <p class="eyebrow">Protected area</p>
+        <h2>Admin access</h2>
+        <p class="muted">Enter the admin token to unlock the palette management panel.</p>
+
+        <label class="field">
+          <span>Admin token</span>
+          <input class="input" id="adminTokenInput" type="password" placeholder="Enter admin token" autocomplete="off" />
+        </label>
+
+        <div class="form-actions">
+          <button class="button button--primary" id="unlockAdminBtn" type="button">Unlock admin panel</button>
+        </div>
+
+        <small class="hint">For local development, set ADMIN_TOKEN in backend/.env. If .env is not configured, the fallback token is dev-admin-token.</small>
+      </div>
+    </section>
+
+    <section class="section admin-layout hidden" id="adminPanel">
+      <form class="admin-form" id="paletteForm">
+        <input type="hidden" id="paletteId" />
+
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="eyebrow">Form</p>
+            <h2 id="formTitle">Add palette</h2>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Name</span>
+          <input class="input" id="nameInput" type="text" placeholder="Nordic Blue" required />
+        </label>
+
+        <label class="field">
+          <span>Description</span>
+          <textarea class="textarea" id="descriptionInput" rows="4" placeholder="Short description..." required></textarea>
+        </label>
+
+        <label class="field">
+          <span>Colors</span>
+          <input class="input" id="colorsInput" type="text" placeholder="#1b263b, #415a77, #778da9, #e0e1dd" required />
+          <small class="hint">Use comma-separated HEX colors.</small>
+        </label>
+
+        <label class="field">
+          <span>Tags</span>
+          <input class="input" id="tagsInput" type="text" placeholder="cold, nordic, clean" required />
+          <small class="hint">Use comma-separated tags.</small>
+        </label>
+
+        <div class="form-actions">
+          <button class="button button--primary" id="submitButton" type="submit">Create palette</button>
+          <button class="button button--secondary" id="cancelEditButton" type="button" hidden>Cancel edit</button>
+          <button class="button button--ghost" id="lockAdminBtn" type="button">Lock admin panel</button>
+        </div>
+      </form>
+
+      <section class="admin-list" aria-labelledby="admin-list-title">
+        <div class="section-heading section-heading--compact">
+          <div>
+            <p class="eyebrow">Database</p>
+            <h2 id="admin-list-title">Palettes in SQLite</h2>
+          </div>
+          <p class="result-count" id="adminCount"></p>
+        </div>
+
+        <div class="admin-items" id="adminItems"></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="js/pages/admin.js"></script>
+</body>
+</html>

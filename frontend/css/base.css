@@ -1,0 +1,127 @@
+:root {
+  --color-bg: #f7f2eb;
+  --color-surface: #fffaf2;
+  --color-surface-strong: #efe7dc;
+  --color-text: #2f2d2a;
+  --color-muted: #746c63;
+  --color-border: rgba(47, 45, 42, 0.14);
+  --color-primary: #302f2c;
+  --color-primary-soft: #e7d8c9;
+  --color-danger: #a64444;
+  --color-success: #4b7f52;
+  --shadow-soft: 0 18px 50px rgba(47, 45, 42, 0.08);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --container: 1180px;
+  --transition: 180ms ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at top left, rgba(231, 216, 201, 0.8), transparent 34rem),
+    var(--color-bg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+select {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+main {
+  width: 100%;
+}
+
+.section {
+  width: min(var(--container), calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 760px;
+  margin-bottom: 18px;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+h2 {
+  margin-bottom: 8px;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+pre {
+  margin: 0;
+}
+
+::selection {
+  color: #fff;
+  background: var(--color-primary);
+}
