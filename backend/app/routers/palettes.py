@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..database import get_db
-from ..security import verify_admin_token
+from ..security import require_admin_user
 
 router = APIRouter(prefix="/palettes", tags=["palettes"])
 
@@ -37,7 +37,7 @@ def read_palette(slug: str, db: Session = Depends(get_db)):
 def create_palette(
     palette_data: schemas.PaletteCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(verify_admin_token),
+    _ = Depends(require_admin_user),
 ):
     return crud.create_palette(db, palette_data)
 
@@ -47,7 +47,7 @@ def update_palette(
     palette_id: int,
     palette_data: schemas.PaletteUpdate,
     db: Session = Depends(get_db),
-    _: None = Depends(verify_admin_token),
+    _ = Depends(require_admin_user),
 ):
     palette = crud.get_palette(db, palette_id)
 
@@ -61,7 +61,7 @@ def update_palette(
 def delete_palette(
     palette_id: int,
     db: Session = Depends(get_db),
-    _: None = Depends(verify_admin_token),
+    _ = Depends(require_admin_user),
 ):
     palette = crud.get_palette(db, palette_id)
 

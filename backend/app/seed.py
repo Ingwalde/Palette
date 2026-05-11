@@ -81,3 +81,18 @@ DEFAULT_PALETTES = [
 
 def seed_default_palettes(db: Session) -> int:
     return create_many_if_empty(db, DEFAULT_PALETTES)
+
+
+
+def seed_default_admin_user(db: Session) -> bool:
+    from .config import DEFAULT_ADMIN_EMAIL, DEFAULT_ADMIN_PASSWORD, DEFAULT_ADMIN_USERNAME
+    from .crud import create_admin_if_missing
+    from .security import hash_password
+
+    created_user = create_admin_if_missing(
+        db=db,
+        username=DEFAULT_ADMIN_USERNAME,
+        email=DEFAULT_ADMIN_EMAIL,
+        password_hash=hash_password(DEFAULT_ADMIN_PASSWORD),
+    )
+    return created_user is not None

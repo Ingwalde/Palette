@@ -14,7 +14,25 @@ http://localhost:8000/docs
 
 ---
 
-## Public endpoints
+## Authentication
+
+Protected endpoints use a Bearer token.
+
+Header:
+
+```http
+Authorization: Bearer your_access_token
+```
+
+The token is returned by:
+
+```http
+POST /api/auth/login
+```
+
+---
+
+## Public palette endpoints
 
 ### Get all palettes
 
@@ -69,43 +87,200 @@ GET /api/palettes/navy-orange
 
 ---
 
-## Admin-protected endpoints
+## Authentication endpoints
 
-The following endpoints require an admin token.
-
-Header:
+### Register user
 
 ```http
-X-Admin-Token: your-admin-token
+POST /api/auth/register
 ```
 
-The token is configured locally in:
+Body:
 
-```text
-backend/.env
+```json
+{
+  "username": "user",
+  "email": "user@gmail.com",
+  "password": "user123"
+}
 ```
 
-Example:
-
-```env
-ADMIN_TOKEN=palette-admin-2026
-```
-
-Do not commit `.env` to GitHub. Commit only `.env.example`.
+Returns the created user without the password.
 
 ---
 
-### Create palette
+### Login
 
 ```http
-POST /api/palettes
+POST /api/auth/login
+```
+
+Body:
+
+```json
+{
+  "username": "user",
+  "password": "user123"
+}
+```
+
+Example response:
+
+```json
+{
+  "access_token": "jwt-token-here",
+  "token_type": "bearer",
+  "user": {
+    "id": 2,
+    "username": "user",
+    "email": "user@gmail.com",
+    "is_admin": false,
+    "created_at": "2026-05-08T12:00:00"
+  }
+}
+```
+
+---
+
+### Get current user
+
+```http
+GET /api/auth/me
 ```
 
 Headers:
 
 ```http
+Authorization: Bearer your_access_token
+```
+
+---
+
+### Change password
+
+```http
+PUT /api/auth/password
+```
+
+Headers:
+
+```http
+Authorization: Bearer your_access_token
 Content-Type: application/json
-X-Admin-Token: your-admin-token
+```
+
+Body:
+
+```json
+{
+  "current_password": "old-password",
+  "new_password": "new-password",
+  "confirm_password": "new-password"
+}
+```
+
+---
+
+## Favorites endpoints
+
+All favorites endpoints require a logged-in user.
+
+### Get current user's favorite palettes
+
+```http
+GET /api/favorites
+```
+
+Headers:
+
+```http
+Authorization: Bearer your_access_token
+```
+
+---
+
+### Get current user's favorite keys
+
+```http
+GET /api/favorites/keys
+```
+
+Returns palette slugs:
+
+```json
+["navy-orange", "eco"]
+```
+
+---
+
+### Add palette to favorites
+
+```http
+POST /api/favorites/{slug}
+```
+
+Example:
+
+```http
+POST /api/favorites/navy-orange
+```
+
+Headers:
+
+```http
+Authorization: Bearer your_access_token
+```
+
+---
+
+### Remove palette from favorites
+
+```http
+DELETE /api/favorites/{slug}
+```
+
+Example:
+
+```http
+DELETE /api/favorites/navy-orange
+```
+
+---
+
+### Clear all favorites
+
+```http
+DELETE /api/favorites
+```
+
+Example response:
+
+```json
+{
+  "deleted": 3
+}
+```
+
+---
+
+## Admin-only palette endpoints
+
+The following endpoints require a logged-in user with:
+
+```text
+is_admin = true
+```
+
+They use the standard Bearer token header:
+
+```http
+Authorization: Bearer admin_access_token
+```
+
+### Create palette
+
+```http
+POST /api/palettes
 ```
 
 Body:
@@ -127,13 +302,6 @@ Body:
 PUT /api/palettes/{id}
 ```
 
-Headers:
-
-```http
-Content-Type: application/json
-X-Admin-Token: your-admin-token
-```
-
 Body can include one or more fields:
 
 ```json
@@ -153,12 +321,6 @@ Body can include one or more fields:
 DELETE /api/palettes/{id}
 ```
 
-Headers:
-
-```http
-X-Admin-Token: your-admin-token
-```
-
 Returns:
 
 ```text
@@ -167,8 +329,16 @@ Returns:
 
 ---
 
-## Notes
+## Common status codes
 
-- Public palette reading is available without authentication.
-- Palette creation, editing and deletion require the admin token.
-- Full email/password authentication is planned for v3.1.
+| Code | Meaning |
+|---|---|
+| `200` | Successful request |
+| `201` | Created |
+| `204` | Deleted successfully, no content returned |
+| `400` | Invalid request or incorrect current password |
+| `401` | Missing, invalid or expired token |
+| `403` | Logged in but not admin |
+| `404` | Palette not found |
+| `409` | Username or email already registered |
+| `422` | Validation error |

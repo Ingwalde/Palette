@@ -1,6 +1,7 @@
 import { createElement } from "../utils/dom.js";
 import { copyToClipboard, getPaletteContrastStatus } from "../utils/color.js";
-import { isFavorite, toggleFavorite } from "../utils/storage.js";
+import { getAccessToken } from "../utils/authStorage.js";
+import { addFavorite, isFavoritePalette, removeFavorite } from "../api/favoritesApi.js";
 import { showToast } from "../utils/toast.js";
 
 export function getPaletteFavoriteKey(palette) {
@@ -72,15 +73,15 @@ export function createPaletteCard(palette, options = {}) {
 
   const copyPaletteButton = createElement("button", {
     className: "button button--ghost",
-    text: "Copy palette",
+    text: "Copy name",
     attrs: {
       type: "button"
     }
   });
 
   copyPaletteButton.addEventListener("click", async () => {
-    await copyToClipboard(palette.colors.join(", "));
-    showToast(`${palette.name} copied`);
+    await copyToClipboard(palette.name);
+    showToast(`Palette name copied: ${palette.name}`);
   });
 
   footer.append(contrastBadge, copyPaletteButton);
@@ -98,21 +99,56 @@ function createFavoriteButton(favoriteKey, onFavoriteChange) {
     }
   });
 
-  const updateButton = () => {
-    const saved = isFavorite(favoriteKey);
+  const setButtonState = (saved) => {
     button.textContent = saved ? "♥ Saved" : "♡ Save";
     button.classList.toggle("button--saved", saved);
   };
 
-  updateButton();
+  const refreshFavoriteState = async () => {
+    if (!getAccessToken()) {
+      setButtonState(false);
+      return;
+    }
 
-  button.addEventListener("click", () => {
-    const result = toggleFavorite(favoriteKey);
-    updateButton();
-    showToast(result.isFavorite ? "Added to favorites" : "Removed from favorites");
+    try {
+      const saved = await isFavoritePalette(favoriteKey);
+      setButtonState(saved);
+    } catch {
+      setButtonState(false);
+    }
+  };
 
-    if (typeof onFavoriteChange === "function") {
-      onFavoriteChange(result);
+  setButtonState(false);
+  refreshFavoriteState();
+
+  button.addEventListener("click", async () => {
+    if (!getAccessToken()) {
+      showToast("Log in to save favorites");
+      return;
+    }
+
+    button.disabled = true;
+
+    try {
+      const saved = await isFavoritePalette(favoriteKey);
+
+      if (saved) {
+        await removeFavorite(favoriteKey);
+        setButtonState(false);
+        showToast("Removed from favorites");
+      } else {
+        await addFavorite(favoriteKey);
+        setButtonState(true);
+        showToast("Added to favorites");
+      }
+
+      if (typeof onFavoriteChange === "function") {
+        onFavoriteChange();
+      }
+    } catch (error) {
+      showToast(error.message, "error");
+    } finally {
+      button.disabled = false;
     }
   });
 

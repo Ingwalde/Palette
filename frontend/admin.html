@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Palette v3.0 development admin panel." />
-  <title>Palette v3.0 | Admin</title>
+  <meta name="description" content="Palette v3.1 admin panel protected by username and password authentication." />
+  <title>Palette | Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,32 +26,27 @@
       <a class="site-nav__link" href="favorites.html">Favorites</a>
       <a class="site-nav__link" href="export.html">Export</a>
       <a class="site-nav__link site-nav__link--active" href="admin.html">Admin</a>
+      <button class="site-nav__link site-nav__button" data-auth-nav type="button">Login</button>
     </nav>
   </header>
 
   <main>
     <section class="page-hero section">
-      <p class="eyebrow">Development admin · v3.0.1</p>
+      <p class="eyebrow">Admin · v3.1</p>
       <h1>Manage palettes</h1>
-      <p>Admin actions are protected with an admin token. Email/password authentication is planned for v3.1.</p>
+      <p>Admin actions are protected with username/password authentication and an admin role.</p>
     </section>
 
     <section class="section admin-access" id="adminAccess">
       <div class="admin-access__card">
         <p class="eyebrow">Protected area</p>
-        <h2>Admin access</h2>
-        <p class="muted">Enter the admin token to unlock the palette management panel.</p>
-
-        <label class="field">
-          <span>Admin token</span>
-          <input class="input" id="adminTokenInput" type="password" placeholder="Enter admin token" autocomplete="off" />
-        </label>
+        <h2 id="adminAccessTitle">Login required</h2>
+        <p class="muted" id="adminAccessMessage">You need to login with an admin account to manage palettes.</p>
 
         <div class="form-actions">
-          <button class="button button--primary" id="unlockAdminBtn" type="button">Unlock admin panel</button>
+          <a class="button button--primary" href="login.html">Go to login</a>
+          <button class="button button--ghost" id="refreshAccessBtn" type="button">Refresh access</button>
         </div>
-
-        <small class="hint">For local development, set ADMIN_TOKEN in backend/.env. If .env is not configured, the fallback token is dev-admin-token.</small>
       </div>
     </section>
 
@@ -61,7 +56,7 @@
 
         <div class="section-heading section-heading--compact">
           <div>
-            <p class="eyebrow">Form</p>
+            <p class="eyebrow" id="adminUserInfo">Admin session</p>
             <h2 id="formTitle">Add palette</h2>
           </div>
         </div>
@@ -91,7 +86,7 @@
         <div class="form-actions">
           <button class="button button--primary" id="submitButton" type="submit">Create palette</button>
           <button class="button button--secondary" id="cancelEditButton" type="button" hidden>Cancel edit</button>
-          <button class="button button--ghost" id="lockAdminBtn" type="button">Lock admin panel</button>
+          <button class="button button--ghost" id="logoutAdminBtn" type="button">Logout</button>
         </div>
       </form>
 
@@ -111,6 +106,7 @@
 
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
+  <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/admin.js"></script>
 </body>
 </html>

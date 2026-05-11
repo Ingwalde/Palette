@@ -1,8 +1,8 @@
-import { getPalettes } from "../api/palettesApi.js";
-import { createPaletteCard, getPaletteFavoriteKey } from "../components/paletteCard.js";
+import { createPaletteCard } from "../components/paletteCard.js";
 import { createEmptyState } from "../components/emptyState.js";
 import { clearElement, qs } from "../utils/dom.js";
-import { clearFavorites, getFavoriteKeys } from "../utils/storage.js";
+import { getAccessToken } from "../utils/authStorage.js";
+import { clearFavoritePalettes, getFavoritePalettes } from "../api/favoritesApi.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -16,22 +16,30 @@ initFavoritesPage();
 function initFavoritesPage() {
   renderFavorites();
 
-  elements.clearButton.addEventListener("click", () => {
-    clearFavorites();
-    showToast("Favorites cleared");
-    renderFavorites();
+  elements.clearButton.addEventListener("click", async () => {
+    await handleClearFavorites();
   });
 }
 
 async function renderFavorites() {
   clearElement(elements.grid);
+
+  if (!getAccessToken()) {
+    elements.favoriteCount.textContent = "Login required";
+    elements.clearButton.disabled = true;
+    elements.grid.append(createEmptyState(
+      "Log in to view favorites",
+      "Favorites are now connected to your account. Log in to save and view your palettes."
+    ));
+    return;
+  }
+
   elements.favoriteCount.textContent = "Loading...";
-  elements.grid.append(createEmptyState("Loading favorites", "The frontend is loading palettes from the backend API."));
+  elements.clearButton.disabled = true;
+  elements.grid.append(createEmptyState("Loading favorites", "The app is loading your saved palettes from the backend API."));
 
   try {
-    const allPalettes = await getPalettes();
-    const favoriteKeys = getFavoriteKeys();
-    const favoritePalettes = allPalettes.filter((palette) => favoriteKeys.includes(getPaletteFavoriteKey(palette)));
+    const favoritePalettes = await getFavoritePalettes();
 
     clearElement(elements.grid);
     elements.favoriteCount.textContent = `${favoritePalettes.length} saved palette${favoritePalettes.length === 1 ? "" : "s"}`;
@@ -50,9 +58,27 @@ async function renderFavorites() {
     elements.favoriteCount.textContent = "API error";
     elements.clearButton.disabled = true;
     elements.grid.append(createEmptyState(
-      "Backend is not available",
-      "Start FastAPI with: uvicorn app.main:app --reload"
+      "Favorites are not available",
+      "Check that FastAPI is running and that your session is valid."
     ));
     showToast(error.message, "error");
+  }
+}
+
+async function handleClearFavorites() {
+  if (!getAccessToken()) {
+    showToast("Log in to clear favorites", "error");
+    return;
+  }
+
+  elements.clearButton.disabled = true;
+
+  try {
+    await clearFavoritePalettes();
+    showToast("Favorites cleared");
+    await renderFavorites();
+  } catch (error) {
+    showToast(error.message, "error");
+    elements.clearButton.disabled = false;
   }
 }

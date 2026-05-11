@@ -1,5 +1,6 @@
+import { getAccessToken } from "../utils/authStorage.js";
+
 const API_BASE_URL = "http://localhost:8000/api";
-const ADMIN_TOKEN_KEY = "palette:admin-token";
 
 async function apiRequest(endpoint, options = {}) {
   const { headers = {}, ...requestOptions } = options;
@@ -32,24 +33,12 @@ async function apiRequest(endpoint, options = {}) {
   return response.json();
 }
 
-function getAdminHeaders() {
-  const token = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+function getAuthHeaders() {
+  const token = getAccessToken();
 
-  return {
-    "X-Admin-Token": token || ""
-  };
-}
-
-export function saveAdminToken(token) {
-  sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
-}
-
-export function getAdminToken() {
-  return sessionStorage.getItem(ADMIN_TOKEN_KEY);
-}
-
-export function clearAdminToken() {
-  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+  return token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
 }
 
 export function buildPaletteQuery(params = {}) {
@@ -80,7 +69,7 @@ export function getTags() {
 export function createPalette(payload) {
   return apiRequest("/palettes", {
     method: "POST",
-    headers: getAdminHeaders(),
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 }
@@ -88,7 +77,7 @@ export function createPalette(payload) {
 export function updatePalette(id, payload) {
   return apiRequest(`/palettes/${id}`, {
     method: "PUT",
-    headers: getAdminHeaders(),
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 }
@@ -96,6 +85,6 @@ export function updatePalette(id, payload) {
 export function deletePalette(id) {
   return apiRequest(`/palettes/${id}`, {
     method: "DELETE",
-    headers: getAdminHeaders()
+    headers: getAuthHeaders()
   });
 }

@@ -284,3 +284,95 @@
   font-size: 0.95rem;
   line-height: 1.7;
 }
+
+/* Account page — v3.1 */
+.page-hero--account {
+  padding-top: 56px;
+}
+
+.account-layout {
+  display: grid;
+  place-items: start;
+  padding-bottom: 48px;
+}
+
+.account-card {
+  width: min(560px, 100%);
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 250, 242, 0.9);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 32px;
+}
+
+.account-card__header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.account-avatar {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--color-primary);
+  font-size: 1.6rem;
+  font-weight: 700;
+  box-shadow: 0 14px 32px rgba(47, 45, 42, 0.18);
+}
+
+
+.account-actions {
+  display: grid;
+  gap: 14px;
+}
+
+.account-actions__main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.account-actions__logout {
+  width: max-content;
+  min-width: 240px;
+}
+
+.password-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.password-form h3 {
+  margin: 4px 0 8px;
+  font-size: 1.35rem;
+}
+
+.password-form.hidden {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .account-card__header {
+    align-items: flex-start;
+  }
+
+  .account-actions__main {
+    flex-direction: column;
+  }
+
+  .account-actions__main .button,
+  .account-actions__logout {
+    width: 100%;
+    min-width: 0;
+  }
+}

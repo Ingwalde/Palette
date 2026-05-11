@@ -1,6 +1,6 @@
 import { getPalettes } from "../api/palettesApi.js";
 import { copyToClipboard } from "../utils/color.js";
-import { getFavoriteKeys } from "../utils/storage.js";
+import { getFavoritePalettes } from "../api/favoritesApi.js";
 import { qs } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 import { initCustomSelects } from "../utils/customSelect.js";
@@ -94,20 +94,17 @@ async function renderExport() {
     currentSelectedPalettes = [];
     currentPreviewDataUrl = "";
     setTextMode();
-    elements.output.textContent = `Backend is not available.\n\nStart FastAPI with:\nuvicorn app.main:app --reload\n\nDetails: ${error.message}`;
+    elements.output.textContent = `Export is not available.\n\nStart FastAPI or log in if you selected Favorites only.\n\nDetails: ${error.message}`;
     showToast(error.message, "error");
   }
 }
 
 async function getSelectedPalettes() {
-  const allPalettes = await getPalettes();
-
   if (elements.sourceSelect.value === "favorites") {
-    const favoriteKeys = getFavoriteKeys();
-    return allPalettes.filter((palette) => favoriteKeys.includes(palette.slug));
+    return getFavoritePalettes();
   }
 
-  return allPalettes;
+  return getPalettes();
 }
 
 function updateActionButton(format) {

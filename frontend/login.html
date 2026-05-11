@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Login or create an account in Palette v3.1." />
+  <title>Palette | Login</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html" aria-label="Palette home">
+      <span class="logo__mark">P</span>
+      <span class="logo__text">Palette</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="site-nav__link" href="index.html">Home</a>
+      <a class="site-nav__link" href="favorites.html">Favorites</a>
+      <a class="site-nav__link" href="export.html">Export</a>
+      <a class="site-nav__link" href="admin.html">Admin</a>
+      <button class="site-nav__link site-nav__link--active site-nav__button" data-auth-nav type="button">Login</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero section">
+      <p class="eyebrow">Authentication · v3.1</p>
+      <h1>Login to Palette</h1>
+      <p>Use username, email and password authentication. Admin access is connected to the admin role.</p>
+    </section>
+
+    <section class="section auth-layout">
+      <form class="auth-card" id="loginForm">
+        <div>
+          <p class="eyebrow">Existing account</p>
+          <h2>Login</h2>
+          <p class="muted">For local admin access, use the admin user from backend/.env.</p>
+        </div>
+
+        <label class="field">
+          <span>Username/Email</span>
+          <input class="input" id="loginUsername" type="text" autocomplete="username" required />
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <input class="input" id="loginPassword" type="password" autocomplete="current-password" required />
+        </label>
+
+        <div class="form-actions">
+          <button class="button button--primary" type="submit">Login</button>
+        </div>
+      </form>
+
+      <form class="auth-card" id="registerForm">
+        <div>
+          <p class="eyebrow">New account</p>
+          <h2>Create account</h2>
+          <p class="muted">New users are created without admin rights. Admin users are created from backend settings.</p>
+        </div>
+
+        <label class="field">
+          <span>Username</span>
+          <input class="input" id="registerUsername" type="text" autocomplete="username" required />
+          <small class="hint">Use 3–40 characters: letters, numbers, underscore or hyphen.</small>
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input class="input" id="registerEmail" type="email" autocomplete="email" required />
+          <small class="hint">Use a valid email address.</small>
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <input class="input" id="registerPassword" type="password" autocomplete="new-password" required />
+          <small class="hint">Minimum 6 characters.</small>
+        </label>
+
+        <div class="form-actions">
+          <button class="button button--secondary" type="submit">Create account</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="js/utils/authNav.js"></script>
+  <script type="module" src="js/pages/login.js"></script>
+</body>
+</html>

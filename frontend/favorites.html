@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Saved color palettes in Palette v3.0." />
-  <title>Palette v3.0 | Favorites</title>
+  <meta name="description" content="Saved account-based color palettes in Palette v3.1." />
+  <title>Palette | Favorites</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,6 +26,7 @@
       <a class="site-nav__link site-nav__link--active" href="favorites.html">Favorites</a>
       <a class="site-nav__link" href="export.html">Export</a>
       <a class="site-nav__link" href="admin.html">Admin</a>
+      <button class="site-nav__link site-nav__button" data-auth-nav type="button">Login</button>
     </nav>
   </header>
 
@@ -33,7 +34,7 @@
     <section class="page-hero section">
       <p class="eyebrow">Saved palettes</p>
       <h1>Your favorite palettes</h1>
-      <p>In v3.0 favorites are still stored locally in your browser. User accounts are planned for v3.1.</p>
+      <p>In v3.1 favorites are connected to your account and stored in the backend database.</p>
     </section>
 
     <section class="section">
@@ -51,6 +52,7 @@
 
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
+  <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/favorites.js"></script>
 </body>
 </html>

@@ -141,3 +141,133 @@ def create_many_if_empty(db: Session, palettes: Iterable[schemas.PaletteCreate])
         created_count += 1
 
     return created_count
+
+
+
+def get_user(db: Session, user_id: int) -> models.User | None:
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def get_user_by_username(db: Session, username: str) -> models.User | None:
+    return db.query(models.User).filter(models.User.username == username).first()
+
+
+def get_user_by_email(db: Session, email: str) -> models.User | None:
+    return db.query(models.User).filter(models.User.email == email.lower()).first()
+
+
+def create_user(
+    db: Session,
+    user_data: schemas.UserCreate,
+    password_hash: str,
+    is_admin: bool = False,
+) -> models.User:
+    user = models.User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=password_hash,
+        is_admin=is_admin,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def create_admin_if_missing(db: Session, username: str, email: str, password_hash: str) -> models.User | None:
+    admin_exists = db.query(models.User).filter(models.User.is_admin.is_(True)).first()
+    if admin_exists:
+        if not admin_exists.email:
+            admin_exists.email = email
+            db.commit()
+            db.refresh(admin_exists)
+        return None
+
+    existing_user = get_user_by_username(db, username)
+    if existing_user:
+        existing_user.is_admin = True
+        existing_user.email = existing_user.email or email
+        existing_user.password_hash = password_hash
+        db.commit()
+        db.refresh(existing_user)
+        return existing_user
+
+    user = models.User(
+        username=username,
+        email=email,
+        password_hash=password_hash,
+        is_admin=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def get_user_favorite_palettes(db: Session, user: models.User) -> list[models.Palette]:
+    return (
+        db.query(models.Palette)
+        .join(models.Favorite, models.Favorite.palette_id == models.Palette.id)
+        .filter(models.Favorite.user_id == user.id)
+        .order_by(models.Favorite.created_at.desc())
+        .all()
+    )
+
+
+def get_user_favorite_keys(db: Session, user: models.User) -> list[str]:
+    return [palette.slug for palette in get_user_favorite_palettes(db, user)]
+
+
+def is_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
+    return db.query(models.Favorite).filter(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
+    ).first() is not None
+
+
+def add_user_favorite(db: Session, user: models.User, palette: models.Palette) -> models.Palette:
+    existing_favorite = db.query(models.Favorite).filter(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
+    ).first()
+
+    if existing_favorite:
+        return palette
+
+    favorite = models.Favorite(
+        user_id=user.id,
+        palette_id=palette.id,
+    )
+    db.add(favorite)
+    db.commit()
+    return palette
+
+
+def remove_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
+    favorite = db.query(models.Favorite).filter(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
+    ).first()
+
+    if favorite is None:
+        return False
+
+    db.delete(favorite)
+    db.commit()
+    return True
+
+
+def clear_user_favorites(db: Session, user: models.User) -> int:
+    favorites_query = db.query(models.Favorite).filter(models.Favorite.user_id == user.id)
+    deleted_count = favorites_query.count()
+    favorites_query.delete(synchronize_session=False)
+    db.commit()
+    return deleted_count
+
+
+
+def update_user_password(db: Session, user: models.User, password_hash: str) -> models.User:
+    user.password_hash = password_hash
+    db.commit()
+    db.refresh(user)
+    return user

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Personal account page in Palette v3.1." />
+  <title>Palette | Account</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html" aria-label="Palette home">
+      <span class="logo__mark">P</span>
+      <span class="logo__text">Palette</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="site-nav__link" href="index.html">Home</a>
+      <a class="site-nav__link" href="favorites.html">Favorites</a>
+      <a class="site-nav__link" href="export.html">Export</a>
+      <a class="site-nav__link" href="admin.html">Admin</a>
+      <button class="site-nav__link site-nav__link--active site-nav__button" data-auth-nav type="button">Account</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-hero page-hero--account section">
+      <p class="eyebrow">Authentication · v3.1</p>
+      <h1>Personal account</h1>
+      <p>View your account details, open your saved palettes and manage your session.</p>
+    </section>
+
+    <section class="section account-layout">
+      <article class="account-card">
+        <div class="account-card__header">
+          <div class="account-avatar" id="accountAvatar" aria-hidden="true">U</div>
+          <div>
+            <p class="eyebrow">Logged in as</p>
+            <h2 id="accountUsername">Loading...</h2>
+            <p class="muted" id="accountEmail">Checking session...</p>
+          </div>
+        </div>
+
+        <div class="account-actions">
+          <div class="account-actions__main">
+            <a class="button button--primary" href="favorites.html">Open favorites</a>
+            <button class="button button--secondary" id="togglePasswordFormButton" type="button">Change password</button>
+          </div>
+
+          <button class="button button--danger account-actions__logout" id="logoutButton" type="button">Logout</button>
+        </div>
+
+        <form class="password-form hidden" id="passwordForm">
+          <div>
+            <p class="eyebrow">Security</p>
+            <h3>Change password</h3>
+            <p class="muted">Enter your current password and confirm the new password.</p>
+          </div>
+
+          <label class="field">
+            <span>Current password</span>
+            <input class="input" id="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+
+          <label class="field">
+            <span>New password</span>
+            <input class="input" id="newPassword" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+
+          <label class="field">
+            <span>Confirm new password</span>
+            <input class="input" id="confirmPassword" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+
+          <div class="form-actions">
+            <button class="button button--primary" type="submit">Save new password</button>
+            <button class="button button--secondary" id="cancelPasswordChangeButton" type="button">Cancel</button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="js/utils/authNav.js"></script>
+  <script type="module" src="js/pages/profile.js"></script>
+</body>
+</html>

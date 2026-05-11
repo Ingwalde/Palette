@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Palette v3.0 — a full-stack color palette web app with FastAPI backend." />
-  <title>Palette v3.0 | Color Palettes</title>
+  <title>Palette | Color Palettes</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,6 +26,7 @@
       <a class="site-nav__link" href="favorites.html">Favorites</a>
       <a class="site-nav__link" href="export.html">Export</a>
       <a class="site-nav__link" href="admin.html">Admin</a>
+      <button class="site-nav__link site-nav__button" data-auth-nav type="button">Login</button>
     </nav>
   </header>
 
@@ -88,6 +89,7 @@
 
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
+  <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/home.js"></script>
 </body>
 </html>

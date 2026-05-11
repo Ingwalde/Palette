@@ -1,23 +1,24 @@
 import {
-  clearAdminToken,
   createPalette,
   deletePalette,
-  getAdminToken,
   getPalettes,
-  saveAdminToken,
   updatePalette
 } from "../api/palettesApi.js";
+import { getCurrentUser } from "../api/authApi.js";
 import { createEmptyState } from "../components/emptyState.js";
 import { parseCommaSeparatedList } from "../utils/color.js";
 import { clearElement, createElement, qs } from "../utils/dom.js";
+import { clearAuth, getStoredUser } from "../utils/authStorage.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
   adminAccess: qs("#adminAccess"),
+  adminAccessTitle: qs("#adminAccessTitle"),
+  adminAccessMessage: qs("#adminAccessMessage"),
+  refreshAccessButton: qs("#refreshAccessBtn"),
   adminPanel: qs("#adminPanel"),
-  adminTokenInput: qs("#adminTokenInput"),
-  unlockAdminButton: qs("#unlockAdminBtn"),
-  lockAdminButton: qs("#lockAdminBtn"),
+  adminUserInfo: qs("#adminUserInfo"),
+  logoutAdminButton: qs("#logoutAdminBtn"),
   form: qs("#paletteForm"),
   formTitle: qs("#formTitle"),
   paletteId: qs("#paletteId"),
@@ -35,38 +36,17 @@ initAdminPage();
 
 function initAdminPage() {
   bindEvents();
-
-  if (getAdminToken()) {
-    unlockAdminPanel({ shouldRender: true });
-  } else {
-    lockAdminPanel({ showMessage: false });
-  }
+  checkAdminAccess();
 }
 
 function bindEvents() {
-  elements.unlockAdminButton.addEventListener("click", () => {
-    const token = elements.adminTokenInput.value.trim();
+  elements.refreshAccessButton.addEventListener("click", checkAdminAccess);
 
-    if (!token) {
-      showToast("Enter admin token", "error");
-      return;
-    }
-
-    saveAdminToken(token);
-    unlockAdminPanel({ shouldRender: true });
-    showToast("Admin panel unlocked");
-  });
-
-  elements.adminTokenInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      elements.unlockAdminButton.click();
-    }
-  });
-
-  elements.lockAdminButton.addEventListener("click", () => {
-    clearAdminToken();
+  elements.logoutAdminButton.addEventListener("click", () => {
+    clearAuth();
     resetForm();
-    lockAdminPanel({ showMessage: true });
+    showAccessMessage("Login required", "You have been logged out. Login with an admin account to continue.");
+    showToast("Logged out");
   });
 
   elements.form.addEventListener("submit", async (event) => {
@@ -77,23 +57,42 @@ function bindEvents() {
   elements.cancelEditButton.addEventListener("click", resetForm);
 }
 
-function unlockAdminPanel({ shouldRender = false } = {}) {
-  elements.adminAccess.classList.add("hidden");
-  elements.adminPanel.classList.remove("hidden");
+async function checkAdminAccess() {
+  const storedUser = getStoredUser();
 
-  if (shouldRender) {
-    renderAdminList();
+  if (!storedUser) {
+    showAccessMessage("Login required", "You need to login with an admin account to manage palettes.");
+    return;
+  }
+
+  try {
+    const user = await getCurrentUser();
+
+    if (!user.is_admin) {
+      showAccessMessage("Admin role required", `User ${user.username} is logged in, but this account does not have admin access.`);
+      return;
+    }
+
+    showAdminPanel(user);
+    await renderAdminList();
+  } catch (error) {
+    clearAuth();
+    showAccessMessage("Session expired", "Login again to continue working with the admin panel.");
+    showToast(error.message, "error");
   }
 }
 
-function lockAdminPanel({ showMessage = true } = {}) {
+function showAdminPanel(user) {
+  elements.adminAccess.classList.add("hidden");
+  elements.adminPanel.classList.remove("hidden");
+  elements.adminUserInfo.textContent = `Admin session · ${user.username}`;
+}
+
+function showAccessMessage(title, message) {
   elements.adminAccess.classList.remove("hidden");
   elements.adminPanel.classList.add("hidden");
-  elements.adminTokenInput.value = "";
-
-  if (showMessage) {
-    showToast("Admin panel locked");
-  }
+  elements.adminAccessTitle.textContent = title;
+  elements.adminAccessMessage.textContent = message;
 }
 
 async function savePalette() {
@@ -191,12 +190,7 @@ function createAdminItem(palette) {
     }));
   });
 
-  const tags = createElement("div", { className: "palette-card__tags" });
-  palette.tags.forEach((tag) => {
-    tags.append(createElement("span", { className: "tag", text: `#${tag}` }));
-  });
-
-  item.append(top, swatches, tags);
+  item.append(top, swatches);
   return item;
 }
 
@@ -209,7 +203,23 @@ function fillForm(palette) {
   elements.formTitle.textContent = "Edit palette";
   elements.submitButton.textContent = "Update palette";
   elements.cancelEditButton.hidden = false;
-  elements.form.scrollIntoView({ behavior: "smooth", block: "start" });
+  elements.nameInput.focus();
+}
+
+async function removePalette(id) {
+  const confirmed = window.confirm("Delete this palette from the database?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await deletePalette(id);
+    showToast("Palette deleted");
+    await renderAdminList();
+  } catch (error) {
+    handleAdminError(error);
+  }
 }
 
 function resetForm() {
@@ -220,22 +230,13 @@ function resetForm() {
   elements.cancelEditButton.hidden = true;
 }
 
-async function removePalette(id) {
-  try {
-    await deletePalette(id);
-    showToast("Palette deleted");
-    await renderAdminList();
-  } catch (error) {
-    handleAdminError(error);
-  }
-}
-
 function handleAdminError(error) {
-  showToast(error.message, "error");
-
-  if (error.message.toLowerCase().includes("admin token") || error.message.includes("401") || error.message.includes("403")) {
-    clearAdminToken();
-    lockAdminPanel({ showMessage: false });
-    showToast("Admin token is invalid or missing", "error");
+  if (error.message.includes("401") || error.message.includes("credentials")) {
+    clearAuth();
+    showAccessMessage("Session expired", "Login again to continue working with the admin panel.");
+  } else if (error.message.includes("403") || error.message.includes("Admin access")) {
+    showAccessMessage("Admin role required", "This account does not have permission to manage palettes.");
   }
+
+  showToast(error.message, "error");
 }
