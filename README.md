@@ -1,8 +1,8 @@
-# Palette v3.1 — Full-Stack Color Palette App with Authentication
+# Palette v3.2 — Full-Stack Color Palette App
 
-Palette is a full-stack web application for browsing, searching, saving and exporting color palettes.
+Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **3.1** adds user accounts, authentication, role-based admin access and account-based favorites on top of the FastAPI + SQLite backend introduced in v3.0.
+Version **3.2** improves the v3.1 authentication release with a more polished export workflow, selected-palette export, PNG palette card export, a project changelog page, footer information panels and navigation stability improvements.
 
 ```text
 Frontend → Fetch API → FastAPI Backend → SQLite Database
@@ -10,21 +10,17 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 
 ---
 
-## What changed from v2.0 to v3.1
+## What changed by version
 
-| Area | v2.0 | v3.0 | v3.1 |
-|---|---|---|---|
-| Architecture | Frontend-only | Frontend + Backend | Full-stack with authentication |
-| Palette data | Static JS data | SQLite database | SQLite database |
-| Backend | No backend | FastAPI | FastAPI with auth and protected routes |
-| API | No REST API | Palette REST API | Palette, auth and favorites APIs |
-| Favorites | Browser localStorage | Browser localStorage | User-based favorites in database |
-| Admin | No backend admin | Admin token | Admin role with Bearer token |
-| Auth | None | Planned | Username, email and password auth |
-| Account page | None | None | Personal account page |
-| Password change | None | None | Supported |
-| Export | CSS, SCSS, JSON, TXT | CSS, SCSS, JSON, TXT, PNG | CSS, SCSS, JSON, TXT, PNG |
-| UI | Native selects | Custom dropdowns | Custom dropdowns, account flow, protected admin visibility |
+| Area | v2.0 | v3.0 | v3.1 | v3.2 |
+|---|---|---|---|---|
+| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish |
+| Palette data | Static JS data | SQLite database | SQLite database | SQLite database |
+| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites |
+| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow |
+| Auth | None | Planned | Username/email/password auth | Login/Account flow refined |
+| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation |
 
 ---
 
@@ -32,26 +28,25 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 
 ### Frontend
 
-- Modular JavaScript with ES Modules.
 - Responsive HTML/CSS interface.
+- Modular JavaScript with ES Modules.
 - Palette cards loaded from the backend API.
 - Search by name, description, slug and tags.
 - Tag filtering and sorting.
 - Custom dropdown UI.
 - Toast notifications and empty states.
 - Save/remove favorites connected to the logged-in user.
-- Account page with user details and session controls.
-- Password change form with confirmation.
+- Account page with session controls and password change.
 - Admin navigation hidden for guests and regular users.
-- Export palettes as:
-  - CSS variables;
-  - SCSS variables;
-  - JSON;
-  - TXT;
-  - PNG image with visual preview.
+- Export one selected palette or user favorites.
+- Export formats: CSS, SCSS, JSON, TXT and PNG.
+- PNG export preview and download.
+- Selected palette PNG export as a standalone palette card.
 - HEX color copying.
 - Palette name copying.
-- Contrast status for palette cards.
+- Palette contrast status rounded to one decimal.
+- Changelog page inside the frontend.
+- Bottom project information panel on each page.
 
 ### Backend
 
@@ -64,6 +59,7 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 - User-based favorites API.
 - Password hashing with PBKDF2-SHA256.
 - JWT/Bearer token authentication with PyJWT.
+- Login by username or email.
 - Admin-only create/update/delete palette actions.
 - Automatic default palette seeding.
 - Automatic first admin user creation from `.env` settings.
@@ -83,156 +79,57 @@ Palette/
 │   ├── admin.html
 │   ├── login.html
 │   ├── profile.html
+│   ├── changelog.html
 │   ├── css/
-│   │   ├── base.css
-│   │   ├── components.css
-│   │   └── pages.css
 │   └── js/
-│       ├── api/
-│       │   ├── authApi.js
-│       │   ├── favoritesApi.js
-│       │   └── palettesApi.js
-│       ├── components/
-│       │   ├── emptyState.js
-│       │   └── paletteCard.js
-│       ├── pages/
-│       │   ├── admin.js
-│       │   ├── export.js
-│       │   ├── favorites.js
-│       │   ├── home.js
-│       │   ├── login.js
-│       │   └── profile.js
-│       └── utils/
-│           ├── authNav.js
-│           ├── authStorage.js
-│           ├── color.js
-│           ├── customSelect.js
-│           ├── dom.js
-│           └── toast.js
-│
 ├── backend/
 │   ├── app/
-│   │   ├── main.py
-│   │   ├── database.py
-│   │   ├── models.py
-│   │   ├── schemas.py
-│   │   ├── crud.py
-│   │   ├── seed.py
-│   │   ├── config.py
-│   │   ├── security.py
-│   │   └── routers/
-│   │       ├── auth.py
-│   │       ├── favorites.py
-│   │       └── palettes.py
-│   ├── .env.example
-│   └── requirements.txt
-│
+│   ├── requirements.txt
+│   └── .env.example
 ├── docs/
-│   ├── api.md
-│   ├── auth.md
-│   ├── database.md
-│   ├── setup.md
-│   └── troubleshooting.md
-├── start_project.bat
 ├── README.md
 ├── CHANGELOG.md
 ├── ROADMAP.md
-└── .gitignore
+├── .gitignore
+└── start_project.bat
 ```
 
 ---
 
-## Quick start on Windows
+## Quick start
 
-The easiest way to run the project locally is:
-
-```text
-start_project.bat
-```
-
-It starts:
-
-```text
-Backend:  http://localhost:8000
-Frontend: http://localhost:5500
-API docs: http://localhost:8000/docs
-```
-
----
-
-## Manual backend setup
-
-Open a terminal in the `backend` folder.
-
-### 1. Create virtual environment
+### Backend
 
 ```bash
+cd backend
 python -m venv .venv
-```
-
-### 2. Activate virtual environment
-
-Windows PowerShell:
-
-```bash
-.venv\Scripts\Activate.ps1
-```
-
-Windows CMD:
-
-```bash
-.venv\Scripts\activate.bat
-```
-
-macOS / Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+.venv\Scripts\activate
 python -m pip install -r requirements.txt
-```
-
-### 4. Create local environment file
-
-Create `backend/.env` from `backend/.env.example`:
-
-```env
-SECRET_KEY=change-this-secret-key-before-sharing
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
-DEFAULT_ADMIN_USERNAME=admin
-DEFAULT_ADMIN_EMAIL=admin@palette.local
-DEFAULT_ADMIN_PASSWORD=change-this-admin-password
-```
-
-For local testing only, you can use a simple password. Do not use a default or weak admin password in a public repository or production deployment.
-
-### 5. Start backend
-
-```bash
 python -m uvicorn app.main:app --reload
 ```
 
-Open:
+Backend:
+
+```text
+http://localhost:8000
+```
+
+Swagger API docs:
 
 ```text
 http://localhost:8000/docs
 ```
 
----
+### Frontend
 
-## Manual frontend setup
-
-Open a second terminal in the `frontend` folder.
+Open a second terminal:
 
 ```bash
+cd frontend
 python -m http.server 5500
 ```
 
-Open:
+Frontend:
 
 ```text
 http://localhost:5500
@@ -240,128 +137,15 @@ http://localhost:5500
 
 ---
 
-## Authentication flow
+## Environment variables
 
-1. A user registers with username, email and password.
-2. The backend hashes the password with PBKDF2-SHA256.
-3. The user logs in with username and password.
-4. The backend returns a Bearer token.
-5. The frontend stores the token and user data locally.
-6. Protected API requests send:
-
-```http
-Authorization: Bearer your_access_token
-```
-
-The first admin user is created automatically from `.env` when no admin exists yet.
-
----
-
-## Main pages
-
-| Page | Purpose |
-|---|---|
-| `index.html` | Browse, search, filter and sort palettes |
-| `favorites.html` | View account-based saved palettes |
-| `export.html` | Export palettes in several formats, including PNG |
-| `login.html` | Register or log in |
-| `profile.html` | Personal account page, password change and logout |
-| `admin.html` | Admin-only palette CRUD interface |
-
----
-
-## API overview
-
-Public:
-
-```http
-GET /api/palettes
-GET /api/palettes/tags
-GET /api/palettes/{slug}
-```
-
-Authentication:
-
-```http
-POST /api/auth/register
-POST /api/auth/login
-GET  /api/auth/me
-PUT  /api/auth/password
-```
-
-Favorites:
-
-```http
-GET    /api/favorites
-GET    /api/favorites/keys
-POST   /api/favorites/{slug}
-DELETE /api/favorites/{slug}
-DELETE /api/favorites
-```
-
-Admin-only:
-
-```http
-POST   /api/palettes
-PUT    /api/palettes/{id}
-DELETE /api/palettes/{id}
-```
-
-Full API documentation is in [`docs/api.md`](docs/api.md).
-
----
-
-## GitHub notes
-
-Do not commit local runtime files:
-
-```text
-backend/.env
-backend/.venv/
-backend/palette.db
-.git/
-__pycache__/
-*.zip
-```
-
-The repository should contain the source code and documentation, not the local virtual environment, local database or Git metadata from an archive.
-
----
-
-## Documentation
-
-- [`docs/setup.md`](docs/setup.md) — full setup guide.
-- [`docs/api.md`](docs/api.md) — API endpoints.
-- [`docs/auth.md`](docs/auth.md) — authentication and roles.
-- [`docs/database.md`](docs/database.md) — database tables.
-- [`docs/troubleshooting.md`](docs/troubleshooting.md) — common errors.
-- [`SECURITY.md`](SECURITY.md) — security notes.
-- [`CHANGELOG.md`](CHANGELOG.md) — version history.
-- [`ROADMAP.md`](ROADMAP.md) — future plans.
-
----
-
-## Security notes
-
-This project is designed for local development and portfolio demonstration.
-
-### Secrets
-
-Do not commit local secrets to GitHub.
-
-Never commit:
+Create a local file:
 
 ```text
 backend/.env
 ```
 
-Use this file only as a public template:
-
-```text
-backend/.env.example
-```
-
-Required environment variables:
+Use `backend/.env.example` as a template:
 
 ```env
 SECRET_KEY=change-this-secret-key-before-sharing
@@ -371,63 +155,50 @@ DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-### Admin account
+Do not commit `backend/.env`.
 
-The first admin user is created automatically if no admin exists yet.
+---
 
-Before sharing or deploying the project:
-
-- change `SECRET_KEY`;
-- change `DEFAULT_ADMIN_PASSWORD`;
-- do not use weak default passwords;
-- do not publish your real `.env` file.
-
-### Password storage
-
-Passwords are not stored as plain text.
-
-The backend stores password hashes using:
+## API overview
 
 ```text
-PBKDF2-SHA256 + salt
+GET    /api/palettes
+POST   /api/auth/register
+POST   /api/auth/login
+GET    /api/auth/me
+PUT    /api/auth/password
+GET    /api/favorites
+POST   /api/favorites/{slug}
+DELETE /api/favorites/{slug}
 ```
 
-### Authentication
+Admin actions require a Bearer token and `is_admin = true`.
 
-Protected API requests use:
+---
 
-```http
-Authorization: Bearer your_access_token
-```
-
-Admin-only actions require:
-
-```text
-current_user.is_admin == true
-```
-
-### Local database
-
-The SQLite database is a local runtime file.
+## GitHub cleanup
 
 Do not commit:
 
 ```text
+.git/
+backend/.venv/
+backend/.env
 backend/palette.db
-*.db
-*.sqlite
-*.sqlite3
+__pycache__/
+*.pyc
+*.zip
+PATCH_README.md
 ```
 
-### Frontend token storage
+The repository should include `.env.example`, not `.env`.
 
-The frontend stores the access token locally for development convenience.
+---
 
-For a production app, consider a more secure session strategy, stricter CORS settings, HTTPS-only deployment and refresh token handling.
+## Version
 
-### CORS
+Current portfolio release:
 
-The current backend allows broad CORS for local development.
-
-Before deployment, restrict allowed origins to the real frontend domain.
-
+```text
+v3.2.0
+```

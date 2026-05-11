@@ -22,7 +22,6 @@ Status: completed.
 - Backend search, filtering and sorting.
 - Frontend connected to backend through Fetch API.
 - Admin page for CRUD testing.
-- Admin token protection for create/update/delete actions.
 - PNG export with image preview.
 - Custom dropdown UI.
 - API documentation.
@@ -32,7 +31,7 @@ Status: completed.
 Status: completed.
 
 - User registration with username, email and password.
-- Login with username and password.
+- Login with username or email.
 - Password hashing.
 - JWT/Bearer token authentication.
 - Personal account page.
@@ -43,7 +42,21 @@ Status: completed.
 - Role-based admin access.
 - Hidden Admin tab for guests and regular users.
 
-## v3.2 — Admin and UX Improvements
+## v3.2 — Export Workflow and UI Polish
+
+Status: completed.
+
+- Selected palette export.
+- Searchable palette picker on Export page.
+- Removed broad All palettes export option.
+- Single palette PNG card export.
+- Changelog page inside frontend.
+- Footer information panel on all pages.
+- Navigation active indicator stability after hard refresh.
+- Login/Register layout fixes.
+- One-decimal contrast ratio.
+
+## v3.3 — Admin and Quality Improvements
 
 Status: planned.
 
@@ -51,20 +64,10 @@ Status: planned.
 - Edit and delete confirmation modals.
 - Better form validation messages.
 - Better error messages from API responses.
-- Admin activity/error logging.
 - Search and pagination for admin palette list.
-- Improved responsive layout for admin forms.
-
-## v3.3 — Testing and Quality
-
-Status: planned.
-
 - Backend unit tests.
 - API integration tests.
-- Frontend utility tests.
 - Basic accessibility review.
-- Error handling review.
-- Better development scripts.
 
 ## v4.0 — Production Upgrade
 

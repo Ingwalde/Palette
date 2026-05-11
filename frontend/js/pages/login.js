@@ -91,6 +91,7 @@ async function refreshCurrentUser() {
   try {
     const user = await getCurrentUser();
     saveAuth(currentToken, user);
+    window.location.href = "profile.html";
   } catch {
     clearAuth();
   }

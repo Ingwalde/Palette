@@ -1,5 +1,60 @@
 # Changelog
 
+## v3.2.0 — Export Workflow and UI Polish
+
+### Release summary
+
+Palette v3.2.0 improves the v3.1 authentication release with a more focused export flow, selected palette export, PNG palette card generation, frontend changelog page and UI/navigation polish.
+
+### Added
+
+- Added `Choose palette` export source.
+- Added palette search inside the export page.
+- Added selected-palette export.
+- Added PNG export for a single selected palette card.
+- Added `frontend/changelog.html`.
+- Added bottom project information panel on each frontend page.
+- Added project-focused footer highlights.
+- Added footer link to API docs and frontend changelog page.
+- Added navigation hard-refresh stability improvements.
+
+### Changed
+
+- Removed `All palettes` from the Export source dropdown.
+- `Choose palette` is now the default Export source.
+- `Favorites only` remains available for account-based favorites export.
+- Selected palette PNG export now generates only the selected palette card.
+- Changelog page does not highlight any top navigation tab.
+- Palette contrast ratio is displayed with one decimal.
+- Create account button now uses the same primary style as Login.
+- Login page redirects logged-in users to Account.
+- Backend login accepts username or email.
+
+### Fixed
+
+- Fixed Login/Register page styling.
+- Fixed navigation active indicator after hard refresh.
+- Fixed Changelog footer link returning 404.
+- Fixed Export dropdown overflow without scrolling the whole left panel.
+
+### GitHub release
+
+Suggested tag:
+
+```text
+v3.2.0
+```
+
+Suggested release title:
+
+```text
+Palette v3.2.0 — Export Workflow and UI Polish
+```
+
+---
+
+# Changelog
+
 ## v3.1.0 — Authentication, User Accounts and User Favorites
 
 

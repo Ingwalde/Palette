@@ -1,53 +1,64 @@
 import { getStoredUser } from "./authStorage.js";
 
+const ROUTE_TO_NAV_SELECTOR = {
+  "index.html": 'a[href="index.html"]',
+  "favorites.html": 'a[href="favorites.html"]',
+  "export.html": 'a[href="export.html"]',
+  "admin.html": 'a[href="admin.html"]',
+  "login.html": "[data-auth-nav]",
+  "profile.html": "[data-auth-nav]"
+};
+
+const PAGES_WITHOUT_ACTIVE_NAV = new Set([
+  "changelog.html"
+]);
+
 export function initAuthNav() {
-  syncAdminNavVisibility();
-
+  const nav = document.querySelector(".site-nav");
   const authButton = document.querySelector("[data-auth-nav]");
+  const user = getStoredUser();
 
-  if (authButton) {
-    const user = getStoredUser();
-
-    if (user) {
-      authButton.textContent = "Account";
-      authButton.setAttribute("aria-label", `Open account for ${user.username}`);
-
-      if (window.location.pathname.endsWith("profile.html")) {
-        authButton.classList.add("site-nav__link--active");
-      } else {
-        authButton.classList.remove("site-nav__link--active");
-      }
-
-      authButton.addEventListener("click", () => {
-        moveNavIndicatorTo(authButton);
-        window.setTimeout(() => {
-          window.location.href = "profile.html";
-        }, 160);
-      });
-    } else {
-      authButton.textContent = "Login";
-      authButton.setAttribute("aria-label", "Go to login page");
-
-      if (window.location.pathname.endsWith("login.html")) {
-        authButton.classList.add("site-nav__link--active");
-      } else {
-        authButton.classList.remove("site-nav__link--active");
-      }
-
-      authButton.addEventListener("click", () => {
-        moveNavIndicatorTo(authButton);
-        window.setTimeout(() => {
-          window.location.href = "login.html";
-        }, 160);
-      });
-    }
-  }
-
-  initSlidingNavIndicator();
+  syncAuthButton(authButton, user);
+  syncAdminNavVisibility(user);
+  syncActiveNavItem(nav, user);
+  initSlidingNavIndicator(nav);
 }
 
-function syncAdminNavVisibility() {
-  const user = getStoredUser();
+function syncAuthButton(authButton, user) {
+  if (!authButton) {
+    return;
+  }
+
+  if (user) {
+    authButton.textContent = "Account";
+    authButton.setAttribute("aria-label", `Open account for ${user.username}`);
+
+    authButton.addEventListener("click", () => {
+      setActiveNavItem(authButton.closest(".site-nav"), authButton);
+      updateNavIndicator(authButton.closest(".site-nav"));
+
+      window.setTimeout(() => {
+        window.location.href = "profile.html";
+      }, 160);
+    });
+
+    return;
+  }
+
+  authButton.textContent = "Login";
+  authButton.setAttribute("aria-label", "Go to login page");
+
+  authButton.addEventListener("click", () => {
+    setActiveNavItem(authButton.closest(".site-nav"), authButton);
+    updateNavIndicator(authButton.closest(".site-nav"));
+
+    window.setTimeout(() => {
+      window.location.href = "login.html";
+    }, 160);
+  });
+}
+
+function syncAdminNavVisibility(user) {
   const isAdmin = Boolean(user?.is_admin);
 
   document.querySelectorAll('.site-nav__link[href$="admin.html"]').forEach((link) => {
@@ -63,9 +74,43 @@ function syncAdminNavVisibility() {
   });
 }
 
-function initSlidingNavIndicator() {
-  const nav = document.querySelector(".site-nav");
+function syncActiveNavItem(nav, user) {
+  if (!nav) {
+    return;
+  }
 
+  clearActiveNavItems(nav);
+
+  const currentPage = getCurrentPageName();
+
+  if (PAGES_WITHOUT_ACTIVE_NAV.has(currentPage)) {
+    return;
+  }
+
+  const selector = ROUTE_TO_NAV_SELECTOR[currentPage];
+
+  if (!selector) {
+    return;
+  }
+
+  const activeItem = nav.querySelector(selector);
+
+  if (!activeItem || activeItem.hidden || activeItem.offsetParent === null) {
+    return;
+  }
+
+  if (currentPage === "login.html" && user) {
+    return;
+  }
+
+  if (currentPage === "profile.html" && !user) {
+    return;
+  }
+
+  activeItem.classList.add("site-nav__link--active");
+}
+
+function initSlidingNavIndicator(nav) {
   if (!nav) {
     return;
   }
@@ -79,16 +124,6 @@ function initSlidingNavIndicator() {
     nav.prepend(indicator);
   }
 
-  const activeItem = getActiveNavItem(nav) || getFirstVisibleNavItem(nav);
-
-  if (activeItem) {
-    moveNavIndicatorTo(activeItem, false);
-  }
-
-  requestAnimationFrame(() => {
-    nav.classList.add("site-nav--ready");
-  });
-
   nav.querySelectorAll(".site-nav__link").forEach((item) => {
     item.addEventListener("click", () => {
       if (item.hidden) {
@@ -96,17 +131,54 @@ function initSlidingNavIndicator() {
       }
 
       setActiveNavItem(nav, item);
-      moveNavIndicatorTo(item);
+      updateNavIndicator(nav);
     });
   });
 
-  window.addEventListener("resize", () => {
-    const currentActiveItem = getActiveNavItem(nav) || getFirstVisibleNavItem(nav);
+  scheduleNavIndicatorUpdate(nav);
 
-    if (currentActiveItem) {
-      moveNavIndicatorTo(currentActiveItem, false);
-    }
+  window.addEventListener("resize", () => {
+    scheduleNavIndicatorUpdate(nav);
   });
+
+  window.addEventListener("load", () => {
+    scheduleNavIndicatorUpdate(nav);
+  });
+
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(() => {
+      scheduleNavIndicatorUpdate(nav);
+    });
+  }
+}
+
+function scheduleNavIndicatorUpdate(nav) {
+  updateNavIndicator(nav, false);
+
+  requestAnimationFrame(() => {
+    updateNavIndicator(nav, false);
+
+    requestAnimationFrame(() => {
+      updateNavIndicator(nav, false);
+    });
+  });
+}
+
+function updateNavIndicator(nav, animated = true) {
+  if (!nav) {
+    return;
+  }
+
+  const activeItem = getActiveNavItem(nav);
+  const indicator = nav.querySelector(".site-nav__indicator");
+
+  if (!activeItem || !indicator) {
+    nav.classList.remove("site-nav--ready");
+    return;
+  }
+
+  moveNavIndicatorTo(activeItem, animated);
+  nav.classList.add("site-nav--ready");
 }
 
 function getActiveNavItem(nav) {
@@ -114,16 +186,18 @@ function getActiveNavItem(nav) {
     .find((item) => !item.hidden && item.offsetParent !== null);
 }
 
-function getFirstVisibleNavItem(nav) {
-  return [...nav.querySelectorAll(".site-nav__link")]
-    .find((item) => !item.hidden && item.offsetParent !== null);
-}
-
-function setActiveNavItem(nav, activeItem) {
+function clearActiveNavItems(nav) {
   nav.querySelectorAll(".site-nav__link--active").forEach((item) => {
     item.classList.remove("site-nav__link--active");
   });
+}
 
+function setActiveNavItem(nav, activeItem) {
+  if (!nav || !activeItem) {
+    return;
+  }
+
+  clearActiveNavItems(nav);
   activeItem.classList.add("site-nav__link--active");
 }
 
@@ -154,6 +228,12 @@ function moveNavIndicatorTo(target, animated = true) {
       indicator.style.transition = "";
     });
   }
+}
+
+function getCurrentPageName() {
+  const pageName = window.location.pathname.split("/").pop();
+
+  return pageName || "index.html";
 }
 
 initAuthNav();

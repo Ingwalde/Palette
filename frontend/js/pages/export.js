@@ -8,6 +8,10 @@ import { initCustomSelects } from "../utils/customSelect.js";
 const elements = {
   sourceSelect: qs("#sourceSelect"),
   formatSelect: qs("#formatSelect"),
+  palettePicker: qs("#palettePicker"),
+  paletteSearchInput: qs("#paletteSearchInput"),
+  paletteSearchResults: qs("#paletteSearchResults"),
+  palettePickerStatus: qs("#palettePickerStatus"),
   output: qs("#exportOutput"),
   textPreview: qs("#textPreview"),
   imagePreview: qs("#imagePreview"),
@@ -19,22 +23,41 @@ const elements = {
 
 let currentSelectedPalettes = [];
 let currentPreviewDataUrl = "";
+let allPalettesCache = null;
+let selectedPaletteSlug = "";
 
 initExportPage();
 
 function initExportPage() {
   initCustomSelects();
+  bindEvents();
   renderExport();
+}
 
-  elements.sourceSelect.addEventListener("change", renderExport);
+function bindEvents() {
+  elements.sourceSelect.addEventListener("change", async () => {
+    if (elements.sourceSelect.value !== "single") {
+      selectedPaletteSlug = "";
+      elements.paletteSearchInput.value = "";
+    }
+
+    await renderExport();
+  });
+
   elements.formatSelect.addEventListener("change", renderExport);
+
+  elements.paletteSearchInput.addEventListener("input", debounce(async () => {
+    selectedPaletteSlug = "";
+    await renderPaletteSearchResults();
+    await renderExport();
+  }, 180));
 
   elements.previewButton.addEventListener("click", async () => {
     const format = elements.formatSelect.value;
 
     if (format === "png") {
       if (currentSelectedPalettes.length === 0) {
-        showToast("No palettes to preview");
+        showToast("Choose a palette to preview");
         return;
       }
 
@@ -60,29 +83,40 @@ function initExportPage() {
         await renderPngPreview(currentSelectedPalettes, false);
       }
 
-      downloadDataUrl(currentPreviewDataUrl, "palette-export.png");
+      downloadDataUrl(currentPreviewDataUrl, getExportFilename("png"));
       showToast("PNG image downloaded");
       return;
     }
 
     const content = elements.output.textContent;
     const extension = getFileExtension(format);
-    downloadTextFile(content, `palette-export.${extension}`);
+    downloadTextFile(content, getExportFilename(extension));
     showToast("Export file downloaded");
   });
 }
 
 async function renderExport() {
   setTextMode();
+  togglePalettePicker();
   elements.output.textContent = "Loading palettes from backend API...";
 
   try {
+    if (isSinglePaletteMode()) {
+      await renderPaletteSearchResults();
+    }
+
     const selectedPalettes = await getSelectedPalettes();
     const format = elements.formatSelect.value;
     currentSelectedPalettes = selectedPalettes;
     currentPreviewDataUrl = "";
 
     updateActionButton(format);
+
+    if (isSinglePaletteMode() && selectedPalettes.length === 0) {
+      setTextMode();
+      elements.output.textContent = "Choose one palette to generate export.";
+      return;
+    }
 
     if (format === "png") {
       await renderPngPreview(selectedPalettes, false);
@@ -104,7 +138,101 @@ async function getSelectedPalettes() {
     return getFavoritePalettes();
   }
 
+  if (isSinglePaletteMode()) {
+    const palettes = await loadAllPalettes();
+    const selectedPalette = palettes.find((palette) => palette.slug === selectedPaletteSlug);
+    return selectedPalette ? [selectedPalette] : [];
+  }
+
   return getPalettes();
+}
+
+function isSinglePaletteMode() {
+  return elements.sourceSelect.value === "single";
+}
+
+function togglePalettePicker() {
+  elements.palettePicker.classList.toggle("hidden", !isSinglePaletteMode());
+}
+
+async function loadAllPalettes() {
+  if (!allPalettesCache) {
+    allPalettesCache = await getPalettes();
+  }
+
+  return allPalettesCache;
+}
+
+async function renderPaletteSearchResults() {
+  if (!isSinglePaletteMode()) {
+    elements.paletteSearchResults.innerHTML = "";
+    return;
+  }
+
+  const palettes = await loadAllPalettes();
+  const query = elements.paletteSearchInput.value.trim().toLowerCase();
+  const visiblePalettes = filterPalettes(palettes, query).slice(0, 8);
+
+  elements.paletteSearchResults.innerHTML = "";
+
+  if (visiblePalettes.length === 0) {
+    elements.palettePickerStatus.textContent = "No palettes found.";
+    return;
+  }
+
+  visiblePalettes.forEach((palette) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "palette-picker__option";
+    button.classList.toggle("palette-picker__option--selected", palette.slug === selectedPaletteSlug);
+
+    const swatches = palette.colors
+      .map((color) => `<span style="--swatch-color: ${color}"></span>`)
+      .join("");
+
+    button.innerHTML = `
+      <span class="palette-picker__option-info">
+        <strong>${escapeHtml(palette.name)}</strong>
+        <small>${escapeHtml(palette.slug)}</small>
+      </span>
+      <span class="palette-picker__swatches" aria-hidden="true">${swatches}</span>
+    `;
+
+    button.addEventListener("click", async () => {
+      selectedPaletteSlug = palette.slug;
+      elements.paletteSearchInput.value = palette.name;
+      await renderPaletteSearchResults();
+      await renderExport();
+    });
+
+    elements.paletteSearchResults.append(button);
+  });
+
+  if (selectedPaletteSlug) {
+    const selectedPalette = palettes.find((palette) => palette.slug === selectedPaletteSlug);
+    elements.palettePickerStatus.textContent = selectedPalette
+      ? `Selected: ${selectedPalette.name}`
+      : "Choose one palette to export.";
+  } else {
+    elements.palettePickerStatus.textContent = "Choose one palette to export.";
+  }
+}
+
+function filterPalettes(palettes, query) {
+  if (!query) {
+    return palettes;
+  }
+
+  return palettes.filter((palette) => {
+    const haystack = [
+      palette.name,
+      palette.slug,
+      palette.description,
+      ...(palette.tags || [])
+    ].join(" ").toLowerCase();
+
+    return haystack.includes(query);
+  });
 }
 
 function updateActionButton(format) {
@@ -124,7 +252,9 @@ function setImageMode() {
 async function renderPngPreview(selectedPalettes, forceRefresh = false) {
   if (selectedPalettes.length === 0) {
     setTextMode();
-    elements.output.textContent = "No palettes selected. Add palettes to favorites or choose All palettes.";
+    elements.output.textContent = isSinglePaletteMode()
+      ? "Choose one palette to generate PNG preview."
+      : "No palettes selected. Add palettes to favorites or choose All palettes.";
     return;
   }
 
@@ -134,12 +264,16 @@ async function renderPngPreview(selectedPalettes, forceRefresh = false) {
 
   setImageMode();
   elements.imageElement.src = currentPreviewDataUrl;
-  elements.imageCaption.textContent = `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Click Download file to save the PNG image.`;
+  elements.imageCaption.textContent = isSinglePaletteMode() && selectedPalettes.length === 1
+    ? `Previewing selected palette card: ${selectedPalettes[0].name}. Click Download file to save the PNG image.`
+    : `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Click Download file to save the PNG image.`;
 }
 
 function generateExport(selectedPalettes, format) {
   if (selectedPalettes.length === 0) {
-    return "No palettes selected. Add palettes to favorites or choose All palettes.";
+    return isSinglePaletteMode()
+      ? "Choose one palette to generate export."
+      : "No palettes selected. Add palettes to favorites or choose All palettes.";
   }
 
   const generators = {
@@ -197,6 +331,14 @@ function getFileExtension(format) {
   return extensions[format] || "txt";
 }
 
+function getExportFilename(extension) {
+  if (currentSelectedPalettes.length === 1) {
+    return `${currentSelectedPalettes[0].slug}-palette.${extension}`;
+  }
+
+  return `palette-export.${extension}`;
+}
+
 function downloadTextFile(content, filename) {
   const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -219,7 +361,29 @@ function downloadDataUrl(dataUrl, filename) {
   link.remove();
 }
 
+function debounce(callback, delay = 200) {
+  let timeoutId;
+
+  return (...args) => {
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => callback(...args), delay);
+  };
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 async function generatePngDataUrl(selectedPalettes) {
+  if (isSinglePaletteMode() && selectedPalettes.length === 1) {
+    return generateSinglePaletteCardPngDataUrl(selectedPalettes[0]);
+  }
+
   const cardWidth = 1180;
   const outerPadding = 44;
   const headerHeight = 168;
@@ -248,6 +412,30 @@ async function generatePngDataUrl(selectedPalettes) {
   });
 
   drawFooter(ctx, outerPadding, canvasHeight - outerPadding + 2, cardWidth);
+
+  return canvas.toDataURL("image/png");
+}
+
+
+function generateSinglePaletteCardPngDataUrl(palette) {
+  const outerPadding = 44;
+  const cardWidth = 1180;
+  const cardHeight = 250;
+  const canvasWidth = cardWidth + outerPadding * 2;
+  const canvasHeight = cardHeight + outerPadding * 2;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const deviceScale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  canvas.width = canvasWidth * deviceScale;
+  canvas.height = canvasHeight * deviceScale;
+  canvas.style.width = `${canvasWidth}px`;
+  canvas.style.height = `${canvasHeight}px`;
+  ctx.scale(deviceScale, deviceScale);
+
+  drawBackground(ctx, canvasWidth, canvasHeight);
+  drawPaletteCard(ctx, palette, outerPadding, outerPadding, cardWidth, cardHeight, 0);
 
   return canvas.toDataURL("image/png");
 }

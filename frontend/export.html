@@ -42,10 +42,20 @@
         <label class="field">
           <span>Palette source</span>
           <select class="select" id="sourceSelect">
-            <option value="all">All palettes</option>
+            <option value="single">Choose palette</option>
             <option value="favorites">Favorites only</option>
           </select>
         </label>
+
+        <div class="palette-picker hidden" id="palettePicker">
+          <label class="field">
+            <span>Search palette</span>
+            <input class="input" id="paletteSearchInput" type="search" placeholder="Type palette name, slug or tag..." autocomplete="off" />
+          </label>
+
+          <div class="palette-picker__results" id="paletteSearchResults" aria-live="polite"></div>
+          <p class="palette-picker__status" id="palettePickerStatus">Choose one palette to export.</p>
+        </div>
 
         <label class="field">
           <span>Format</span>
@@ -86,7 +96,30 @@
     </section>
   </main>
 
-  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+  <footer class="site-footer section">
+    <div class="site-footer__panel">
+      <div class="site-footer__content">
+        <p class="site-footer__eyebrow">Palette v3.2</p>
+        <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
+
+        <div class="site-footer__features" aria-label="Project highlights">
+          <span>Personal palette library</span>
+          <span>Account-based favorites</span>
+          <span>Single palette export</span>
+          <span>PNG palette cards</span>
+          <span>Admin collection tools</span>
+        </div>
+      </div>
+
+      <div class="site-footer__meta" aria-label="Project links">
+        <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
+        <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
+      </div>
+    </div>
+  </footer>
+
+
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/export.js"></script>

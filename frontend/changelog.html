@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Saved account-based color palettes in Palette v3.1." />
-  <title>Palette | Favorites</title>
+  <meta name="description" content="Palette project changelog." />
+  <title>Palette | Changelog</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,7 +23,7 @@
 
     <nav class="site-nav" aria-label="Main navigation">
       <a class="site-nav__link" href="index.html">Home</a>
-      <a class="site-nav__link site-nav__link--active" href="favorites.html">Favorites</a>
+      <a class="site-nav__link" href="favorites.html">Favorites</a>
       <a class="site-nav__link" href="export.html">Export</a>
       <a class="site-nav__link" href="admin.html">Admin</a>
       <button class="site-nav__link site-nav__button" data-auth-nav type="button">Login</button>
@@ -32,21 +32,47 @@
 
   <main>
     <section class="page-hero section">
-      <p class="eyebrow">Saved palettes</p>
-      <h1>Your favorite palettes</h1>
-      <p>In v3.2 favorites are connected to your account and stored in the backend database.</p>
+      <p class="eyebrow">Project history</p>
+      <h1>Changelog</h1>
+      <p>Short overview of the main project versions and what changed between releases.</p>
     </section>
 
-    <section class="section">
-      <div class="section-heading">
-        <div>
-          <h2>Favorites</h2>
-          <p class="muted" id="favoriteCount"></p>
-        </div>
-        <button class="button button--danger" id="clearFavoritesBtn" type="button">Clear favorites</button>
-      </div>
+    <section class="section changelog-layout">
+      <article class="changelog-card">
+        <p class="changelog-card__version">v3.2</p>
+        <h2>Export workflow and footer polish</h2>
+        <ul>
+          <li>Added export for one selected palette.</li>
+          <li>Added palette search inside the export page.</li>
+          <li>Removed the general All palettes export option from the source selector.</li>
+          <li>PNG export for a selected palette now generates only one palette card.</li>
+          <li>Added a bottom project information panel across the frontend pages.</li>
+        </ul>
+      </article>
 
-      <div class="palette-grid" id="favoritesGrid"></div>
+      <article class="changelog-card">
+        <p class="changelog-card__version">v3.1</p>
+        <h2>Authentication and user accounts</h2>
+        <ul>
+          <li>Added registration with username, email and password.</li>
+          <li>Added login with Bearer token authentication.</li>
+          <li>Added personal Account page and password changing.</li>
+          <li>Moved Favorites from browser storage to user-based database storage.</li>
+          <li>Added role-based Admin access.</li>
+        </ul>
+      </article>
+
+      <article class="changelog-card">
+        <p class="changelog-card__version">v3.0</p>
+        <h2>Full-stack backend update</h2>
+        <ul>
+          <li>Added FastAPI backend.</li>
+          <li>Added SQLite palette database.</li>
+          <li>Connected frontend to backend API.</li>
+          <li>Added admin palette management.</li>
+          <li>Added PNG export preview and download.</li>
+        </ul>
+      </article>
     </section>
   </main>
 
@@ -67,15 +93,13 @@
 
       <div class="site-footer__meta" aria-label="Project links">
         <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
-        <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
+        <a href="changelog.html">Changelog</a>
       </div>
     </div>
   </footer>
 
-
-<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
-  <script type="module" src="js/pages/favorites.js"></script>
 </body>
 </html>

@@ -285,6 +285,62 @@
   line-height: 1.7;
 }
 
+
+
+/* Login / registration page — v3.1 */
+.auth-page .page-hero--auth {
+  padding-top: 56px;
+  padding-bottom: 24px;
+}
+
+.auth-page .auth-layout {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+  padding-bottom: 56px;
+}
+
+.auth-page .auth-card {
+  display: grid !important;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 250, 242, 0.88);
+  box-shadow: var(--shadow-soft);
+}
+
+.auth-page .auth-card h2 {
+  margin: 4px 0 8px;
+}
+
+.auth-page .auth-card .field {
+  margin: 0;
+}
+
+.auth-page .auth-card .form-actions {
+  display: flex;
+  margin-top: 4px;
+}
+
+.auth-page .auth-card .form-actions .button {
+  width: auto;
+  min-width: 170px;
+}
+
+@media (max-width: 920px) {
+  .auth-page .auth-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-page .auth-card .form-actions .button {
+    width: 100%;
+  }
+}
+
 /* Account page — v3.1 */
 .page-hero--account {
   padding-top: 56px;
@@ -374,5 +430,115 @@
   .account-actions__logout {
     width: 100%;
     min-width: 0;
+  }
+}
+
+/* Export single palette picker — v3.2 */
+.palette-picker {
+  display: grid;
+  gap: 12px;
+}
+
+.palette-picker__results {
+  display: grid;
+  gap: 10px;
+  max-height: 330px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.palette-picker__option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  color: var(--color-text);
+  background: rgba(255, 250, 242, 0.72);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    transform var(--transition);
+}
+
+.palette-picker__option:hover,
+.palette-picker__option--selected {
+  border-color: rgba(47, 45, 42, 0.35);
+  background: var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.palette-picker__option-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.palette-picker__option-info strong,
+.palette-picker__option-info small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette-picker__option-info small {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.palette-picker__swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 34px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+
+.palette-picker__swatches span {
+  background: var(--swatch-color);
+}
+
+.palette-picker__status {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+@media (max-width: 680px) {
+  .palette-picker__option {
+    grid-template-columns: 1fr;
+  }
+
+  .palette-picker__swatches {
+    width: 120px;
+  }
+}
+
+/* Export palette picker compact list — v3.2 */
+.palette-picker__results {
+  max-height: 220px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.palette-picker__option {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.palette-picker__swatches {
+  width: 112px;
+}
+
+@media (max-width: 920px) {
+  .palette-picker__results {
+    max-height: 260px;
   }
 }

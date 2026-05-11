@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/pages.css" />
 </head>
-<body>
+<body class="auth-page">
   <header class="site-header">
     <a class="logo" href="index.html" aria-label="Palette home">
       <span class="logo__mark">P</span>
@@ -31,8 +31,8 @@
   </header>
 
   <main>
-    <section class="page-hero section">
-      <p class="eyebrow">Authentication · v3.1</p>
+    <section class="page-hero page-hero--auth section">
+      <p class="eyebrow">Authentication</p>
       <h1>Login to Palette</h1>
       <p>Use username, email and password authentication. Admin access is connected to the admin role.</p>
     </section>
@@ -86,13 +86,36 @@
         </label>
 
         <div class="form-actions">
-          <button class="button button--secondary" type="submit">Create account</button>
+          <button class="button button--primary" type="submit">Create account</button>
         </div>
       </form>
     </section>
   </main>
 
-  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+  <footer class="site-footer section">
+    <div class="site-footer__panel">
+      <div class="site-footer__content">
+        <p class="site-footer__eyebrow">Palette v3.2</p>
+        <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
+
+        <div class="site-footer__features" aria-label="Project highlights">
+          <span>Personal palette library</span>
+          <span>Account-based favorites</span>
+          <span>Single palette export</span>
+          <span>PNG palette cards</span>
+          <span>Admin collection tools</span>
+        </div>
+      </div>
+
+      <div class="site-footer__meta" aria-label="Project links">
+        <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
+        <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
+      </div>
+    </div>
+  </footer>
+
+
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/login.js"></script>

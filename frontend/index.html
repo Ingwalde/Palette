@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Palette v3.0 — a full-stack color palette web app with FastAPI backend." />
+  <meta name="description" content="Palette — a full-stack color palette web app with FastAPI backend." />
   <title>Palette | Color Palettes</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,10 +33,10 @@
   <main>
     <section class="hero section" aria-labelledby="hero-title">
       <div class="hero__content">
-        <p class="eyebrow">Palette v3.0 · Full-stack update</p>
+        <p class="eyebrow">Palette v3.2 · Update!</p>
         <h1 id="hero-title">Find a color palette for your next design project.</h1>
         <p class="hero__text">
-          Search, filter, save and export palettes. In v3.0 palettes are loaded from a FastAPI backend and stored in SQLite.
+          Search, filter, save and export palettes. In v3.2 palettes are loaded from a FastAPI backend and stored in SQLite.
         </p>
         <div class="hero__actions">
           <a class="button button--primary" href="#palettes">Browse palettes</a>
@@ -87,7 +87,30 @@
     </section>
   </main>
 
-  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+  <footer class="site-footer section">
+    <div class="site-footer__panel">
+      <div class="site-footer__content">
+        <p class="site-footer__eyebrow">Palette v3.2</p>
+        <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
+
+        <div class="site-footer__features" aria-label="Project highlights">
+          <span>Personal palette library</span>
+          <span>Account-based favorites</span>
+          <span>Single palette export</span>
+          <span>PNG palette cards</span>
+          <span>Admin collection tools</span>
+        </div>
+      </div>
+
+      <div class="site-footer__meta" aria-label="Project links">
+        <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
+        <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
+      </div>
+    </div>
+  </footer>
+
+
+<div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
   <script type="module" src="js/pages/home.js"></script>

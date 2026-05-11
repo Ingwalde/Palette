@@ -1,7 +1,7 @@
 @echo off
-title Palette v3.0 Launcher
+title Palette v3.1 Launcher
 
-echo Starting Palette v3.0...
+echo Starting Palette v3.1...
 
 echo.
 echo Starting backend...
@@ -21,7 +21,7 @@ start http://localhost:5500
 start http://localhost:8000/docs
 
 echo.
-echo Palette v3.0 started.
+echo Palette v3.1 started.
 echo Frontend: http://localhost:5500
 echo Backend docs: http://localhost:8000/docs
 

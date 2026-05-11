@@ -54,7 +54,13 @@ def _pbkdf2_hash(password: str, salt: str, iterations: int = HASH_ITERATIONS) ->
 
 
 def authenticate_user(db: Session, username: str, password: str) -> models.User | None:
-    user = crud.get_user_by_username(db, username)
+    login_value = username.strip().lower()
+
+    if "@" in login_value:
+        user = crud.get_user_by_email(db, login_value)
+    else:
+        user = crud.get_user_by_username(db, username.strip())
+
     if user is None:
         return None
 

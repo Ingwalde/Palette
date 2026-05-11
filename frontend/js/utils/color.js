@@ -54,7 +54,7 @@ export function getContrastRatio(firstHex, secondHex) {
   const lighter = Math.max(firstLuminance, secondLuminance);
   const darker = Math.min(firstLuminance, secondLuminance);
 
-  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(2));
+  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(1));
 }
 
 export function getPaletteContrastStatus(colors) {
