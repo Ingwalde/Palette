@@ -39,6 +39,18 @@
 
     <section class="section changelog-layout">
       <article class="changelog-card">
+        <p class="changelog-card__version">v3.3</p>
+        <h2>Security hardening and tests</h2>
+        <ul>
+          <li>Made SECRET_KEY mandatory with a fail-fast startup check.</li>
+          <li>Replaced wildcard CORS with an explicit origin allowlist.</li>
+          <li>Added login and registration rate limiting.</li>
+          <li>Switched to timing-safe password comparison and timezone-aware timestamps.</li>
+          <li>Fixed login by email and added an automated backend test suite.</li>
+        </ul>
+      </article>
+
+      <article class="changelog-card">
         <p class="changelog-card__version">v3.2</p>
         <h2>Export workflow and footer polish</h2>
         <ul>
@@ -79,7 +91,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v3.2</p>
+        <p class="site-footer__eyebrow">Palette v3.3</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">

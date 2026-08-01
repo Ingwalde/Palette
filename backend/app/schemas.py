@@ -112,7 +112,10 @@ class UserCreate(UserBase):
         return email
 
 
-class UserLogin(UserBase):
+class UserLogin(BaseModel):
+    # Login identifier may be a username OR an email, so it must not use the
+    # strict username pattern. authenticate_user() decides which by the "@".
+    username: str = Field(min_length=1, max_length=254)
     password: str = Field(min_length=1, max_length=128)
 
 

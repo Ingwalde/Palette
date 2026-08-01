@@ -2,8 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
+from .config import CORS_ORIGINS
 from .database import Base, SessionLocal, engine, run_startup_migrations
+from .rate_limit import limiter
 from .routers import auth, favorites, palettes
 from .seed import seed_default_admin_user, seed_default_palettes
 
@@ -25,14 +30,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v3.1 with authentication and user-based favorites.",
-    version="3.1.0",
+    description="Backend API for Palette v3.3 with authentication and user-based favorites.",
+    version="3.3.0",
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,7 +56,7 @@ app.include_router(favorites.router, prefix="/api")
 def root():
     return {
         "name": "Palette API",
-        "version": "3.1.0",
+        "version": "3.3.0",
         "docs": "/docs",
         "health": "/health",
     }

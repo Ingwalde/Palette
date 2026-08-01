@@ -56,17 +56,26 @@ Status: completed.
 - Login/Register layout fixes.
 - One-decimal contrast ratio.
 
-## v3.3 — Admin and Quality Improvements
+## v3.3 — Security Hardening, Consistency and Tests
 
-Status: planned.
+Status: completed.
+
+- Mandatory `SECRET_KEY` with fail-fast startup.
+- Explicit CORS origin allowlist (no wildcard).
+- Login and registration rate limiting (slowapi).
+- Timing-safe password comparison.
+- Timezone-aware timestamps.
+- Fixed login by email.
+- Synchronised version strings to v3.3.
+- Backend unit tests.
+- API integration tests.
+
+Deferred to a later release:
 
 - Better admin dashboard UI.
 - Edit and delete confirmation modals.
-- Better form validation messages.
-- Better error messages from API responses.
+- Better form validation and API error messages.
 - Search and pagination for admin palette list.
-- Backend unit tests.
-- API integration tests.
 - Basic accessibility review.
 
 ## v4.0 — Production Upgrade

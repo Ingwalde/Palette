@@ -1,8 +1,8 @@
-# Palette v3.2 — Full-Stack Color Palette App
+# Palette v3.3 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **3.2** improves the v3.1 authentication release with a more polished export workflow, selected-palette export, PNG palette card export, a project changelog page, footer information panels and navigation stability improvements.
+Version **3.3** hardens the backend: mandatory `SECRET_KEY`, an explicit CORS allowlist, login/registration rate limiting, timing-safe password comparison, timezone-aware timestamps, a fixed login-by-email path, and a first automated test suite (auth, CRUD and API).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → SQLite Database
@@ -12,15 +12,17 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 
 ## What changed by version
 
-| Area | v2.0 | v3.0 | v3.1 | v3.2 |
-|---|---|---|---|---|
-| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish |
-| Palette data | Static JS data | SQLite database | SQLite database | SQLite database |
-| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites |
-| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow |
-| Auth | None | Planned | Username/email/password auth | Login/Account flow refined |
-| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card |
-| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation |
+| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 |
+|---|---|---|---|---|---|
+| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened |
+| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database |
+| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites |
+| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow |
+| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited |
+| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare |
+| Tests | None | None | None | None | pytest suite (auth/CRUD/API) |
+| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation |
 
 ---
 
@@ -57,14 +59,19 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 - Public palette API.
 - Authentication API.
 - User-based favorites API.
-- Password hashing with PBKDF2-SHA256.
+- Password hashing with PBKDF2-SHA256 (210k iterations).
+- Timing-safe password comparison.
 - JWT/Bearer token authentication with PyJWT.
 - Login by username or email.
+- Login and registration rate limiting with slowapi.
+- Mandatory `SECRET_KEY` — the app refuses to start without a real secret.
+- Explicit CORS origin allowlist (no wildcard).
+- Timezone-aware timestamps.
 - Admin-only create/update/delete palette actions.
 - Automatic default palette seeding.
 - Automatic first admin user creation from `.env` settings.
 - Swagger UI documentation.
-- CORS enabled for local frontend development.
+- Automated test suite with pytest (auth, CRUD, API).
 
 ---
 
@@ -135,6 +142,15 @@ Frontend:
 http://localhost:5500
 ```
 
+### Tests
+
+Run the backend test suite from the `backend` directory:
+
+```bash
+cd backend
+python -m pytest
+```
+
 ---
 
 ## Environment variables
@@ -150,10 +166,20 @@ Use `backend/.env.example` as a template:
 ```env
 SECRET_KEY=change-this-secret-key-before-sharing
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
+
+`SECRET_KEY` is **mandatory** — the backend raises an error at startup if it is
+missing or left as a placeholder. Generate one with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+`CORS_ORIGINS` is a comma-separated allowlist of browser origins. Never use `*`.
 
 Do not commit `backend/.env`.
 
@@ -200,5 +226,5 @@ The repository should include `.env.example`, not `.env`.
 Current portfolio release:
 
 ```text
-v3.2.0
+v3.3.0
 ```
