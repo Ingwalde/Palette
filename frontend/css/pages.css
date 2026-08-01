@@ -234,22 +234,23 @@
     width: 100%;
     flex-wrap: nowrap;
     justify-content: space-between;
-    gap: 2px;
+    gap: 1px;
   }
 
   .site-nav__link,
   .site-nav__button {
     flex: 1 1 0;
     min-width: 0;
-    padding: 9px 4px;
+    min-height: 44px;
+    padding: 11px 4px;
     font-size: 0.76rem;
     white-space: nowrap;
-    border-radius: 16px;
+    border-radius: 20px;
   }
 
-  /* Softer highlight so the stadium rounding no longer visually clips labels. */
+  /* Wider, softer highlight — chunkier pill, gentler corners. */
   .site-nav__indicator {
-    border-radius: 16px;
+    border-radius: 20px;
   }
 
   .code-output {
