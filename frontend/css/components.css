@@ -381,7 +381,7 @@ input[type="search"] {
   position: absolute;
   left: 50%;
   bottom: 10px;
-  translate: -50% 8px;
+  translate: -50% 10px;
   padding: 5px 8px;
   border-radius: 999px;
   color: #fff;
@@ -389,7 +389,9 @@ input[type="search"] {
   font-size: 0.72rem;
   font-weight: 700;
   opacity: 0;
-  transition: opacity var(--transition), translate var(--transition);
+  transition:
+    opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .color-swatch:hover::after,
@@ -503,7 +505,7 @@ input[type="search"] {
   color: var(--color-text);
   background: var(--color-surface);
   box-shadow: var(--shadow-soft);
-  animation: toast-in 180ms ease both;
+  animation: toast-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .toast--error {
@@ -514,7 +516,7 @@ input[type="search"] {
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
