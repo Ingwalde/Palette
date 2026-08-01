@@ -131,7 +131,11 @@ document.addEventListener("click", (event) => {
 
   const url = new URL(link.getAttribute("href"), location.href);
   if (url.pathname === location.pathname) {
-    event.preventDefault();
+    // Same page: let the browser handle in-page anchor scrolling (e.g. #palettes);
+    // only block a same-page link with no hash to avoid a pointless reload.
+    if (!url.hash) {
+      event.preventDefault();
+    }
     return;
   }
 
