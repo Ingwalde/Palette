@@ -234,23 +234,23 @@
     width: 100%;
     flex-wrap: nowrap;
     justify-content: space-between;
-    gap: 1px;
+    gap: 0;
   }
 
   .site-nav__link,
   .site-nav__button {
     flex: 1 1 0;
     min-width: 0;
-    min-height: 44px;
-    padding: 11px 4px;
+    min-height: 40px;
+    padding: 9px 4px;
     font-size: 0.76rem;
     white-space: nowrap;
-    border-radius: 20px;
+    border-radius: 18px;
   }
 
-  /* Wider, softer highlight — chunkier pill, gentler corners. */
+  /* Wider, softer highlight — gentler corners. */
   .site-nav__indicator {
-    border-radius: 20px;
+    border-radius: 18px;
   }
 
   .code-output {
