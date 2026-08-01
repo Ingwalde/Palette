@@ -20,4 +20,8 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --proxy-headers + --forwarded-allow-ips lets uvicorn trust X-Forwarded-For from the
+# reverse proxy (Caddy), so the app sees the real client IP. Without this, every request
+# looks like it comes from the Docker gateway and rate limits are shared across all users.
+# Port 8000 is only reachable via the proxy (firewalled), so trusting all forwarders is safe.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips=*"]

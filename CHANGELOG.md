@@ -1,5 +1,24 @@
 # Changelog
 
+## v4.1.2 — Production hardening: proxy-aware rate limiting, hidden docs
+
+### Fixed
+
+- Rate limiting now uses the real client IP behind the reverse proxy. Uvicorn runs with
+  `--proxy-headers --forwarded-allow-ips=*`, so slowapi keys limits on the forwarded client
+  address instead of the Docker gateway IP. Previously every request appeared to come from
+  the gateway, so a handful of logins could rate-limit every user.
+
+### Added
+
+- `ENABLE_API_DOCS` environment flag. Interactive API docs (`/api/docs`, `/api/redoc`,
+  `/api/openapi.json`) are disabled by default and only served when it is set to `true`, so
+  Swagger UI is not exposed in production. Local development enables it in `backend/.env`.
+
+### Changed
+
+- Backend API version bumped to `4.1.2`.
+
 ## v4.1.1 — HTTPS / reverse-proxy deploy fixes
 
 ### Fixed

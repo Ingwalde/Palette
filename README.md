@@ -217,5 +217,5 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.1.1
+v4.1.2
 ```
