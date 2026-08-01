@@ -225,11 +225,31 @@
     align-items: flex-start;
     border-radius: 28px;
     flex-direction: column;
+    gap: 12px;
+    margin-bottom: 8px;
   }
 
+  /* All tabs on one row, shrinking evenly to fit without clipping or overlapping. */
   .site-nav {
     width: 100%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 2px;
+  }
+
+  .site-nav__link,
+  .site-nav__button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .code-output {
+    min-height: 260px;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .code-output {

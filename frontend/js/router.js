@@ -72,6 +72,8 @@ async function loadPage(pathname, { push }) {
   }
   currentMain.replaceWith(newMain);
   document.title = doc.title;
+  // Sync body class so page-scoped styles (e.g. .auth-page) apply after an SPA swap.
+  document.body.className = doc.body.className;
 
   if (animate) {
     void newMain.offsetWidth;
