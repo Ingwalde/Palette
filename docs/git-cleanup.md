@@ -8,11 +8,14 @@ The uploaded ZIP/archive may contain local files that should not be committed.
 .git/
 backend/.venv/
 backend/.env
-backend/palette.db
+*.db
 __pycache__/
+.claude/
+graphify-out/
 *.zip
-PATCH_README.md
 ```
+
+All of these are already covered by `.gitignore`.
 
 ## Check repository status
 
@@ -26,7 +29,7 @@ git status
 git rm -r --cached backend/.venv
 ```
 
-## If local database was already added
+## If a local database file was already added
 
 ```bash
 git rm --cached backend/palette.db
@@ -38,16 +41,16 @@ git rm --cached backend/palette.db
 git rm --cached backend/.env
 ```
 
-## Recommended commit for v3.1 docs
+## Recommended commit for v4.0 docs
 
 ```bash
-git add README.md CHANGELOG.md ROADMAP.md SECURITY.md RELEASE_NOTES_v3_1.md docs/
-git commit -m "Update documentation for Palette v3.1"
+git add README.md CHANGELOG.md ROADMAP.md docs/
+git commit -m "Update documentation for Palette v4.0"
 ```
 
 ## Recommended tag
 
 ```bash
-git tag v3.1.0
-git push origin v3.1.0
+git tag v4.0.0
+git push origin v4.0.0
 ```

@@ -29,3 +29,9 @@ Thumbs.db
 .cache/
 dist/
 build/
+
+# Claude Code (agents, skills, CLAUDE.md, settings — kept local, not shared)
+.claude/
+
+# graphify knowledge-graph output/cache
+graphify-out/

@@ -1,18 +1,19 @@
 # Database Documentation
 
-Palette v3.1 uses SQLite for local development.
+Palette v4.0 uses **PostgreSQL** exclusively. There is no SQLite fallback — the backend
+refuses to start without a `postgresql://` `DATABASE_URL`.
 
-Database URL:
-
-```text
-sqlite:///./palette.db
-```
-
-When the backend is started from the `backend/` folder, the database file is created as:
+The URL is set automatically by Docker Compose:
 
 ```text
-backend/palette.db
+postgresql+psycopg://palette:palette@db:5432/palette
 ```
+
+The data lives in the PostgreSQL `db` service and persists in the `pgdata` volume. The
+test suite runs against a separate disposable PostgreSQL (`test-db` service, database
+`palette_test`) via `docker compose --profile test run --rm tests`.
+
+Connectivity uses the psycopg 3 driver (`postgresql+psycopg://`).
 
 ---
 
@@ -81,28 +82,21 @@ This creates a many-to-many relationship through the `favorites` table.
 
 ---
 
-## Local migrations
+## Migrations
 
-The project includes a small startup migration helper in `database.py` for local development.
-
-It helps older local databases continue working after changes such as adding an email column to users.
-
-For serious production use, a migration tool such as Alembic would be better.
+The schema is created directly from the SQLAlchemy models by `Base.metadata.create_all`
+on startup. For evolving a production schema without dropping data, a migration tool
+such as Alembic would be added (planned).
 
 ---
 
-## Reset local database
+## Reset the database
 
-For local testing only, you can reset the database by deleting:
-
-```text
-backend/palette.db
-```
-
-Then restart the backend:
+Drop the data volume and bring the stack back up:
 
 ```bash
-python -m uvicorn app.main:app --reload
+docker compose down -v
+docker compose up --build
 ```
 
-The app will recreate tables and seed default palettes/admin user.
+The app recreates the tables and seeds the default palettes and admin user.

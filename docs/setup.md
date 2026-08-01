@@ -1,153 +1,59 @@
 # Setup Guide
 
-This guide explains how to run Palette v3.1 locally.
+Palette v4.0 runs on PostgreSQL via Docker Compose. Docker is the only supported way to
+run it — there is no SQLite or non-Docker mode.
 
 ---
 
 ## Requirements
 
-- Python 3.12+ recommended.
+- Docker Desktop (Compose v2).
 - A modern browser.
-- VS Code or another editor.
 
 ---
 
-## 1. Clone or open the project
+## 1. Environment file
 
-Open the project root folder:
-
-```text
-Palette/
-```
-
-The root should contain:
-
-```text
-frontend/
-backend/
-README.md
-CHANGELOG.md
-ROADMAP.md
-```
-
----
-
-## 2. Backend setup
-
-Open terminal in:
-
-```text
-Palette/backend
-```
-
-Create virtual environment:
+Create `backend/.env` (copy `backend/.env.example`). `SECRET_KEY` is mandatory — the
+app refuses to start with a missing or placeholder value. Generate one with:
 
 ```bash
-python -m venv .venv
+python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Activate it.
-
-PowerShell:
-
-```bash
-.venv\Scripts\Activate.ps1
-```
-
-CMD:
-
-```bash
-.venv\Scripts\activate.bat
-```
-
-Install dependencies:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
----
-
-## 3. Environment file
-
-Create:
-
-```text
-backend/.env
-```
-
-Use this content for local testing:
+Example `backend/.env`:
 
 ```env
-SECRET_KEY=palette-v3-1-local-secret
+SECRET_KEY=replace-with-a-generated-secret
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
+POSTGRES_USER=palette
+POSTGRES_PASSWORD=palette
+POSTGRES_DB=palette
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_EMAIL=admin@palette.local
-DEFAULT_ADMIN_PASSWORD=admin123456
+DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-Do not commit `.env` to GitHub.
+`DATABASE_URL` is set automatically by Docker Compose from the `POSTGRES_*` values.
+Do not commit `.env`.
 
 ---
 
-## 4. Start backend
+## 2. Start the stack
 
-From `backend/`:
+From the project root:
 
 ```bash
-python -m uvicorn app.main:app --reload
+docker compose up --build
 ```
 
-Open:
-
-```text
-http://localhost:8000/docs
-```
+This starts PostgreSQL (`db`), the backend and the static frontend (`nginx`). On first
+boot the backend creates the schema and seeds the default palettes and admin user.
 
 ---
 
-## 5. Frontend setup
-
-Open a second terminal in:
-
-```text
-Palette/frontend
-```
-
-Start static server:
-
-```bash
-python -m http.server 5500
-```
-
-Open:
-
-```text
-http://localhost:5500
-```
-
----
-
-## 6. Test login
-
-Open:
-
-```text
-http://localhost:5500/login.html
-```
-
-Admin test credentials from the example `.env`:
-
-```text
-username: admin
-password: admin123456
-```
-
-Regular users can register from the Login page.
-
----
-
-## 7. Useful pages
+## 3. Open the app
 
 ```text
 Frontend:       http://localhost:5500
@@ -159,12 +65,38 @@ Admin:          http://localhost:5500/admin.html
 Backend API:    http://localhost:8000/docs
 ```
 
+Admin credentials come from `DEFAULT_ADMIN_*` in `.env`. Regular users can register
+from the Login page.
+
 ---
 
-## 8. Optional Windows launcher
+## 4. Tests
 
-If `start_project.bat` exists, you can run it from the project root.
+The suite runs against a disposable PostgreSQL in a dedicated Compose profile:
 
-It starts backend and frontend automatically.
+```bash
+docker compose --profile test run --rm tests
+```
 
-The script is safe to keep in GitHub if it does not contain secrets or personal paths.
+---
+
+## 5. View on another device (same Wi-Fi)
+
+The frontend uses a dynamic API base (`http://<host>:8000/api`), so the app also works
+from another device on the same network — e.g. a phone.
+
+1. Find the PC's LAN IP (Windows: `ipconfig` → IPv4 of the Wi-Fi adapter).
+2. On the phone browser open `http://<PC-IP>:5500`.
+3. Add that origin to `CORS_ORIGINS` in `backend/.env`
+   (e.g. `...,http://<PC-IP>:5500`) and restart the backend:
+   `docker compose up -d backend`.
+4. If it does not connect, allow inbound ports 5500 and 8000 through the PC firewall.
+
+---
+
+## 6. Stop / reset
+
+```bash
+docker compose down        # stop containers, keep data
+docker compose down -v     # also drop the pgdata volume (fresh database next up)
+```

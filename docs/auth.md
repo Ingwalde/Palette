@@ -1,6 +1,6 @@
 # Authentication Documentation
 
-Palette v3.1 uses username, email and password authentication.
+Palette uses username, email and password authentication.
 
 ---
 
@@ -170,6 +170,7 @@ DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-If a local test database already exists and the admin password does not change, delete `backend/palette.db` and restart the backend.
+The admin user is seeded only when no admin exists yet. To reseed with new credentials,
+reset the database: `docker compose down -v && docker compose up --build`.
 
-Do this only for local testing, because it removes local data.
+Do this only for local testing, because it drops the database volume and its data.

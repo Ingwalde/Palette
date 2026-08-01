@@ -20,8 +20,17 @@ export function initAuthNav() {
 
   syncAuthButton(authButton, user);
   syncAdminNavVisibility(user);
+  syncAdminOnlyElements(user);
   syncActiveNavItem(nav, user);
   initSlidingNavIndicator(nav);
+}
+
+function syncAdminOnlyElements(user) {
+  const isAdmin = Boolean(user?.is_admin);
+
+  document.querySelectorAll("[data-admin-only]").forEach((element) => {
+    element.hidden = !isAdmin;
+  });
 }
 
 function syncAuthButton(authButton, user) {
@@ -72,6 +81,32 @@ function syncAdminNavVisibility(user) {
     link.classList.remove("site-nav__link--admin-visible");
     link.classList.remove("site-nav__link--active");
   });
+}
+
+// Used by the SPA router: set the active tab for a path and slide the indicator
+// to it within the current document (no reload).
+export function activateNavForPath(pathname) {
+  const nav = document.querySelector(".site-nav");
+  if (!nav) {
+    return;
+  }
+
+  const page = pathname.split("/").pop() || "index.html";
+  clearActiveNavItems(nav);
+
+  const selector = ROUTE_TO_NAV_SELECTOR[page];
+  const activeItem = selector ? nav.querySelector(selector) : null;
+
+  if (
+    activeItem &&
+    !activeItem.hidden &&
+    activeItem.offsetParent !== null &&
+    !PAGES_WITHOUT_ACTIVE_NAV.has(page)
+  ) {
+    activeItem.classList.add("site-nav__link--active");
+  }
+
+  updateNavIndicator(nav, true);
 }
 
 function syncActiveNavItem(nav, user) {

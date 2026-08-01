@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/base.css?v=4.0" />
+  <link rel="stylesheet" href="css/components.css?v=4.0" />
+  <link rel="stylesheet" href="css/pages.css?v=4.0" />
 </head>
 <body>
   <header class="site-header">
@@ -38,6 +38,18 @@
     </section>
 
     <section class="section changelog-layout">
+      <article class="changelog-card">
+        <p class="changelog-card__version">v4.0</p>
+        <h2>PostgreSQL, Docker and UX</h2>
+        <ul>
+          <li>Moved the backend fully onto PostgreSQL; removed SQLite.</li>
+          <li>Added a Docker Compose stack: PostgreSQL, backend and static frontend.</li>
+          <li>Single-page navigation with a soft page cross-fade and sliding tab indicator.</li>
+          <li>Polished search: centered clear button, bold text, animated results.</li>
+          <li>Dynamic API base so the app also works over the LAN (e.g. on a phone).</li>
+        </ul>
+      </article>
+
       <article class="changelog-card">
         <p class="changelog-card__version">v3.3</p>
         <h2>Security hardening and tests</h2>
@@ -91,7 +103,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v3.3</p>
+        <p class="site-footer__eyebrow">Palette v4.0</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -103,7 +115,7 @@
         </div>
       </div>
 
-      <div class="site-footer__meta" aria-label="Project links">
+      <div class="site-footer__meta" data-admin-only hidden aria-label="Project links">
         <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
         <a href="changelog.html">Changelog</a>
       </div>
@@ -113,5 +125,6 @@
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
+  <script type="module" src="js/router.js"></script>
 </body>
 </html>

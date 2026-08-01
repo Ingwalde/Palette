@@ -1,0 +1,12 @@
+.git/
+.gitignore
+.claude/
+graphify-out/
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/*.db
+**/*.sqlite*
+**/.env
+docs/
+*.md

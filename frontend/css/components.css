@@ -182,6 +182,7 @@
 .select,
 .textarea {
   width: 100%;
+  font: inherit;
   border: 1px solid var(--color-border);
   color: var(--color-text);
   background: var(--color-surface);
@@ -228,6 +229,27 @@
 .textarea:focus {
   border-color: rgba(47, 45, 42, 0.35);
   box-shadow: 0 0 0 4px rgba(48, 47, 44, 0.08);
+}
+
+/* Placeholder styled to match the page (Poppins, muted warm tone). */
+.search-field input::placeholder,
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 0.7;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.search-field input:focus::placeholder,
+.input:focus::placeholder,
+.textarea:focus::placeholder {
+  opacity: 0.55;
+}
+
+/* Bold typed text in the search fields (placeholder stays regular weight above). */
+input[type="search"] {
+  font-weight: 600;
 }
 
 .tag-filters {
@@ -283,6 +305,35 @@
   background: rgba(255, 250, 242, 0.78);
   box-shadow: var(--shadow-soft);
   overflow: hidden;
+  animation: palette-card-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes palette-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Gentle cascade so results ripple in as you search. */
+.palette-card:nth-child(1) { animation-delay: 0ms; }
+.palette-card:nth-child(2) { animation-delay: 65ms; }
+.palette-card:nth-child(3) { animation-delay: 130ms; }
+.palette-card:nth-child(4) { animation-delay: 195ms; }
+.palette-card:nth-child(5) { animation-delay: 260ms; }
+.palette-card:nth-child(6) { animation-delay: 325ms; }
+.palette-card:nth-child(7) { animation-delay: 390ms; }
+.palette-card:nth-child(8) { animation-delay: 455ms; }
+.palette-card:nth-child(n + 9) { animation-delay: 500ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .palette-card {
+    animation: none;
+  }
 }
 
 .palette-card__header {
@@ -374,15 +425,48 @@
   border-radius: var(--radius-lg);
   text-align: center;
   background: rgba(255, 250, 242, 0.58);
+  animation: empty-state-in 550ms ease both;
+}
+
+@keyframes empty-state-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .empty-state h3 {
   margin-bottom: 8px;
+  animation: empty-line-in 500ms ease 120ms both;
 }
 
 .empty-state p {
   margin-bottom: 0;
   color: var(--color-muted);
+  animation: empty-line-in 500ms ease 280ms both;
+}
+
+@keyframes empty-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-state,
+  .empty-state h3,
+  .empty-state p {
+    animation: none;
+  }
 }
 
 .toast-container {
@@ -605,24 +689,68 @@
 }
 
 
-/* Search clear button — v3.1 */
-.search-field input[type="search"]::-webkit-search-cancel-button {
-  appearance: none;
+/* Custom search clear button (home + export). The native webkit button is hidden and
+   replaced with a real, perfectly-centered button for full control and cross-browser. */
+input[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  cursor: pointer;
-  background:
-    linear-gradient(45deg, transparent 44%, var(--color-primary) 45%, var(--color-primary) 55%, transparent 56%),
-    linear-gradient(-45deg, transparent 44%, var(--color-primary) 45%, var(--color-primary) 55%, transparent 56%);
-  background-color: rgba(48, 47, 44, 0.08);
-  transition: background-color var(--transition), transform var(--transition);
+  appearance: none;
+  display: none;
 }
 
-.search-field input[type="search"]::-webkit-search-cancel-button:hover {
-  background-color: rgba(48, 47, 44, 0.16);
-  transform: scale(1.05);
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-wrap {
+  position: relative;
+  display: block;
+}
+
+/* Room on the right so the text never runs under the clear button. */
+.search-field input[type="search"],
+.search-input-wrap input[type="search"] {
+  padding-right: 58px;
+}
+
+.search-clear {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  display: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 7l10 10M17 7L7 17' stroke='%23746c63' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 21px 21px;
+  transition: transform var(--transition), background-image var(--transition);
+}
+
+/* Show only when the field has text (placeholder no longer shown). */
+.search-field input[type="search"]:not(:placeholder-shown) ~ .search-clear,
+.search-input-wrap input[type="search"]:not(:placeholder-shown) ~ .search-clear {
+  display: block;
+}
+
+.search-clear:hover {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 7l10 10M17 7L7 17' stroke='%23302f2c' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  transform: translateY(-50%) scale(1.12);
+}
+
+.search-clear:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.search-clear:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Custom select viewport fit — v3.2 */
@@ -686,6 +814,11 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* The [hidden] attribute must beat the display rules above (admin-only links). */
+.site-footer__meta[hidden] {
+  display: none !important;
 }
 
 .site-footer__meta span,
