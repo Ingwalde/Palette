@@ -506,6 +506,7 @@ input[type="search"] {
   background: var(--color-surface);
   box-shadow: var(--shadow-soft);
   animation: toast-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 
 .toast--error {
