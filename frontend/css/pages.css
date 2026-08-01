@@ -242,8 +242,14 @@
     flex: 1 1 0;
     min-width: 0;
     padding: 9px 4px;
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     white-space: nowrap;
+    border-radius: 12px;
+  }
+
+  /* Softer highlight so the stadium rounding no longer visually clips labels. */
+  .site-nav__indicator {
+    border-radius: 12px;
   }
 
   .code-output {
