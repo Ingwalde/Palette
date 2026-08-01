@@ -6,6 +6,10 @@ export function showToast(message, type = "default") {
   const container = qs("#toastContainer");
   if (!container) return;
 
+  // Only ever show the latest action — clear any previous toasts so rapid copies
+  // don't stack up and fill the screen.
+  container.replaceChildren();
+
   const toast = createElement("div", {
     className: `toast${type === "error" ? " toast--error" : ""}`,
     text: message,

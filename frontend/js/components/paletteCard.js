@@ -4,6 +4,9 @@ import { getAccessToken } from "../utils/authStorage.js";
 import { addFavorite, isFavoritePalette, removeFavorite } from "../api/favoritesApi.js";
 import { showToast } from "../utils/toast.js";
 
+// Auto-hide timer for the tapped-swatch hex tooltip (one at a time).
+let swatchRevealTimer;
+
 export function getPaletteFavoriteKey(palette) {
   return palette.slug || String(palette.id);
 }
@@ -52,14 +55,16 @@ export function createPaletteCard(palette, options = {}) {
     });
 
     swatch.addEventListener("click", async () => {
-      // Toggle the hex tooltip on tap (touch has no reliable hover); keep only one open.
-      const wasRevealed = swatch.classList.contains("color-swatch--revealed");
+      // Reveal the hex on tap (touch has no reliable hover) for a short time, then hide
+      // it automatically. Only one swatch is revealed at a time.
       document
         .querySelectorAll(".color-swatch--revealed")
         .forEach((other) => other.classList.remove("color-swatch--revealed"));
-      if (!wasRevealed) {
-        swatch.classList.add("color-swatch--revealed");
-      }
+      swatch.classList.add("color-swatch--revealed");
+      window.clearTimeout(swatchRevealTimer);
+      swatchRevealTimer = window.setTimeout(() => {
+        swatch.classList.remove("color-swatch--revealed");
+      }, 1800);
 
       await copyToClipboard(color);
       showToast(`${color} copied`);
