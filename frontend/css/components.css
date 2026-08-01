@@ -373,6 +373,7 @@ input[type="search"] {
   position: relative;
   border: 0;
   background: var(--swatch-color);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .color-swatch::after {
@@ -398,10 +399,10 @@ input[type="search"] {
   opacity: 1;
 }
 
-/* On touch devices hover "sticks", so reveal the hex only on an explicit tap
-   (.color-swatch--revealed, toggled in paletteCard.js) — not on hover. */
+/* On touch devices hover "sticks", so suppress the hover reveal — but only when the
+   swatch is not explicitly revealed by a tap (.color-swatch--revealed wins). */
 @media (hover: none) {
-  .color-swatch:hover::after {
+  .color-swatch:not(.color-swatch--revealed):hover::after {
     translate: -50% 8px;
     opacity: 0;
   }
