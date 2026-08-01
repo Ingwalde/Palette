@@ -1,0 +1,34 @@
+name: CI
+
+# Run the backend test suite on every pull request and on pushes to main.
+# Tests need PostgreSQL, so we reuse the project's canonical test runner:
+# the `test` Docker Compose profile (disposable PostgreSQL + pytest), the same
+# command developers run locally (docker compose --profile test run --rm tests).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-tests:
+    name: Backend tests (pytest · PostgreSQL)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Provide placeholder backend/.env
+        # The `backend` service in docker-compose.yml declares `env_file: backend/.env`,
+        # which Compose requires to exist when it parses the file — even though the
+        # `tests` service we run here never reads it (it sets SECRET_KEY / DATABASE_URL
+        # inline). backend/.env is gitignored and absent on a fresh checkout, so create
+        # an empty one to satisfy parsing.
+        run: touch backend/.env
+
+      - name: Run backend test suite (test profile)
+        run: docker compose --profile test run --build --rm tests
