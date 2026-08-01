@@ -131,10 +131,16 @@ document.addEventListener("click", (event) => {
 
   const url = new URL(link.getAttribute("href"), location.href);
   if (url.pathname === location.pathname) {
-    // Same page: let the browser handle in-page anchor scrolling (e.g. #palettes);
-    // only block a same-page link with no hash to avoid a pointless reload.
-    if (!url.hash) {
-      event.preventDefault();
+    // Same page. For an in-page anchor, scroll to the target ourselves — the native
+    // hash jump lands at the top when the target is momentarily missing (async render
+    // / SPA swap). Always block reload for same-page links.
+    event.preventDefault();
+    if (url.hash) {
+      const target = document.querySelector(url.hash);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        history.pushState(null, "", url.hash);
+      }
     }
     return;
   }
