@@ -1,6 +1,6 @@
 /* SPA content transition: fade <main> out/in on route change (js/router.js). */
 main.spa-fade {
-  transition: opacity 200ms ease;
+  transition: opacity 280ms ease;
   will-change: opacity;
 }
 
@@ -8,9 +8,11 @@ main.spa-fade--out {
   opacity: 0;
 }
 
+/* Opacity-only fade is not "motion", so keep it (just shorter) under reduced-motion
+   instead of an abrupt instant page swap. */
 @media (prefers-reduced-motion: reduce) {
   main.spa-fade {
-    transition: none;
+    transition: opacity 140ms ease;
   }
 }
 
@@ -122,7 +124,7 @@ h1 {
   max-width: 760px;
   margin-bottom: 18px;
   font-size: clamp(2.4rem, 6vw, 5rem);
-  line-height: 0.98;
+  line-height: 1.14;
   letter-spacing: -0.06em;
 }
 

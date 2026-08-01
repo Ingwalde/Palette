@@ -1,5 +1,49 @@
 # Changelog
 
+## v4.1.0 — Mobile fixes, UX polish and CI
+
+### Release summary
+
+Palette v4.1.0 adds continuous integration on GitHub Actions and a broad pass of mobile
+and UX fixes found on small screens (iPhone 13, 390px wide) and during navigation.
+
+### Added
+
+- GitHub Actions CI (`.github/workflows/ci.yml`) running the backend test suite (the
+  `test` Docker Compose profile: disposable PostgreSQL + pytest) on every pull request
+  and on pushes to `main`.
+
+### Fixed — navigation
+
+- Navigation tabs stay on one row on small screens, shrinking evenly instead of
+  clipping or overflowing; the active/last item is no longer cut off.
+- Softer, chunkier nav highlight pill (no stadium rounding that clipped labels), with
+  spacing between the header and the page content.
+- SPA navigation restores the `<body>` class on content swap, so page-scoped styles
+  (e.g. the login/auth form spacing) apply after navigating in-app.
+- Page transition keeps a gentle fade even under reduced-motion (opacity only), instead
+  of an abrupt instant swap; longer, smoother fade otherwise.
+- "Browse palettes" and other in-page anchor links now scroll natively instead of being
+  swallowed by the SPA router.
+
+### Fixed — search and forms
+
+- Custom, centered search clear button on the home and export fields; bold search text
+  and a smaller, page-styled placeholder.
+- Native `<select>` no longer flashes before it is enhanced into the custom dropdown.
+- Export "Generated output" block wraps long lines and is shorter on mobile.
+
+### Fixed — palette cards and feedback
+
+- Palette cards animate in with a staggered fade/slide; the empty state fades in.
+- Contrast badge stays on one line.
+- Button text uses an explicit dark colour (no default blue on iOS) and never wraps.
+- Hex tooltips on color swatches reveal on tap on touch devices, auto-hide after a short
+  time, and fade in/out smoothly; no stray tap highlight.
+- Toasts reuse a single element and update in place, so rapid copies show only the
+  latest action instead of stacking, and appear/disappear smoothly.
+- More line spacing in the hero heading.
+
 ## v4.0.0 — PostgreSQL, Docker and UX
 
 ### Release summary

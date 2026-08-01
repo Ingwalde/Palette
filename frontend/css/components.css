@@ -133,7 +133,11 @@
   padding: 0 18px;
   border: 1px solid transparent;
   border-radius: 999px;
+  font: inherit;
   font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
 }
 
@@ -238,6 +242,7 @@
   color: var(--color-muted);
   opacity: 0.7;
   font-weight: 400;
+  font-size: 0.9rem;
   letter-spacing: 0.01em;
 }
 
@@ -368,6 +373,7 @@ input[type="search"] {
   position: relative;
   border: 0;
   background: var(--swatch-color);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .color-swatch::after {
@@ -375,7 +381,7 @@ input[type="search"] {
   position: absolute;
   left: 50%;
   bottom: 10px;
-  translate: -50% 8px;
+  transform: translate(-50%, 10px);
   padding: 5px 8px;
   border-radius: 999px;
   color: #fff;
@@ -383,13 +389,25 @@ input[type="search"] {
   font-size: 0.72rem;
   font-weight: 700;
   opacity: 0;
-  transition: opacity var(--transition), translate var(--transition);
+  transition:
+    opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .color-swatch:hover::after,
-.color-swatch:focus-visible::after {
-  translate: -50% 0;
+.color-swatch:focus-visible::after,
+.color-swatch--revealed::after {
+  transform: translate(-50%, 0);
   opacity: 1;
+}
+
+/* On touch devices hover "sticks", so suppress the hover reveal — but only when the
+   swatch is not explicitly revealed by a tap (.color-swatch--revealed wins). */
+@media (hover: none) {
+  .color-swatch:not(.color-swatch--revealed):hover::after {
+    transform: translate(-50%, 10px);
+    opacity: 0;
+  }
 }
 
 .palette-card__tags {
@@ -416,6 +434,7 @@ input[type="search"] {
   background: var(--color-primary-soft);
   font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .empty-state {
@@ -486,7 +505,8 @@ input[type="search"] {
   color: var(--color-text);
   background: var(--color-surface);
   box-shadow: var(--shadow-soft);
-  animation: toast-in 180ms ease both;
+  animation: toast-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 250ms ease, transform 250ms ease;
 }
 
 .toast--error {
@@ -497,7 +517,7 @@ input[type="search"] {
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -535,6 +555,12 @@ input[type="search"] {
   height: 1px !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* When JS is present, hide the native select before it is enhanced (keeps its box,
+   so no layout shift) to avoid a flash of the native control on page load. */
+.js select.select:not(.native-select--enhanced) {
+  opacity: 0;
 }
 
 .custom-select {

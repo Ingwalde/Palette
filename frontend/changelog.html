@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>document.documentElement.classList.add("js");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Palette project changelog." />
@@ -10,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css?v=4.0" />
-  <link rel="stylesheet" href="css/components.css?v=4.0" />
-  <link rel="stylesheet" href="css/pages.css?v=4.0" />
+  <link rel="stylesheet" href="css/base.css?v=4.1" />
+  <link rel="stylesheet" href="css/components.css?v=4.1" />
+  <link rel="stylesheet" href="css/pages.css?v=4.1" />
 </head>
 <body>
   <header class="site-header">
@@ -38,6 +39,18 @@
     </section>
 
     <section class="section changelog-layout">
+      <article class="changelog-card">
+        <p class="changelog-card__version">v4.1</p>
+        <h2>Mobile fixes, UX polish and CI</h2>
+        <ul>
+          <li>Added GitHub Actions CI running the backend tests on every PR and push to main.</li>
+          <li>Single-row navigation on small screens with a softer highlight pill.</li>
+          <li>Smoother SPA page transitions; in-page anchor links scroll natively.</li>
+          <li>Polished search (clear button, placeholder) and no native select flash.</li>
+          <li>Swatch hex tooltips and copy toasts now appear and disappear smoothly.</li>
+        </ul>
+      </article>
+
       <article class="changelog-card">
         <p class="changelog-card__version">v4.0</p>
         <h2>PostgreSQL, Docker and UX</h2>
@@ -103,7 +116,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v4.0</p>
+        <p class="site-footer__eyebrow">Palette v4.1</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
