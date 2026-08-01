@@ -91,7 +91,16 @@ Status: completed.
 - Dynamic API base for LAN access (view on a phone on the same network).
 - Admin-only footer links; nginx no-store dev caching.
 
-## v4.1 — Email Verification
+## v4.1 — Mobile fixes and CI
+
+Status: completed.
+
+- GitHub Actions CI: backend test suite runs on every pull request and push to `main`.
+- Mobile fix: navigation bar wraps instead of clipping tabs on small screens.
+- Mobile fix: export "Generated output" block wraps and shrinks on mobile.
+- Mobile fix: hex tooltips on color swatches reveal on tap for touch devices.
+
+## v4.2 — Email Verification
 
 Status: planned.
 
@@ -102,7 +111,6 @@ Status: planned.
 
 Deferred to a later release:
 
-- CI checks (GitHub Actions).
 - Better logging.
 - Alembic migrations.
 - Refresh token or improved session strategy.

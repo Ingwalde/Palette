@@ -1,5 +1,27 @@
 # Changelog
 
+## v4.1.0 — Mobile fixes and CI
+
+### Release summary
+
+Palette v4.1.0 adds continuous integration on GitHub Actions and fixes three mobile
+display issues found on small screens (iPhone 13, 390px wide).
+
+### Added
+
+- GitHub Actions CI (`.github/workflows/ci.yml`) running the backend test suite (the
+  `test` Docker Compose profile: disposable PostgreSQL + pytest) on every pull request
+  and on pushes to `main`.
+
+### Fixed
+
+- Navigation bar now wraps instead of horizontally clipping tabs on small screens, so
+  the active/last item is no longer cut off.
+- Export "Generated output" block wraps long lines and uses a smaller minimum height on
+  mobile, so messages are no longer clipped and there is less empty space.
+- Hex tooltips on color swatches reveal on an explicit tap on touch devices instead of
+  relying on an unreliable, sticky hover.
+
 ## v4.0.0 — PostgreSQL, Docker and UX
 
 ### Release summary
