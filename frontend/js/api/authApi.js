@@ -1,6 +1,7 @@
 import { getAccessToken } from "../utils/authStorage.js";
 
-const API_BASE_URL = `http://${location.hostname}:8000/api`;
+const API_BASE_URL =
+  location.protocol === "https:" ? "/api" : `http://${location.hostname}:8000/api`;
 
 async function apiRequest(endpoint, options = {}) {
   const { headers = {}, ...requestOptions } = options;

@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.1.1 — HTTPS / reverse-proxy deploy fixes
+
+### Fixed
+
+- Frontend API base URL is now same-origin (`/api`) when the app is served over HTTPS, so
+  it works behind a TLS reverse proxy (e.g. Caddy) with no mixed-content errors. Local HTTP
+  Docker dev keeps the direct `http://<host>:8000/api` behavior.
+- "API docs" links use a relative `/api/docs` instead of a hardcoded
+  `http://localhost:8000/docs`, so they resolve through the reverse proxy in production.
+
+### Changed
+
+- FastAPI serves its interactive docs under `/api` (`/api/docs`, `/api/redoc`,
+  `/api/openapi.json`), so every backend route shares the `/api/*` prefix and a single
+  reverse-proxy rule covers both the app and its docs.
+
 ## v4.1.0 — Mobile fixes, UX polish and CI
 
 ### Release summary
