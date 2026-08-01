@@ -381,7 +381,7 @@ input[type="search"] {
   position: absolute;
   left: 50%;
   bottom: 10px;
-  translate: -50% 10px;
+  transform: translate(-50%, 10px);
   padding: 5px 8px;
   border-radius: 999px;
   color: #fff;
@@ -391,13 +391,13 @@ input[type="search"] {
   opacity: 0;
   transition:
     opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    translate 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .color-swatch:hover::after,
 .color-swatch:focus-visible::after,
 .color-swatch--revealed::after {
-  translate: -50% 0;
+  transform: translate(-50%, 0);
   opacity: 1;
 }
 
@@ -405,7 +405,7 @@ input[type="search"] {
    swatch is not explicitly revealed by a tap (.color-swatch--revealed wins). */
 @media (hover: none) {
   .color-swatch:not(.color-swatch--revealed):hover::after {
-    translate: -50% 8px;
+    transform: translate(-50%, 10px);
     opacity: 0;
   }
 }
