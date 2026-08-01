@@ -238,6 +238,7 @@
   color: var(--color-muted);
   opacity: 0.7;
   font-weight: 400;
+  font-size: 0.9rem;
   letter-spacing: 0.01em;
 }
 
@@ -426,6 +427,7 @@ input[type="search"] {
   background: var(--color-primary-soft);
   font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .empty-state {
@@ -545,6 +547,12 @@ input[type="search"] {
   height: 1px !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* When JS is present, hide the native select before it is enhanced (keeps its box,
+   so no layout shift) to avoid a flash of the native control on page load. */
+.js select.select:not(.native-select--enhanced) {
+  opacity: 0;
 }
 
 .custom-select {

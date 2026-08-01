@@ -244,18 +244,12 @@
     padding: 9px 4px;
     font-size: 0.76rem;
     white-space: nowrap;
-    border-radius: 12px;
+    border-radius: 16px;
   }
 
   /* Softer highlight so the stadium rounding no longer visually clips labels. */
   .site-nav__indicator {
-    border-radius: 12px;
-  }
-
-  .code-output {
-    min-height: 260px;
-    white-space: pre-wrap;
-    word-break: break-word;
+    border-radius: 16px;
   }
 
   .code-output {
