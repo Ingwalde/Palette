@@ -1,8 +1,13 @@
 """Shared test fixtures.
 
-SECRET_KEY must be set before importing the app, otherwise config.py hard-fails.
-Tests run against an isolated in-memory SQLite database and the login/register
-rate limiter is disabled so repeated calls do not trip 429 responses.
+The suite runs against PostgreSQL (there is no SQLite fallback). Provide a database via
+`DATABASE_URL` (or `TEST_DATABASE_URL`) pointing at a disposable PostgreSQL — the
+`tests` service in docker-compose.yml wires this up automatically:
+
+    docker compose --profile test run --rm tests
+
+SECRET_KEY must be set before importing the app, otherwise config.py hard-fails. The
+login/register rate limiter is disabled so repeated calls do not trip 429 responses.
 """
 import os
 
@@ -10,11 +15,19 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-not-a-placeholder-012345678
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:5500")
 os.environ.setdefault("DEFAULT_ADMIN_PASSWORD", "test-admin-strong-password")
 
+# Prefer an explicit test DB; fall back to DATABASE_URL. Must be PostgreSQL.
+_test_db_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+if not _test_db_url or not _test_db_url.startswith("postgresql"):
+    raise RuntimeError(
+        "Tests require a PostgreSQL DATABASE_URL (or TEST_DATABASE_URL). "
+        "Run them via: docker compose --profile test run --rm tests"
+    )
+os.environ["DATABASE_URL"] = _test_db_url
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app import crud, schemas
 from app.database import Base, get_db
@@ -22,12 +35,7 @@ from app.main import app
 from app.rate_limit import limiter
 from app.security import hash_password
 
-# One shared in-memory database across all connections in the process.
-engine = create_engine(
-    "sqlite://",
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-)
+engine = create_engine(_test_db_url, pool_pre_ping=True)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 limiter.enabled = False

@@ -5,6 +5,7 @@ pydantic
 python-dotenv
 PyJWT
 slowapi
+psycopg[binary]
 
 # Testing
 pytest

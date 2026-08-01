@@ -78,16 +78,31 @@ Deferred to a later release:
 - Search and pagination for admin palette list.
 - Basic accessibility review.
 
-## v4.0 — Production Upgrade
+## v4.0 — PostgreSQL, Docker and UX
+
+Status: completed.
+
+- PostgreSQL support (psycopg 3, mandatory `DATABASE_URL`, no SQLite fallback).
+- Docker Compose deployment: database, backend and frontend.
+- Dedicated `test` Compose profile (pytest against disposable PostgreSQL).
+- Production CORS configuration (explicit allowlist, from v3.3).
+- Single-page navigation with page cross-fade and a sliding tab indicator.
+- Search UX polish: centered clear button, bold text, animated results.
+- Dynamic API base for LAN access (view on a phone on the same network).
+- Admin-only footer links; nginx no-store dev caching.
+
+## v4.1 — Email Verification
 
 Status: planned.
 
-- PostgreSQL support.
-- Deployment setup.
-- Environment-specific configuration.
-- CI checks.
-- Better logging.
-- Production CORS configuration.
-- Refresh token or improved session strategy.
-- Email verification.
+- Email verification flow: send a token link on registration, confirm before login.
+- `is_verified` + verification token on the user model.
+- SMTP configuration (dev via Mailtrap, prod via a mail provider).
 - Password reset by email.
+
+Deferred to a later release:
+
+- CI checks (GitHub Actions).
+- Better logging.
+- Alembic migrations.
+- Refresh token or improved session strategy.

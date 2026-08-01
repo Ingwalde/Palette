@@ -10,9 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/base.css?v=4.0" />
+  <link rel="stylesheet" href="css/components.css?v=4.0" />
+  <link rel="stylesheet" href="css/pages.css?v=4.0" />
 </head>
 <body>
   <header class="site-header">
@@ -33,10 +33,10 @@
   <main>
     <section class="hero section" aria-labelledby="hero-title">
       <div class="hero__content">
-        <p class="eyebrow">Palette v3.3 · Update!</p>
+        <p class="eyebrow">Palette v4.0 · Update!</p>
         <h1 id="hero-title">Find a color palette for your next design project.</h1>
         <p class="hero__text">
-          Search, filter, save and export palettes. In v3.3 the backend is security-hardened with rate limiting, an explicit CORS allowlist and an automated test suite.
+          Search, filter, save and export palettes. In v4.0 the backend runs on PostgreSQL and the whole stack ships with Docker Compose.
         </p>
         <div class="hero__actions">
           <a class="button button--primary" href="#palettes">Browse palettes</a>
@@ -62,6 +62,7 @@
         <label class="search-field" for="searchInput">
           <span class="visually-hidden">Search palettes</span>
           <input id="searchInput" type="search" placeholder="Search by name, description or tag..." autocomplete="off" />
+          <button type="button" class="search-clear" data-clear-target="searchInput" aria-label="Clear search"></button>
         </label>
 
         <select id="sortSelect" class="select" aria-label="Sort palettes">
@@ -90,7 +91,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v3.3</p>
+        <p class="site-footer__eyebrow">Palette v4.0</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -102,7 +103,7 @@
         </div>
       </div>
 
-      <div class="site-footer__meta" aria-label="Project links">
+      <div class="site-footer__meta" data-admin-only hidden aria-label="Project links">
         <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
         <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
       </div>
@@ -113,6 +114,7 @@
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
+  <script type="module" src="js/router.js"></script>
   <script type="module" src="js/pages/home.js"></script>
 </body>
 </html>

@@ -1,28 +1,35 @@
 @echo off
-title Palette v3.1 Launcher
+title Palette v4.0 Launcher
 
-echo Starting Palette v3.1...
-
+echo Starting Palette v4.0 (Docker Compose)...
 echo.
-echo Starting backend...
-start "Palette Backend" cmd /k "cd /d "%~dp0backend" && if not exist .venv py -m venv .venv && call .venv\Scripts\activate.bat && py -m pip install -r requirements.txt && py -m uvicorn app.main:app --reload"
+
+cd /d "%~dp0"
+
+if not exist "backend\.env" (
+  echo ERROR: backend\.env is missing.
+  echo Copy backend\.env.example to backend\.env and set a real SECRET_KEY first.
+  pause
+  exit /b 1
+)
+
+docker compose up --build -d
+if errorlevel 1 (
+  echo.
+  echo ERROR: docker compose failed. Is Docker Desktop running?
+  pause
+  exit /b 1
+)
 
 timeout /t 4 /nobreak > nul
 
-echo.
-echo Starting frontend...
-start "Palette Frontend" cmd /k "cd /d "%~dp0frontend" && py -m http.server 5500"
-
-timeout /t 2 /nobreak > nul
-
-echo.
-echo Opening project in browser...
 start http://localhost:5500
 start http://localhost:8000/docs
 
 echo.
-echo Palette v3.1 started.
-echo Frontend: http://localhost:5500
+echo Palette v4.0 started.
+echo Frontend:     http://localhost:5500
 echo Backend docs: http://localhost:8000/docs
-
+echo.
+echo Stop with: docker compose down
 pause

@@ -1,28 +1,29 @@
-# Palette v3.3 — Full-Stack Color Palette App
+# Palette v4.0 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **3.3** hardens the backend: mandatory `SECRET_KEY`, an explicit CORS allowlist, login/registration rate limiting, timing-safe password comparison, timezone-aware timestamps, a fixed login-by-email path, and a first automated test suite (auth, CRUD and API).
+Version **4.0** moves the backend fully onto **PostgreSQL** and packages the whole stack with **Docker Compose** (database, backend and static frontend). It also adds single-page navigation, page transitions and polished search. SQLite and the non-Docker run mode are removed — Docker is the only supported way to run the app.
 
 ```text
-Frontend → Fetch API → FastAPI Backend → SQLite Database
+Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 ```
 
 ---
 
 ## What changed by version
 
-| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 |
-|---|---|---|---|---|---|
-| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened |
-| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database |
-| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites |
-| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow |
-| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited |
-| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare |
-| Tests | None | None | None | None | pytest suite (auth/CRUD/API) |
-| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
-| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation |
+| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 | v4.0 |
+|---|---|---|---|---|---|---|
+| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened | Containerized full-stack |
+| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database | PostgreSQL only |
+| Deployment | None | Local scripts | Local scripts | Local scripts | Local scripts | Docker Compose |
+| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites | User-based favorites |
+| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow | Protected admin flow |
+| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited |
+| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets |
+| Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) |
+| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation |
 
 ---
 
@@ -32,11 +33,17 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 
 - Responsive HTML/CSS interface.
 - Modular JavaScript with ES Modules.
+- Single-page navigation (fetch + content swap, no full reload) with a page cross-fade.
+- Sliding navigation indicator between tabs.
 - Palette cards loaded from the backend API.
 - Search by name, description, slug and tags.
+- Custom, centered search clear button with bold search text.
+- Staggered fade/slide-in animation for palette cards and empty states.
 - Tag filtering and sorting.
 - Custom dropdown UI.
 - Toast notifications and empty states.
+- Dynamic API base so the app also works over the LAN (view on a phone on the same Wi-Fi).
+- Admin-only footer links (API docs / Changelog).
 - Save/remove favorites connected to the logged-in user.
 - Account page with session controls and password change.
 - Admin navigation hidden for guests and regular users.
@@ -53,7 +60,7 @@ Frontend → Fetch API → FastAPI Backend → SQLite Database
 ### Backend
 
 - FastAPI backend.
-- SQLite database.
+- PostgreSQL database (psycopg 3).
 - SQLAlchemy models.
 - Pydantic validation.
 - Public palette API.
@@ -103,52 +110,29 @@ Palette/
 
 ---
 
-## Quick start
+## Quick start with Docker
 
-### Backend
-
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
-```
-
-Backend:
-
-```text
-http://localhost:8000
-```
-
-Swagger API docs:
-
-```text
-http://localhost:8000/docs
-```
-
-### Frontend
-
-Open a second terminal:
+Palette runs on PostgreSQL via Docker Compose — database, backend and static frontend
+together. This is the only supported way to run it (there is no SQLite / non-Docker mode).
 
 ```bash
-cd frontend
-python -m http.server 5500
+docker compose up --build
 ```
 
-Frontend:
+- Backend: `http://localhost:8000` (Swagger at `/docs`)
+- Frontend: `http://localhost:5500`
+- Database: PostgreSQL in the `db` service, data persisted in the `pgdata` volume.
 
-```text
-http://localhost:5500
-```
+`backend/.env` must exist (copy `backend/.env.example` and set a real `SECRET_KEY`).
+Compose sets `DATABASE_URL` to the Postgres service automatically. Stop with
+`docker compose down` (add `-v` to also drop the database volume).
 
 ### Tests
 
-Run the backend test suite from the `backend` directory:
+The test suite runs against a disposable PostgreSQL in its own Compose profile:
 
 ```bash
-cd backend
-python -m pytest
+docker compose --profile test run --rm tests
 ```
 
 ---
@@ -167,6 +151,10 @@ Use `backend/.env.example` as a template:
 SECRET_KEY=change-this-secret-key-before-sharing
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
+# DATABASE_URL is mandatory (PostgreSQL). Docker Compose sets it from the values below.
+POSTGRES_USER=palette
+POSTGRES_PASSWORD=palette
+POSTGRES_DB=palette
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
@@ -210,14 +198,16 @@ Do not commit:
 .git/
 backend/.venv/
 backend/.env
-backend/palette.db
+*.db
 __pycache__/
 *.pyc
+.claude/
+graphify-out/
 *.zip
-PATCH_README.md
 ```
 
-The repository should include `.env.example`, not `.env`.
+All of these are covered by `.gitignore`. The repository should include
+`.env.example`, not `.env`.
 
 ---
 
@@ -226,5 +216,5 @@ The repository should include `.env.example`, not `.env`.
 Current portfolio release:
 
 ```text
-v3.3.0
+v4.0.0
 ```

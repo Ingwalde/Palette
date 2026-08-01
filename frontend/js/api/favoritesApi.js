@@ -1,6 +1,6 @@
 import { getAccessToken } from "../utils/authStorage.js";
 
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = `http://${location.hostname}:8000/api`;
 
 let favoriteKeysCache = null;
 

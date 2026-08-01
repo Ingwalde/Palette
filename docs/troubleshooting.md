@@ -1,5 +1,7 @@
 # Troubleshooting
 
+Palette v4.0 runs on Docker Compose (PostgreSQL + backend + frontend).
+
 ## Backend is not available
 
 Frontend message:
@@ -8,14 +10,14 @@ Frontend message:
 Backend is not available
 ```
 
-Start the backend:
+Check the stack is up:
 
 ```bash
-cd backend
-python -m uvicorn app.main:app --reload
+docker compose ps
+docker compose logs backend
 ```
 
-Check:
+Then verify:
 
 ```text
 http://localhost:8000/docs
@@ -24,38 +26,34 @@ http://localhost:8000/api/palettes
 
 ---
 
-## ModuleNotFoundError: No module named 'jwt'
+## Backend refuses to start
 
-Install requirements:
+The app hard-fails at startup if configuration is missing:
+
+- `SECRET_KEY is missing or set to an insecure placeholder value` — set a strong
+  `SECRET_KEY` in `backend/.env` (`python -c "import secrets; print(secrets.token_urlsafe(48))"`).
+- `DATABASE_URL must be a PostgreSQL URL` — run via `docker compose up`, which sets it.
+
+---
+
+## Database connection errors
 
 ```bash
-cd backend
-python -m pip install -r requirements.txt
+docker compose logs db
+docker compose ps        # db should be "healthy"
 ```
 
-Or install PyJWT directly:
-
-```bash
-python -m pip install PyJWT
-```
-
-Do not install the wrong package with only `pip install jwt`.
+The backend `depends_on` the db healthcheck, so it waits for PostgreSQL. If the db is
+unhealthy, check the `POSTGRES_*` values in `backend/.env`.
 
 ---
 
 ## 401 Could not validate credentials
 
-Possible reasons:
+Possible reasons: token expired, backend restarted with a different `SECRET_KEY`, or
+stale auth in localStorage.
 
-- token expired;
-- token was deleted;
-- backend restarted with a different `SECRET_KEY`;
-- localStorage contains old auth data.
-
-Fix:
-
-- log out and log in again;
-- or clear browser localStorage keys:
+Fix: log out and log in again, or clear these localStorage keys:
 
 ```text
 palette:access-token
@@ -66,101 +64,51 @@ palette:user
 
 ## 403 Admin access is required
 
-You are logged in, but your user is not admin.
-
-Use the admin account from `.env` or create a new local database with an admin user.
-
-For local testing only:
-
-```text
-Delete backend/palette.db
-Restart backend
-Login with DEFAULT_ADMIN_USERNAME and DEFAULT_ADMIN_PASSWORD
-```
+You are logged in, but your user is not admin. Use the admin account from `backend/.env`
+(`DEFAULT_ADMIN_*`). To reseed a fresh admin, reset the database (below).
 
 ---
 
-## Username or email already registered
+## Reset the database
 
-The user already exists in the database.
-
-Options:
-
-- log in instead of registering;
-- use another username/email;
-- delete `backend/palette.db` for a clean local test reset.
+```bash
+docker compose down -v     # drops the pgdata volume
+docker compose up --build  # recreates schema, reseeds palettes + admin
+```
 
 ---
 
 ## Favorites not loading
 
-Favorites require login in v3.1.
-
-Check:
-
-- backend is running;
-- user is logged in;
-- token exists in localStorage;
-- `/api/favorites` works in Swagger with Bearer token.
+Favorites require login. Check: backend is running, user is logged in, token exists in
+localStorage, and `/api/favorites` works in Swagger with a Bearer token.
 
 ---
 
-## Admin tab is not visible
+## Admin tab / footer links not visible
 
-This is expected for:
-
-- guests;
-- regular users.
-
-Admin tab is visible only if:
-
-```text
-user.is_admin = true
-```
-
-Backend still protects admin endpoints even if someone manually opens `admin.html`.
+Expected for guests and regular users — the Admin tab and the footer API-docs/Changelog
+links are shown only when `user.is_admin = true`. The backend still protects admin
+endpoints even if `admin.html` is opened directly.
 
 ---
 
-## Changed password but login fails
+## Changes not showing in the browser
 
-Check:
-
-- you are using the new password;
-- the current database is the expected database;
-- backend was restarted from the `backend/` folder.
-
-For local testing reset:
-
-```text
-Delete backend/palette.db
-Restart backend
-```
-
----
-
-## PowerShell cannot activate virtual environment
-
-Run:
-
-```bash
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-Then:
-
-```bash
-.venv\Scripts\Activate.ps1
-```
+The dev nginx sends `no-store`, so a normal reload should fetch fresh files. If a change
+still does not appear, do a hard reload (DevTools → right-click reload → "Empty Cache and
+Hard Reload"). CSS assets are also tagged with `?v=<version>` and busted per release.
 
 ---
 
 ## Port already in use
 
-If port `8000` is busy, stop the old backend process with `Ctrl + C`.
+If `5500` or `8000` is taken (`WinError 10013` / bind error), stop whatever holds the
+port, or change the published port in `docker-compose.yml` (e.g. `"8001:8000"`).
 
-If port `5500` is busy, stop the old frontend server or use another port:
+---
 
-```bash
-python -m http.server 5501
-```
+## Viewing on a phone fails
+
+See `docs/setup.md` → "View on another device". Ensure the phone is on the same Wi-Fi,
+the phone origin is in `CORS_ORIGINS`, and the PC firewall allows inbound 5500/8000.

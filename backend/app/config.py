@@ -26,6 +26,22 @@ if SECRET_KEY in _INSECURE_SECRET_KEYS:
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
+# Database. PostgreSQL only, mandatory. The app is designed to run via Docker Compose,
+# which supplies DATABASE_URL (postgresql+psycopg://...). It refuses to start without a
+# PostgreSQL URL — there is no SQLite fallback.
+DATABASE_URL = os.getenv("DATABASE_URL", "")
+
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_URL is not set. Palette requires PostgreSQL and is meant to run via "
+        "Docker Compose (docker compose up). See docker-compose.yml / backend/.env.example."
+    )
+
+if not DATABASE_URL.startswith("postgresql"):
+    raise RuntimeError(
+        f"DATABASE_URL must be a PostgreSQL URL (postgresql+psycopg://...); got: {DATABASE_URL!r}"
+    )
+
 # Allowed browser origins for CORS (comma-separated). Defaults to the local
 # frontend dev server. Never use "*" together with credentials.
 CORS_ORIGINS = [

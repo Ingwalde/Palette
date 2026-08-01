@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Palette v3.3 admin panel protected by username and password authentication." />
+  <meta name="description" content="Palette v4.0 admin panel protected by username and password authentication." />
   <title>Palette | Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="css/base.css?v=4.0" />
+  <link rel="stylesheet" href="css/components.css?v=4.0" />
+  <link rel="stylesheet" href="css/pages.css?v=4.0" />
 </head>
 <body>
   <header class="site-header">
@@ -107,7 +107,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v3.3</p>
+        <p class="site-footer__eyebrow">Palette v4.0</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -119,7 +119,7 @@
         </div>
       </div>
 
-      <div class="site-footer__meta" aria-label="Project links">
+      <div class="site-footer__meta" data-admin-only hidden aria-label="Project links">
         <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API docs</a>
         <a href="changelog.html" target="_blank" rel="noreferrer">Changelog</a>
       </div>
@@ -130,6 +130,7 @@
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
   <script type="module" src="js/utils/authNav.js"></script>
+  <script type="module" src="js/router.js"></script>
   <script type="module" src="js/pages/admin.js"></script>
 </body>
 </html>

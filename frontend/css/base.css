@@ -1,3 +1,19 @@
+/* SPA content transition: fade <main> out/in on route change (js/router.js). */
+main.spa-fade {
+  transition: opacity 200ms ease;
+  will-change: opacity;
+}
+
+main.spa-fade--out {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main.spa-fade {
+    transition: none;
+  }
+}
+
 :root {
   --color-bg: #f7f2eb;
   --color-surface: #fffaf2;

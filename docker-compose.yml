@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-palette}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-palette}
+      POSTGRES_DB: ${POSTGRES_DB:-palette}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-palette} -d ${POSTGRES_DB:-palette}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: backend/.env
+    environment:
+      # Container-only DB URL (host `db` resolves on the compose network). Overrides
+      # the SQLite default so local non-Docker runs stay on SQLite.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-palette}:${POSTGRES_PASSWORD:-palette}@db:5432/${POSTGRES_DB:-palette}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "5500:80"
+    depends_on:
+      - backend
+
+  # --- Test profile: disposable PostgreSQL + pytest, run on demand ---
+  # docker compose --profile test run --rm tests
+  test-db:
+    image: postgres:16-alpine
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: palette
+      POSTGRES_PASSWORD: palette
+      POSTGRES_DB: palette_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U palette -d palette_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  tests:
+    build: ./backend
+    profiles: ["test"]
+    depends_on:
+      test-db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: test-secret-key-not-a-placeholder-0123456789
+      DATABASE_URL: postgresql+psycopg://palette:palette@test-db:5432/palette_test
+    volumes:
+      - ./backend:/app
+    command: ["python", "-m", "pytest", "-q"]
+
+volumes:
+  pgdata:

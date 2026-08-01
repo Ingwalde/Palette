@@ -1,5 +1,49 @@
 # Changelog
 
+## v4.0.0 — PostgreSQL, Docker and UX
+
+### Release summary
+
+Palette v4.0.0 moves the backend fully onto PostgreSQL, ships the whole stack as a
+Docker Compose setup (PostgreSQL, backend, static frontend), and adds a smoother
+single-page navigation experience with polished search and animations. SQLite and the
+non-Docker run mode are removed — Docker is the only supported way to run the app.
+
+### Added — backend & infrastructure
+
+- `docker-compose.yml` with `db` (PostgreSQL 16), `backend` and `frontend` (nginx) services.
+- `backend/Dockerfile` (python:3.12-slim, non-root) and `.dockerignore` files.
+- `DATABASE_URL` environment variable; `POSTGRES_USER/PASSWORD/DB` for the db service.
+- `psycopg[binary]` (psycopg 3) PostgreSQL driver.
+- Persistent `pgdata` volume for the database.
+- `test` Compose profile: pytest runs against a disposable PostgreSQL (`test-db`).
+- nginx dev config with no-store caching so edits show up on a plain reload.
+
+### Added — frontend & UX
+
+- Single-page navigation: nav tabs, Account and Changelog swap content via `fetch`
+  without a full reload (`js/router.js`), with a soft cross-fade of the page content.
+- The nav indicator slides between tabs within the same document.
+- Admin-only footer links (API docs / Changelog), hidden for guests and regular users.
+- Custom, centered search clear button on the home and export search fields.
+- Bold search text and page-styled placeholders.
+- Palette cards animate in with a staggered fade/slide; the empty state fades in.
+- Dynamic API base (`http://<host>:8000/api`) so the app also works over the LAN
+  (e.g. viewing on a phone on the same Wi-Fi).
+
+### Changed
+
+- Database engine is built from a mandatory `DATABASE_URL`; the app hard-fails at
+  startup if it is missing or not a `postgresql://` URL.
+- The test suite runs against PostgreSQL instead of in-memory SQLite.
+- API version bumped to `4.0.0`; frontend version strings updated to v4.0.
+
+### Removed
+
+- SQLite support and the local SQLite file (`palette.db`).
+- The SQLite-only startup `ALTER TABLE` migration helper (`run_startup_migrations`).
+- The non-Docker (venv + uvicorn + SQLite) run path from the docs.
+
 ## v3.3.0 — Security Hardening and Tests
 
 ### Release summary
