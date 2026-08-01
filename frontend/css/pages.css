@@ -62,6 +62,11 @@
   padding: 16px 0 36px;
 }
 
+/* Offset in-page anchor scrolling (e.g. Browse palettes) below the sticky header. */
+#palettes {
+  scroll-margin-top: 100px;
+}
+
 .section-heading {
   display: flex;
   align-items: flex-end;
