@@ -20,8 +20,10 @@ const PAGE_MODULES = {
 // swap); the rest re-run their module after the swap.
 const ROUTABLE_PAGES = new Set([...Object.keys(PAGE_MODULES), "changelog.html"]);
 
-const FADE_MS = 200;
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// The page transition is an opacity-only cross-fade (no movement), so it is safe to keep
+// even under reduced-motion — just shorter — instead of an abrupt instant swap.
+const FADE_MS = prefersReducedMotion ? 140 : 280;
 
 function pageOf(pathname) {
   return pathname.split("/").pop() || "index.html";
@@ -34,7 +36,7 @@ function delay(ms) {
 async function loadPage(pathname, { push }) {
   const page = pageOf(pathname);
   const currentMain = document.querySelector("main");
-  const animate = !prefersReducedMotion && currentMain;
+  const animate = Boolean(currentMain);
 
   // Start fading the old content out immediately, while the fetch runs in parallel.
   if (animate) {
