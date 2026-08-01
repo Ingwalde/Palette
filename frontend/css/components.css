@@ -387,9 +387,19 @@ input[type="search"] {
 }
 
 .color-swatch:hover::after,
-.color-swatch:focus-visible::after {
+.color-swatch:focus-visible::after,
+.color-swatch--revealed::after {
   translate: -50% 0;
   opacity: 1;
+}
+
+/* On touch devices hover "sticks", so reveal the hex only on an explicit tap
+   (.color-swatch--revealed, toggled in paletteCard.js) — not on hover. */
+@media (hover: none) {
+  .color-swatch:hover::after {
+    translate: -50% 8px;
+    opacity: 0;
+  }
 }
 
 .palette-card__tags {

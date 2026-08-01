@@ -52,6 +52,15 @@ export function createPaletteCard(palette, options = {}) {
     });
 
     swatch.addEventListener("click", async () => {
+      // Toggle the hex tooltip on tap (touch has no reliable hover); keep only one open.
+      const wasRevealed = swatch.classList.contains("color-swatch--revealed");
+      document
+        .querySelectorAll(".color-swatch--revealed")
+        .forEach((other) => other.classList.remove("color-swatch--revealed"));
+      if (!wasRevealed) {
+        swatch.classList.add("color-swatch--revealed");
+      }
+
       await copyToClipboard(color);
       showToast(`${color} copied`);
     });
