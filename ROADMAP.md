@@ -91,14 +91,17 @@ Status: completed.
 - Dynamic API base for LAN access (view on a phone on the same network).
 - Admin-only footer links; nginx no-store dev caching.
 
-## v4.1 — Mobile fixes and CI
+## v4.1 — Mobile fixes, UX polish and CI
 
 Status: completed.
 
 - GitHub Actions CI: backend test suite runs on every pull request and push to `main`.
-- Mobile fix: navigation bar wraps instead of clipping tabs on small screens.
-- Mobile fix: export "Generated output" block wraps and shrinks on mobile.
-- Mobile fix: hex tooltips on color swatches reveal on tap for touch devices.
+- Single-row mobile navigation with a softer highlight pill and header spacing.
+- Smoother SPA transitions; restored body class on swap; native in-page anchor scroll.
+- Search polish (clear button, placeholder), no native select flash on load.
+- Card animations, one-line contrast badge, dark button text (no iOS blue).
+- Smooth, non-stacking toasts and tap-to-reveal swatch hex tooltips.
+- Export "Generated output" wraps and shrinks on mobile.
 
 ## v4.2 — Email Verification
 

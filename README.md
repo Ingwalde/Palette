@@ -2,7 +2,7 @@
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.1** adds GitHub Actions CI (the backend test suite runs on every pull request and push to `main`) and fixes three mobile display issues on small screens. It builds on **4.0**, which moved the backend fully onto **PostgreSQL** and packaged the whole stack with **Docker Compose** — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.1** adds GitHub Actions CI (the backend test suite runs on every pull request and push to `main`) and a broad pass of mobile and UX fixes — single-row navigation, smoother SPA transitions, polished search and swatch/toast feedback. It builds on **4.0**, which moved the backend fully onto **PostgreSQL** and packaged the whole stack with **Docker Compose** — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -24,7 +24,7 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 | Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets | Same, plus containerized secrets |
 | Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) | pytest suite + CI |
 | Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
-| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes + UX polish |
 
 ---
 
