@@ -26,6 +26,15 @@ if SECRET_KEY in _INSECURE_SECRET_KEYS:
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
+# Interactive API docs (Swagger UI / ReDoc). Disabled by default so they are not
+# exposed in production. Enable for local development with ENABLE_API_DOCS=true.
+ENABLE_API_DOCS = os.getenv("ENABLE_API_DOCS", "false").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
 # Database. PostgreSQL only, mandatory. The app is designed to run via Docker Compose,
 # which supplies DATABASE_URL (postgresql+psycopg://...). It refuses to start without a
 # PostgreSQL URL — there is no SQLite fallback.
