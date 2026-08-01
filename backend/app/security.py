@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import os
 from datetime import datetime, timedelta, timezone
 
@@ -39,12 +41,10 @@ def verify_password(password: str, stored_hash: str) -> bool:
         iterations=int(iterations_raw),
     )
 
-    return password_hash == expected_hash
+    return hmac.compare_digest(password_hash, expected_hash)
 
 
 def _pbkdf2_hash(password: str, salt: str, iterations: int = HASH_ITERATIONS) -> str:
-    import hashlib
-
     return hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),

@@ -4,3 +4,8 @@ sqlalchemy
 pydantic
 python-dotenv
 PyJWT
+slowapi
+
+# Testing
+pytest
+httpx

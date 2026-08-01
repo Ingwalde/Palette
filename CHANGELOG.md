@@ -1,5 +1,35 @@
 # Changelog
 
+## v3.3.0 — Security Hardening and Tests
+
+### Release summary
+
+Palette v3.3.0 hardens the backend and adds a first automated test suite. It makes `SECRET_KEY` mandatory, replaces wildcard CORS with an explicit allowlist, rate-limits authentication endpoints, switches to timing-safe password comparison, moves timestamps to timezone-aware UTC, fixes login by email, and synchronises version strings across the project to 3.3.
+
+### Added
+
+- Login and registration rate limiting with slowapi (`5/minute` login, `10/hour` register).
+- Explicit `CORS_ORIGINS` allowlist environment variable.
+- Automated backend test suite with pytest: `test_security`, `test_auth_api`, `test_crud`, `test_palettes_api`.
+- `backend/pytest.ini` and `backend/tests/` package.
+- README test instructions and mandatory-`SECRET_KEY` documentation.
+
+### Changed
+
+- `SECRET_KEY` is now mandatory; the app refuses to start with a missing or placeholder value.
+- CORS `allow_origins` no longer uses `"*"`; origins come from `CORS_ORIGINS`.
+- Timestamps (`created_at`, `updated_at`) are timezone-aware UTC instead of naive `datetime.utcnow`.
+- Backend API version bumped to `3.3.0`; frontend version strings updated to v3.3.
+
+### Fixed
+
+- Login by email returned `422` because `UserLogin` inherited the strict username pattern validator; it now accepts a username or an email.
+
+### Security
+
+- Password comparison uses `hmac.compare_digest` (timing-safe) instead of `==`.
+- Loud startup warning when `DEFAULT_ADMIN_PASSWORD` is still a placeholder.
+
 ## v3.2.0 — Export Workflow and UI Polish
 
 ### Release summary

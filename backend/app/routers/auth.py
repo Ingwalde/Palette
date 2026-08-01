@@ -1,15 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..database import get_db
+from ..rate_limit import limiter
 from ..security import authenticate_user, create_access_token, get_current_user, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
-def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("10/hour")
+def register_user(request: Request, user_data: schemas.UserCreate, db: Session = Depends(get_db)):
     existing_user = crud.get_user_by_username(db, user_data.username)
 
     if existing_user:
@@ -35,7 +37,8 @@ def register_user(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.Token)
-def login_user(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login_user(request: Request, login_data: schemas.UserLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, login_data.username, login_data.password)
 
     if user is None:
