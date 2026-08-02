@@ -44,6 +44,19 @@ export function loginUser(payload) {
   });
 }
 
+export function verifyEmail(token) {
+  return apiRequest(`/auth/verify?token=${encodeURIComponent(token)}`, {
+    method: "GET"
+  });
+}
+
+export function resendVerification(email) {
+  return apiRequest("/auth/resend-verification", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  });
+}
+
 export function getCurrentUser() {
   const token = getAccessToken();
 
