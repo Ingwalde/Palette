@@ -112,6 +112,15 @@ Status: completed.
 - SMTP configuration (dev via Mailtrap, prod via a mail provider).
 - Password reset by email.
 
+## v4.3 — Account Management and Home Tags
+
+Status: completed.
+
+- Show the account email in a clear labeled field on the account page.
+- Delete-account flow (`DELETE /api/auth/me`) removing the user and their favorites,
+  guarded so the last admin cannot be deleted.
+- Home page shows ten random tag filters instead of the full tag list.
+
 Deferred to a later release:
 
 - Better logging.

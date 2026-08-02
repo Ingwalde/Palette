@@ -1,8 +1,8 @@
-# Palette v4.2 — Full-Stack Color Palette App
+# Palette v4.3 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.2** adds email verification on registration: new accounts receive a Resend-backed verification link, a friendly verify page confirms the address, an "email not verified" banner with a resend button appears on the account page, and login is still allowed while unverified. It builds on **4.1** (GitHub Actions CI and a broad pass of mobile/UX fixes) and the **4.1.2** production hardening (proxy-aware rate limiting, API docs hidden by default), on top of the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.3** rounds out account management: the account page shows your email in a clear labeled field and adds a "Delete account" flow (removing the account and its favorites), and the home page now shows a lighter, rotating set of ten random tag filters. It builds on **4.2** (email verification with verify-link auto-login), **4.1** (CI and mobile/UX fixes), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -12,19 +12,19 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 
 ## What changed by version
 
-| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 | v4.0 | v4.1 | v4.2 |
-|---|---|---|---|---|---|---|---|---|
-| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened | Containerized full-stack | Containerized full-stack | Containerized full-stack |
-| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database | PostgreSQL only | PostgreSQL only | PostgreSQL only |
-| Deployment | None | Local scripts | Local scripts | Local scripts | Local scripts | Docker Compose | Docker Compose | Docker Compose |
-| CI | None | None | None | None | None | None | GitHub Actions (pytest) | GitHub Actions (pytest) |
-| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites |
-| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow |
-| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Email verification on registration |
-| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets | Same, plus containerized secrets | Same, plus proxy-aware rate limiting |
-| Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) | pytest suite + CI | pytest suite + CI |
-| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
-| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes + UX polish | Email verify page + resend banner |
+| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 | v4.0 | v4.1 | v4.2 | v4.3 |
+|---|---|---|---|---|---|---|---|---|---|
+| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened | Containerized full-stack | Containerized full-stack | Containerized full-stack | Containerized full-stack |
+| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database | PostgreSQL only | PostgreSQL only | PostgreSQL only | PostgreSQL only |
+| Deployment | None | Local scripts | Local scripts | Local scripts | Local scripts | Docker Compose | Docker Compose | Docker Compose | Docker Compose |
+| CI | None | None | None | None | None | None | GitHub Actions (pytest) | GitHub Actions (pytest) | GitHub Actions (pytest) |
+| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites |
+| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow |
+| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Email verification on registration | Email verification + delete account |
+| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets | Same, plus containerized secrets | Same, plus proxy-aware rate limiting | Same, plus proxy-aware rate limiting |
+| Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) | pytest suite + CI | pytest suite + CI | pytest suite + CI |
+| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes + UX polish | Email verify page + resend banner | Account email field, delete account, random home tags |
 
 ---
 
@@ -181,6 +181,7 @@ GET    /api/palettes
 POST   /api/auth/register
 POST   /api/auth/login
 GET    /api/auth/me
+DELETE /api/auth/me
 GET    /api/auth/verify?token=...
 POST   /api/auth/resend-verification
 PUT    /api/auth/password
@@ -219,5 +220,5 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.2.1
+v4.3.0
 ```

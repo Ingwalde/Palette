@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.3.0 — Account email, delete account, random home tags
+
+### Added
+
+- Delete account: `DELETE /api/auth/me` removes the current account and its favorites
+  (204). A "Danger zone" button on the account page asks for confirmation, then deletes,
+  logs out and returns to the home page. The last remaining admin account cannot be
+  deleted (guarded server-side).
+
+### Changed
+
+- The account page shows the signed-in email in a clear labeled field instead of faint
+  muted text.
+- The home page tag filter now shows `All` plus up to ten random tags, instead of the full
+  tag list, for a lighter and rotating set of filters.
+
 ## v4.2.1 — Verify page polish and auto-login
 
 ### Changed

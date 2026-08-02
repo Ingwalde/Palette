@@ -30,8 +30,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.2 with authentication, user-based favorites, PostgreSQL, Docker and CI.",
-    version="4.2.1",
+    description="Backend API for Palette v4.3 with authentication, user-based favorites, PostgreSQL, Docker and CI.",
+    version="4.3.0",
     docs_url="/api/docs" if ENABLE_API_DOCS else None,
     redoc_url="/api/redoc" if ENABLE_API_DOCS else None,
     openapi_url="/api/openapi.json" if ENABLE_API_DOCS else None,
@@ -59,7 +59,7 @@ app.include_router(favorites.router, prefix="/api")
 def root():
     return {
         "name": "Palette API",
-        "version": "4.2.1",
+        "version": "4.3.0",
         "docs": "/api/docs",
         "health": "/health",
     }
