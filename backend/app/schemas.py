@@ -89,6 +89,13 @@ class PaletteRead(PaletteBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PaletteList(BaseModel):
+    items: list[PaletteRead]
+    total: int
+    limit: int
+    offset: int
+
+
 class UserBase(BaseModel):
     username: str = Field(min_length=3, max_length=40)
 

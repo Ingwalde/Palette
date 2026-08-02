@@ -22,8 +22,11 @@ export function buildPaletteQuery(params = {}) {
   return queryString ? `?${queryString}` : "";
 }
 
-export function getPalettes(params = {}) {
-  return apiRequest(`/palettes${buildPaletteQuery(params)}`);
+export async function getPalettes(params = {}) {
+  // The list endpoint returns a paginated envelope { items, total, limit, offset };
+  // callers only need the items array.
+  const data = await apiRequest(`/palettes${buildPaletteQuery(params)}`);
+  return data.items;
 }
 
 export function getTags() {

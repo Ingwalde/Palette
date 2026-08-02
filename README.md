@@ -177,17 +177,17 @@ Do not commit `backend/.env`.
 ## API overview
 
 ```text
-GET    /api/palettes
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/auth/me
-DELETE /api/auth/me
-GET    /api/auth/verify?token=...
-POST   /api/auth/resend-verification
-PUT    /api/auth/password
-GET    /api/favorites
-POST   /api/favorites/{slug}
-DELETE /api/favorites/{slug}
+GET    /api/v1/palettes
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+GET    /api/v1/auth/me
+DELETE /api/v1/auth/me
+GET    /api/v1/auth/verify?token=...
+POST   /api/v1/auth/resend-verification
+PUT    /api/v1/auth/password
+GET    /api/v1/favorites
+POST   /api/v1/favorites/{slug}
+DELETE /api/v1/favorites/{slug}
 ```
 
 Admin actions require a Bearer token and `is_admin = true`.

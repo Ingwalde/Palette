@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
@@ -8,8 +8,9 @@ from ..security import require_admin_user
 router = APIRouter(prefix="/palettes", tags=["palettes"])
 
 
-@router.get("", response_model=list[schemas.PaletteRead])
+@router.get("", response_model=schemas.PaletteList)
 def read_palettes(
+    response: Response,
     search: str | None = Query(
         default=None, description="Search by name, description, slug or tag"
     ),
@@ -19,7 +20,11 @@ def read_palettes(
     offset: int = Query(default=0, ge=0, description="Number of results to skip"),
     db: Session = Depends(get_db),
 ):
-    return crud.get_palettes(db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset)
+    items = crud.get_palettes(db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset)
+    total = crud.count_palettes(db=db, search=search, tag=tag)
+    response.headers["X-Total-Count"] = str(total)
+    # Returned as a dict; FastAPI serialises it through the PaletteList response_model.
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/tags", response_model=list[str])

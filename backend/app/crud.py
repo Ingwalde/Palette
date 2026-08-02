@@ -41,14 +41,7 @@ def get_palette_by_slug(db: Session, slug: str) -> models.Palette | None:
     return db.query(models.Palette).filter(models.Palette.slug == slug).first()
 
 
-def get_palettes(
-    db: Session,
-    search: str | None = None,
-    tag: str | None = None,
-    sort: str = "default",
-    limit: int | None = None,
-    offset: int = 0,
-) -> list[models.Palette]:
+def _filtered_palettes_query(db: Session, search: str | None, tag: str | None):
     query = db.query(models.Palette)
 
     if search:
@@ -67,6 +60,19 @@ def get_palettes(
         # JSONB containment (@>) uses the GIN index: palettes whose tags include the value.
         query = query.filter(models.Palette.tags.contains([tag_value]))
 
+    return query
+
+
+def get_palettes(
+    db: Session,
+    search: str | None = None,
+    tag: str | None = None,
+    sort: str = "default",
+    limit: int | None = None,
+    offset: int = 0,
+) -> list[models.Palette]:
+    query = _filtered_palettes_query(db, search, tag)
+
     if sort == "az":
         query = query.order_by(func.lower(models.Palette.name).asc())
     elif sort == "za":
@@ -80,6 +86,10 @@ def get_palettes(
         query = query.limit(limit)
 
     return query.all()
+
+
+def count_palettes(db: Session, search: str | None = None, tag: str | None = None) -> int:
+    return _filtered_palettes_query(db, search, tag).count()
 
 
 def get_tags(db: Session) -> list[str]:

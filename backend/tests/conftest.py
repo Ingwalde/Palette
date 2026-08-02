@@ -87,7 +87,7 @@ def _make_user(db, username, email, password, is_admin=False):
 def admin_token(client, db_session):
     _make_user(db_session, "adminuser", "admin@test.com", "strong-password", is_admin=True)
     resp = client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"username": "adminuser", "password": "strong-password"},
     )
     return resp.json()["access_token"]
@@ -97,7 +97,7 @@ def admin_token(client, db_session):
 def user_token(client, db_session):
     _make_user(db_session, "normaluser", "user@test.com", "strong-password")
     resp = client.post(
-        "/api/auth/login",
+        "/api/v1/auth/login",
         json={"username": "normaluser", "password": "strong-password"},
     )
     return resp.json()["access_token"]

@@ -1,11 +1,16 @@
 import logging
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
 from .database import SessionLocal, run_migrations
@@ -46,7 +51,7 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
@@ -57,9 +62,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api")
-app.include_router(palettes.router, prefix="/api")
-app.include_router(favorites.router, prefix="/api")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(palettes.router, prefix="/api/v1")
+app.include_router(favorites.router, prefix="/api/v1")
+
+
+def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse:
+    # RFC 7807 problem+json. Keeps `detail` so existing clients keep working.
+    return JSONResponse(
+        status_code=status_code,
+        media_type="application/problem+json",
+        content={
+            "type": "about:blank",
+            "title": title or HTTPStatus(status_code).phrase,
+            "status": status_code,
+            "detail": jsonable_encoder(detail),
+        },
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+def _http_exception_handler(request, exc: StarletteHTTPException) -> JSONResponse:
+    response = _problem(exc.status_code, exc.detail)
+    if exc.headers:  # preserve e.g. WWW-Authenticate on 401
+        response.headers.update(exc.headers)
+    return response
+
+
+@app.exception_handler(RequestValidationError)
+def _validation_exception_handler(request, exc: RequestValidationError) -> JSONResponse:
+    return _problem(HTTPStatus.UNPROCESSABLE_ENTITY, exc.errors(), title="Validation Error")
 
 
 @app.get("/")
