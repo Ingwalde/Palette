@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,17 +7,23 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from .config import CORS_ORIGINS, ENABLE_API_DOCS
-from .database import Base, SessionLocal, engine, run_startup_migrations
+from .config import settings
+from .database import SessionLocal, run_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes
 from .seed import seed_default_admin_user, seed_default_palettes
 
+# Configure application logging once at import so every module's getLogger(...) shares a
+# consistent format and level (overridable with the LOG_LEVEL env var).
+logging.basicConfig(
+    level=getattr(logging, settings.log_level.upper(), logging.INFO),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    run_startup_migrations()
+    run_migrations()
 
     db = SessionLocal()
     try:
@@ -30,11 +37,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.3 with authentication, user-based favorites, PostgreSQL, Docker and CI.",
+    description="Backend API for Palette v4.3 with auth, favorites, PostgreSQL and Docker.",
     version="4.3.0",
-    docs_url="/api/docs" if ENABLE_API_DOCS else None,
-    redoc_url="/api/redoc" if ENABLE_API_DOCS else None,
-    openapi_url="/api/openapi.json" if ENABLE_API_DOCS else None,
+    docs_url="/api/docs" if settings.enable_api_docs else None,
+    redoc_url="/api/redoc" if settings.enable_api_docs else None,
+    openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
     lifespan=lifespan,
 )
 
@@ -44,7 +51,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

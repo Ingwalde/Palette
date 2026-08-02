@@ -1,89 +1,101 @@
 import logging
-import os
+from typing import Annotated
 
-from dotenv import load_dotenv
-
-load_dotenv()
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 logger = logging.getLogger("palette.config")
 
-# SECRET_KEY is mandatory. The app must not boot with a missing or placeholder
-# key, otherwise issued JWTs would be trivially forgeable.
+# Boot-time guards: these placeholder values must never reach production.
 _INSECURE_SECRET_KEYS = {
     "",
     "change-this-dev-secret-key",
     "change-this-secret-key-before-sharing",
 }
-
-SECRET_KEY = os.getenv("SECRET_KEY", "")
-
-if SECRET_KEY in _INSECURE_SECRET_KEYS:
-    raise RuntimeError(
-        "SECRET_KEY is missing or set to an insecure placeholder value. "
-        "Set a strong, unique SECRET_KEY in backend/.env before starting the app. "
-        "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
-    )
-
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
-
-# Interactive API docs (Swagger UI / ReDoc). Disabled by default so they are not
-# exposed in production. Enable for local development with ENABLE_API_DOCS=true.
-ENABLE_API_DOCS = os.getenv("ENABLE_API_DOCS", "false").strip().lower() in {
-    "1",
-    "true",
-    "yes",
-    "on",
-}
-
-# Database. PostgreSQL only, mandatory. The app is designed to run via Docker Compose,
-# which supplies DATABASE_URL (postgresql+psycopg://...). It refuses to start without a
-# PostgreSQL URL — there is no SQLite fallback.
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL is not set. Palette requires PostgreSQL and is meant to run via "
-        "Docker Compose (docker compose up). See docker-compose.yml / backend/.env.example."
-    )
-
-if not DATABASE_URL.startswith("postgresql"):
-    raise RuntimeError(
-        f"DATABASE_URL must be a PostgreSQL URL (postgresql+psycopg://...); got: {DATABASE_URL!r}"
-    )
-
-# Allowed browser origins for CORS (comma-separated). Defaults to the local
-# frontend dev server. Never use "*" together with credentials.
-CORS_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost:5500,http://127.0.0.1:5500",
-    ).split(",")
-    if origin.strip()
-]
-
-# Email verification (Resend). When RESEND_API_KEY is not set, the app logs the
-# verification link to the console instead of sending a real email (local dev).
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
-EMAIL_FROM = os.getenv("EMAIL_FROM", "Palette <onboarding@resend.dev>")
-
-# Public base URL used to build links in outgoing emails (the verification link points
-# at the frontend verify page). No trailing slash.
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:5500").rstrip("/")
-
-# How long an email verification link stays valid.
-EMAIL_VERIFICATION_EXPIRE_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24"))
-
-DEFAULT_ADMIN_USERNAME = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
-DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@palette.local")
-DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")
-
-# First-run seeding needs a password, so we do not hard-fail here, but a loud
-# warning is emitted when the placeholder value is still in use.
 _INSECURE_ADMIN_PASSWORDS = {"admin123", "change-this-admin-password"}
 
-if DEFAULT_ADMIN_PASSWORD in _INSECURE_ADMIN_PASSWORDS:
-    logger.warning(
-        "DEFAULT_ADMIN_PASSWORD is still set to a placeholder value. "
-        "Change it in backend/.env and rotate the seeded admin password."
-    )
+
+class Settings(BaseSettings):
+    """Typed, validated application settings.
+
+    Docker Compose injects these from ``backend/.env``; pydantic-settings reads them from
+    the process environment (case-insensitive). Invalid values fail fast at startup.
+    """
+
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+
+    # Security
+    secret_key: str = ""
+    access_token_expire_minutes: int = 1440
+    email_verification_expire_hours: int = 24
+    enable_api_docs: bool = False
+    log_level: str = "INFO"
+
+    # Database — PostgreSQL only, mandatory (Compose supplies it).
+    database_url: str = ""
+
+    # Allowed browser origins for CORS (comma-separated in the env var). Never "*".
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+    ]
+
+    # Email verification (Resend). Without a key the app logs the link instead of sending.
+    resend_api_key: str = ""
+    email_from: str = "Palette <onboarding@resend.dev>"
+    public_base_url: str = "http://localhost:5500"
+
+    # First-run admin seed.
+    default_admin_username: str = "admin"
+    default_admin_email: str = "admin@palette.local"
+    default_admin_password: str = "admin123"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, value):
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
+    @field_validator("public_base_url")
+    @classmethod
+    def _strip_trailing_slash(cls, value: str) -> str:
+        return value.rstrip("/")
+
+    @field_validator("secret_key")
+    @classmethod
+    def _require_strong_secret(cls, value: str) -> str:
+        if value in _INSECURE_SECRET_KEYS:
+            raise ValueError(
+                "SECRET_KEY is missing or set to an insecure placeholder value. Set a "
+                "strong, unique SECRET_KEY in backend/.env. Generate one with: "
+                'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+        return value
+
+    @field_validator("database_url")
+    @classmethod
+    def _require_postgresql(cls, value: str) -> str:
+        if not value:
+            raise ValueError(
+                "DATABASE_URL is not set. Palette requires PostgreSQL and runs via Docker "
+                "Compose (docker compose up). See docker-compose.yml / backend/.env.example."
+            )
+        if not value.startswith("postgresql"):
+            raise ValueError(
+                f"DATABASE_URL must be a PostgreSQL URL (postgresql+psycopg://...); got: {value!r}"
+            )
+        return value
+
+    @field_validator("default_admin_password")
+    @classmethod
+    def _warn_placeholder_admin_password(cls, value: str) -> str:
+        if value in _INSECURE_ADMIN_PASSWORDS:
+            logger.warning(
+                "DEFAULT_ADMIN_PASSWORD is still set to a placeholder value. "
+                "Change it in backend/.env and rotate the seeded admin password."
+            )
+        return value
+
+
+settings = Settings()

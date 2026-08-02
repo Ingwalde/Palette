@@ -1,10 +1,15 @@
-from sqlalchemy import create_engine, text
+from pathlib import Path
+
+import alembic.command as command
+from alembic.config import Config
+from alembic.runtime.migration import MigrationContext
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-from .config import DATABASE_URL
+from .config import settings
 
 # PostgreSQL only (config guarantees a postgresql:// URL).
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(settings.database_url, pool_pre_ping=True)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -13,6 +18,8 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+_ALEMBIC_INI = Path(__file__).resolve().parent.parent / "alembic.ini"
 
 
 def get_db():
@@ -23,18 +30,29 @@ def get_db():
         db.close()
 
 
-def run_startup_migrations() -> None:
-    """Idempotent schema migrations for already-existing databases.
+def _alembic_config() -> Config:
+    cfg = Config(str(_ALEMBIC_INI))
+    # Absolute script location so migrations resolve regardless of the working directory.
+    cfg.set_main_option("script_location", str(_ALEMBIC_INI.parent / "alembic"))
+    cfg.set_main_option("sqlalchemy.url", settings.database_url)
+    return cfg
 
-    ``Base.metadata.create_all`` only adds columns to tables it creates fresh; it never
-    ALTERs a table that already exists. Columns introduced after the ``users`` table was
-    first created must be added explicitly. ``ADD COLUMN IF NOT EXISTS`` makes this safe
-    to run on every startup (PostgreSQL).
+
+def run_migrations() -> None:
+    """Bring the database schema to head, safely adopting a pre-Alembic database.
+
+    A database that predates Alembic (its tables exist but there is no Alembic version row)
+    is stamped at the baseline and then upgraded. The migrations after the baseline are
+    written idempotently — ``ADD COLUMN IF NOT EXISTS`` and a guard that skips the JSONB
+    conversion when the old columns are already gone — so upgrading an existing database
+    whose schema is ahead of the baseline is safe. A fresh database has no tables and is
+    simply upgraded from scratch.
     """
-    statements = (
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ",
-    )
-    with engine.begin() as connection:
-        for statement in statements:
-            connection.execute(text(statement))
+    cfg = _alembic_config()
+    with engine.connect() as connection:
+        current = MigrationContext.configure(connection).get_current_revision()
+        has_users = inspect(connection).has_table("users")
+
+    if has_users and current is None:
+        command.stamp(cfg, "0001_initial")
+    command.upgrade(cfg, "head")

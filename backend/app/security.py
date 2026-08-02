@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -10,7 +10,7 @@ from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
 from . import crud, models
-from .config import ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_EXPIRE_HOURS, SECRET_KEY
+from .config import settings
 from .database import get_db
 
 ALGORITHM = "HS256"
@@ -71,31 +71,29 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
     return user
 
 
+def _encode_token(claims: dict, expires_delta: timedelta) -> str:
+    payload = {**claims, "exp": datetime.now(UTC) + expires_delta}
+    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
+
+
 def create_access_token(user: models.User) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {
-        "sub": str(user.id),
-        "username": user.username,
-        "is_admin": user.is_admin,
-        "exp": expire,
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return _encode_token(
+        {"sub": str(user.id), "username": user.username, "is_admin": user.is_admin},
+        timedelta(minutes=settings.access_token_expire_minutes),
+    )
 
 
 def create_email_verification_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
-    payload = {
-        "sub": str(user_id),
-        "purpose": EMAIL_VERIFICATION_PURPOSE,
-        "exp": expire,
-    }
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    return _encode_token(
+        {"sub": str(user_id), "purpose": EMAIL_VERIFICATION_PURPOSE},
+        timedelta(hours=settings.email_verification_expire_hours),
+    )
 
 
 def decode_email_verification_token(token: str) -> int | None:
     """Return the user id from a valid, unexpired email verification token, else None."""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         if payload.get("purpose") != EMAIL_VERIFICATION_PURPOSE:
             return None
         return int(payload["sub"])
@@ -114,7 +112,7 @@ def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
         if payload.get("purpose") is not None:
             raise credentials_exception
