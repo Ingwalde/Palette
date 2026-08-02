@@ -50,7 +50,7 @@ def remove_favorite(
         raise HTTPException(status_code=404, detail="Palette not found")
 
     crud.remove_user_favorite(db, current_user, palette)
-    return None
+    return
 
 
 @router.delete("")

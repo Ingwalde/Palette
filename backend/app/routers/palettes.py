@@ -10,12 +10,16 @@ router = APIRouter(prefix="/palettes", tags=["palettes"])
 
 @router.get("", response_model=list[schemas.PaletteRead])
 def read_palettes(
-    search: str | None = Query(default=None, description="Search by name, description, slug or tag"),
+    search: str | None = Query(
+        default=None, description="Search by name, description, slug or tag"
+    ),
     tag: str | None = Query(default=None, description="Filter by tag"),
     sort: str = Query(default="default", pattern="^(default|az|za)$"),
+    limit: int = Query(default=100, ge=1, le=500, description="Max results to return"),
+    offset: int = Query(default=0, ge=0, description="Number of results to skip"),
     db: Session = Depends(get_db),
 ):
-    return crud.get_palettes(db=db, search=search, tag=tag, sort=sort)
+    return crud.get_palettes(db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset)
 
 
 @router.get("/tags", response_model=list[str])
@@ -37,7 +41,7 @@ def read_palette(slug: str, db: Session = Depends(get_db)):
 def create_palette(
     palette_data: schemas.PaletteCreate,
     db: Session = Depends(get_db),
-    _ = Depends(require_admin_user),
+    _=Depends(require_admin_user),
 ):
     return crud.create_palette(db, palette_data)
 
@@ -47,7 +51,7 @@ def update_palette(
     palette_id: int,
     palette_data: schemas.PaletteUpdate,
     db: Session = Depends(get_db),
-    _ = Depends(require_admin_user),
+    _=Depends(require_admin_user),
 ):
     palette = crud.get_palette(db, palette_id)
 
@@ -61,7 +65,7 @@ def update_palette(
 def delete_palette(
     palette_id: int,
     db: Session = Depends(get_db),
-    _ = Depends(require_admin_user),
+    _=Depends(require_admin_user),
 ):
     palette = crud.get_palette(db, palette_id)
 
@@ -69,4 +73,4 @@ def delete_palette(
         raise HTTPException(status_code=404, detail="Palette not found")
 
     crud.delete_palette(db, palette)
-    return None
+    return

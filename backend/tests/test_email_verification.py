@@ -52,9 +52,7 @@ def test_email_token_rejected_as_bearer(client, db_session):
 
 def test_login_allowed_when_unverified(client):
     _register(client)
-    resp = client.post(
-        "/api/auth/login", json={"username": "carol", "password": "strong-password"}
-    )
+    resp = client.post("/api/auth/login", json={"username": "carol", "password": "strong-password"})
     assert resp.status_code == 200
 
 

@@ -120,9 +120,17 @@ def read_current_user(current_user=Depends(get_current_user)):
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 def delete_account(
+    payload: schemas.AccountDeleteRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    # Re-authenticate before an irreversible account deletion.
+    if not verify_password(payload.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password is incorrect",
+        )
+
     # Refuse to delete the last admin, otherwise the admin panel becomes unreachable.
     if crud.is_only_admin(db, current_user):
         raise HTTPException(
@@ -131,6 +139,7 @@ def delete_account(
         )
 
     crud.delete_user(db, current_user)
+
 
 @router.put("/password", response_model=schemas.UserRead)
 def change_password(
@@ -151,4 +160,3 @@ def change_password(
     )
 
     return current_user
-

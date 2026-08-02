@@ -1,7 +1,8 @@
 import re
-from datetime import datetime, timezone
-from typing import Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
 
+from sqlalchemy import Text, cast, func, or_
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -45,42 +46,50 @@ def get_palettes(
     search: str | None = None,
     tag: str | None = None,
     sort: str = "default",
+    limit: int | None = None,
+    offset: int = 0,
 ) -> list[models.Palette]:
-    palettes = db.query(models.Palette).all()
+    query = db.query(models.Palette)
 
     if search:
-        search_value = search.lower().strip()
-        palettes = [
-            palette for palette in palettes
-            if search_value in " ".join([
-                palette.name,
-                palette.description,
-                palette.slug,
-                " ".join(palette.tags),
-            ]).lower()
-        ]
+        like = f"%{search.strip()}%"
+        query = query.filter(
+            or_(
+                models.Palette.name.ilike(like),
+                models.Palette.description.ilike(like),
+                models.Palette.slug.ilike(like),
+                cast(models.Palette.tags, Text).ilike(like),
+            )
+        )
 
     if tag:
-        tag_value = tag.lower().strip().replace("#", "")
-        palettes = [palette for palette in palettes if tag_value in palette.tags]
+        tag_value = tag.strip().lower().replace("#", "")
+        # JSONB containment (@>) uses the GIN index: palettes whose tags include the value.
+        query = query.filter(models.Palette.tags.contains([tag_value]))
 
     if sort == "az":
-        palettes.sort(key=lambda palette: palette.name.lower())
+        query = query.order_by(func.lower(models.Palette.name).asc())
     elif sort == "za":
-        palettes.sort(key=lambda palette: palette.name.lower(), reverse=True)
+        query = query.order_by(func.lower(models.Palette.name).desc())
     else:
-        palettes.sort(key=lambda palette: palette.id)
+        query = query.order_by(models.Palette.id.asc())
 
-    return palettes
+    if offset:
+        query = query.offset(offset)
+    if limit is not None:
+        query = query.limit(limit)
+
+    return query.all()
 
 
 def get_tags(db: Session) -> list[str]:
-    tags: set[str] = set()
+    all_tags: set[str] = set()
 
-    for palette in db.query(models.Palette).all():
-        tags.update(palette.tags)
+    # tags is a JSONB array — SQLAlchemy returns a native list, no JSON parsing needed.
+    for (tags,) in db.query(models.Palette.tags).all():
+        all_tags.update(tags or [])
 
-    return sorted(tags)
+    return sorted(all_tags)
 
 
 def create_palette(db: Session, palette_data: schemas.PaletteCreate) -> models.Palette:
@@ -91,9 +100,9 @@ def create_palette(db: Session, palette_data: schemas.PaletteCreate) -> models.P
         slug=slug,
         name=palette_data.name,
         description=palette_data.description,
+        colors=palette_data.colors,
+        tags=palette_data.tags,
     )
-    palette.colors = palette_data.colors
-    palette.tags = palette_data.tags
 
     db.add(palette)
     db.commit()
@@ -144,7 +153,6 @@ def create_many_if_empty(db: Session, palettes: Iterable[schemas.PaletteCreate])
     return created_count
 
 
-
 def get_user(db: Session, user_id: int) -> models.User | None:
     return db.query(models.User).filter(models.User.id == user_id).first()
 
@@ -179,13 +187,15 @@ def create_user(
 
 def set_email_verified(db: Session, user: models.User) -> models.User:
     user.email_verified = True
-    user.email_verified_at = datetime.now(timezone.utc)
+    user.email_verified_at = datetime.now(UTC)
     db.commit()
     db.refresh(user)
     return user
 
 
-def create_admin_if_missing(db: Session, username: str, email: str, password_hash: str) -> models.User | None:
+def create_admin_if_missing(
+    db: Session, username: str, email: str, password_hash: str
+) -> models.User | None:
     admin_exists = db.query(models.User).filter(models.User.is_admin.is_(True)).first()
     if admin_exists:
         changed = False
@@ -238,17 +248,26 @@ def get_user_favorite_keys(db: Session, user: models.User) -> list[str]:
 
 
 def is_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
-    return db.query(models.Favorite).filter(
-        models.Favorite.user_id == user.id,
-        models.Favorite.palette_id == palette.id,
-    ).first() is not None
+    return (
+        db.query(models.Favorite)
+        .filter(
+            models.Favorite.user_id == user.id,
+            models.Favorite.palette_id == palette.id,
+        )
+        .first()
+        is not None
+    )
 
 
 def add_user_favorite(db: Session, user: models.User, palette: models.Palette) -> models.Palette:
-    existing_favorite = db.query(models.Favorite).filter(
-        models.Favorite.user_id == user.id,
-        models.Favorite.palette_id == palette.id,
-    ).first()
+    existing_favorite = (
+        db.query(models.Favorite)
+        .filter(
+            models.Favorite.user_id == user.id,
+            models.Favorite.palette_id == palette.id,
+        )
+        .first()
+    )
 
     if existing_favorite:
         return palette
@@ -263,10 +282,14 @@ def add_user_favorite(db: Session, user: models.User, palette: models.Palette) -
 
 
 def remove_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
-    favorite = db.query(models.Favorite).filter(
-        models.Favorite.user_id == user.id,
-        models.Favorite.palette_id == palette.id,
-    ).first()
+    favorite = (
+        db.query(models.Favorite)
+        .filter(
+            models.Favorite.user_id == user.id,
+            models.Favorite.palette_id == palette.id,
+        )
+        .first()
+    )
 
     if favorite is None:
         return False
@@ -282,7 +305,6 @@ def clear_user_favorites(db: Session, user: models.User) -> int:
     favorites_query.delete(synchronize_session=False)
     db.commit()
     return deleted_count
-
 
 
 def update_user_password(db: Session, user: models.User, password_hash: str) -> models.User:

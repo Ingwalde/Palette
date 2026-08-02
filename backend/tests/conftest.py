@@ -9,6 +9,7 @@ The suite runs against PostgreSQL (there is no SQLite fallback). Provide a datab
 SECRET_KEY must be set before importing the app, otherwise config.py hard-fails. The
 login/register rate limiter is disabled so repeated calls do not trip 429 responses.
 """
+
 import os
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-a-placeholder-0123456789")
@@ -25,15 +26,14 @@ if not _test_db_url or not _test_db_url.startswith("postgresql"):
 os.environ["DATABASE_URL"] = _test_db_url
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from app import crud, schemas
 from app.database import Base, get_db
 from app.main import app
 from app.rate_limit import limiter
 from app.security import hash_password
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 engine = create_engine(_test_db_url, pool_pre_ping=True)
 TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

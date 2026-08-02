@@ -8,6 +8,40 @@ USERNAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{3,40}$")
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
+# Shared field normalizers, reused by the validators below so each rule lives once.
+def normalize_username(username: str) -> str:
+    username = username.strip()
+    if not USERNAME_PATTERN.match(username):
+        raise ValueError("Username can contain only letters, numbers, underscore and hyphen")
+    return username
+
+
+def normalize_email(email: str) -> str:
+    email = email.strip().lower()
+    if not EMAIL_PATTERN.match(email):
+        raise ValueError("Enter a valid email address")
+    return email
+
+
+def normalize_hex_colors(colors: list[str]) -> list[str]:
+    normalized = []
+    for color in colors:
+        color = color.strip()
+        if not HEX_PATTERN.match(color):
+            raise ValueError(f"Invalid HEX color: {color}")
+        normalized.append(color.upper())
+    return normalized
+
+
+def normalize_tags(tags: list[str]) -> list[str]:
+    cleaned = []
+    for tag in tags:
+        cleaned_tag = tag.strip().lower().replace("#", "")
+        if cleaned_tag:
+            cleaned.append(cleaned_tag)
+    return list(dict.fromkeys(cleaned))
+
+
 class PaletteBase(BaseModel):
     name: str = Field(min_length=2, max_length=160)
     description: str = Field(default="", max_length=1000)
@@ -16,28 +50,13 @@ class PaletteBase(BaseModel):
 
     @field_validator("colors")
     @classmethod
-    def validate_colors(cls, colors: list[str]) -> list[str]:
-        normalized_colors = []
-
-        for color in colors:
-            color = color.strip()
-            if not HEX_PATTERN.match(color):
-                raise ValueError(f"Invalid HEX color: {color}")
-            normalized_colors.append(color.upper())
-
-        return normalized_colors
+    def _normalize_colors(cls, colors: list[str]) -> list[str]:
+        return normalize_hex_colors(colors)
 
     @field_validator("tags")
     @classmethod
-    def validate_tags(cls, tags: list[str]) -> list[str]:
-        cleaned_tags = []
-
-        for tag in tags:
-            cleaned_tag = tag.strip().lower().replace("#", "")
-            if cleaned_tag:
-                cleaned_tags.append(cleaned_tag)
-
-        return list(dict.fromkeys(cleaned_tags))
+    def _normalize_tags(cls, tags: list[str]) -> list[str]:
+        return normalize_tags(tags)
 
 
 class PaletteCreate(PaletteBase):
@@ -52,30 +71,13 @@ class PaletteUpdate(BaseModel):
 
     @field_validator("colors")
     @classmethod
-    def validate_colors(cls, colors: list[str] | None) -> list[str] | None:
-        if colors is None:
-            return None
-
-        normalized_colors = []
-        for color in colors:
-            color = color.strip()
-            if not HEX_PATTERN.match(color):
-                raise ValueError(f"Invalid HEX color: {color}")
-            normalized_colors.append(color.upper())
-        return normalized_colors
+    def _normalize_colors(cls, colors: list[str] | None) -> list[str] | None:
+        return None if colors is None else normalize_hex_colors(colors)
 
     @field_validator("tags")
     @classmethod
-    def validate_tags(cls, tags: list[str] | None) -> list[str] | None:
-        if tags is None:
-            return None
-
-        cleaned_tags = []
-        for tag in tags:
-            cleaned_tag = tag.strip().lower().replace("#", "")
-            if cleaned_tag:
-                cleaned_tags.append(cleaned_tag)
-        return list(dict.fromkeys(cleaned_tags))
+    def _normalize_tags(cls, tags: list[str] | None) -> list[str] | None:
+        return None if tags is None else normalize_tags(tags)
 
 
 class PaletteRead(PaletteBase):
@@ -92,11 +94,8 @@ class UserBase(BaseModel):
 
     @field_validator("username")
     @classmethod
-    def validate_username(cls, username: str) -> str:
-        username = username.strip()
-        if not USERNAME_PATTERN.match(username):
-            raise ValueError("Username can contain only letters, numbers, underscore and hyphen")
-        return username
+    def _normalize_username(cls, username: str) -> str:
+        return normalize_username(username)
 
 
 class UserCreate(UserBase):
@@ -105,11 +104,8 @@ class UserCreate(UserBase):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, email: str) -> str:
-        email = email.strip().lower()
-        if not EMAIL_PATTERN.match(email):
-            raise ValueError("Enter a valid email address")
-        return email
+    def _normalize_email(cls, email: str) -> str:
+        return normalize_email(email)
 
 
 class UserLogin(BaseModel):
@@ -135,6 +131,10 @@ class PasswordChange(BaseModel):
         return confirm_password
 
 
+class AccountDeleteRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+
 class UserRead(UserBase):
     id: int
     email: str
@@ -150,11 +150,8 @@ class ResendVerificationRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, email: str) -> str:
-        email = email.strip().lower()
-        if not EMAIL_PATTERN.match(email):
-            raise ValueError("Enter a valid email address")
-        return email
+    def _normalize_email(cls, email: str) -> str:
+        return normalize_email(email)
 
 
 class MessageResponse(BaseModel):

@@ -1,7 +1,16 @@
-import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -9,18 +18,20 @@ from .database import Base
 
 def _utcnow() -> datetime:
     """Timezone-aware UTC now. Replaces the deprecated naive datetime.utcnow."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Palette(Base):
     __tablename__ = "palettes"
+    # GIN index on the JSONB tags array powers fast containment (tag) filtering.
+    __table_args__ = (Index("ix_palettes_tags", "tags", postgresql_using="gin"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     slug: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    colors_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
-    tags_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    colors: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    tags: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -30,22 +41,6 @@ class Palette(Base):
         onupdate=_utcnow,
         nullable=False,
     )
-
-    @property
-    def colors(self) -> list[str]:
-        return json.loads(self.colors_json or "[]")
-
-    @colors.setter
-    def colors(self, value: list[str]) -> None:
-        self.colors_json = json.dumps(value)
-
-    @property
-    def tags(self) -> list[str]:
-        return json.loads(self.tags_json or "[]")
-
-    @tags.setter
-    def tags(self, value: list[str]) -> None:
-        self.tags_json = json.dumps(value)
 
 
 class User(Base):
@@ -70,11 +65,10 @@ class User(Base):
         nullable=False,
     )
 
+
 class Favorite(Base):
     __tablename__ = "favorites"
-    __table_args__ = (
-        UniqueConstraint("user_id", "palette_id", name="uq_user_palette_favorite"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "palette_id", name="uq_user_palette_favorite"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
@@ -82,4 +76,3 @@ class Favorite(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
-

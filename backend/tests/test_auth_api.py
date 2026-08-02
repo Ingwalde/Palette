@@ -87,9 +87,14 @@ def test_password_change_success(client, user_token):
     )
     assert resp.status_code == 200
 
-    old = client.post("/api/auth/login", json={"username": "normaluser", "password": "strong-password"})
+    old = client.post(
+        "/api/auth/login", json={"username": "normaluser", "password": "strong-password"}
+    )
     assert old.status_code == 401
-    new = client.post("/api/auth/login", json={"username": "normaluser", "password": "new-strong-password"})
+    new = client.post(
+        "/api/auth/login",
+        json={"username": "normaluser", "password": "new-strong-password"},
+    )
     assert new.status_code == 200
 
 
