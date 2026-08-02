@@ -117,6 +117,21 @@ def login_user(request: Request, login_data: schemas.UserLogin, db: Session = De
 def read_current_user(current_user=Depends(get_current_user)):
     return current_user
 
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    # Refuse to delete the last admin, otherwise the admin panel becomes unreachable.
+    if crud.is_only_admin(db, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot delete the only admin account",
+        )
+
+    crud.delete_user(db, current_user)
+
 @router.put("/password", response_model=schemas.UserRead)
 def change_password(
     password_data: schemas.PasswordChange,

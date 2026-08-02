@@ -290,3 +290,22 @@ def update_user_password(db: Session, user: models.User, password_hash: str) -> 
     db.commit()
     db.refresh(user)
     return user
+
+
+def is_only_admin(db: Session, user: models.User) -> bool:
+    if not user.is_admin:
+        return False
+
+    other_admin = (
+        db.query(models.User)
+        .filter(models.User.is_admin.is_(True), models.User.id != user.id)
+        .first()
+    )
+    return other_admin is None
+
+
+def delete_user(db: Session, user: models.User) -> None:
+    # Favorites have no ON DELETE cascade, so remove them before deleting the user.
+    clear_user_favorites(db, user)
+    db.delete(user)
+    db.commit()
