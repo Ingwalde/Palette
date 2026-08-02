@@ -40,6 +40,18 @@
 
     <section class="section changelog-layout">
       <article class="changelog-card">
+        <p class="changelog-card__version">v4.2</p>
+        <h2>Email verification</h2>
+        <ul>
+          <li>Email verification on registration: new accounts get a Resend-backed link.</li>
+          <li>Friendly verify page confirms the address, with an inline resend on failure.</li>
+          <li>"Email not verified" banner with a resend button on the account page.</li>
+          <li>Login stays available while an account is still unverified.</li>
+          <li>Verification tokens are signed and purpose-scoped; resend is rate-limited.</li>
+        </ul>
+      </article>
+
+      <article class="changelog-card">
         <p class="changelog-card__version">v4.1</p>
         <h2>Mobile fixes, UX polish and CI</h2>
         <ul>
@@ -116,7 +128,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v4.1</p>
+        <p class="site-footer__eyebrow">Palette v4.2</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">

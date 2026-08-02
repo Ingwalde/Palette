@@ -62,6 +62,18 @@ CORS_ORIGINS = [
     if origin.strip()
 ]
 
+# Email verification (Resend). When RESEND_API_KEY is not set, the app logs the
+# verification link to the console instead of sending a real email (local dev).
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+EMAIL_FROM = os.getenv("EMAIL_FROM", "Palette <onboarding@resend.dev>")
+
+# Public base URL used to build links in outgoing emails (the verification link points
+# at the frontend verify page). No trailing slash.
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "http://localhost:5500").rstrip("/")
+
+# How long an email verification link stays valid.
+EMAIL_VERIFICATION_EXPIRE_HOURS = int(os.getenv("EMAIL_VERIFICATION_EXPIRE_HOURS", "24"))
+
 DEFAULT_ADMIN_USERNAME = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@palette.local")
 DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin123")

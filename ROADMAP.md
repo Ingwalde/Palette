@@ -105,7 +105,7 @@ Status: completed.
 
 ## v4.2 — Email Verification
 
-Status: planned.
+Status: completed.
 
 - Email verification flow: send a token link on registration, confirm before login.
 - `is_verified` + verification token on the user model.

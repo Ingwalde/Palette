@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from .config import CORS_ORIGINS, ENABLE_API_DOCS
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, run_startup_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes
 from .seed import seed_default_admin_user, seed_default_palettes
@@ -16,6 +16,7 @@ from .seed import seed_default_admin_user, seed_default_palettes
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    run_startup_migrations()
 
     db = SessionLocal()
     try:
@@ -29,8 +30,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.1 with authentication, user-based favorites, PostgreSQL, Docker and CI.",
-    version="4.1.2",
+    description="Backend API for Palette v4.2 with authentication, user-based favorites, PostgreSQL, Docker and CI.",
+    version="4.2.0",
     docs_url="/api/docs" if ENABLE_API_DOCS else None,
     redoc_url="/api/redoc" if ENABLE_API_DOCS else None,
     openapi_url="/api/openapi.json" if ENABLE_API_DOCS else None,
@@ -58,7 +59,7 @@ app.include_router(favorites.router, prefix="/api")
 def root():
     return {
         "name": "Palette API",
-        "version": "4.1.2",
+        "version": "4.2.0",
         "docs": "/api/docs",
         "health": "/health",
     }

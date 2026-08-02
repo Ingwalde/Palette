@@ -966,3 +966,38 @@ input[type="search"]::-webkit-search-cancel-button {
   color: var(--color-muted);
   line-height: 1.7;
 }
+
+/* Email verification */
+.verify-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(233, 86, 35, 0.35);
+  background: rgba(233, 86, 35, 0.1);
+}
+
+.verify-banner__text {
+  margin: 0;
+  flex: 1 1 240px;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.site-header--bare {
+  justify-content: center;
+}
+
+.auth-card--centered {
+  margin: 0 auto;
+  max-width: 460px;
+  text-align: center;
+}
+
+.form-actions--centered {
+  justify-content: center;
+}

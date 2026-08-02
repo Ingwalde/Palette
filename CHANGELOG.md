@@ -1,5 +1,35 @@
 # Changelog
 
+## v4.2.0 — Email verification
+
+### Release summary
+
+Palette v4.2.0 adds email verification on registration. New accounts receive a
+Resend-backed verification email with a one-time link; a friendly verify page confirms the
+address, an "email not verified" banner with a resend button appears on the account page,
+and login is still allowed while an account is unverified.
+
+### Added
+
+- Email verification on registration: `POST /api/auth/register` emails a signed, expiring,
+  purpose-scoped verification link (JWT) via Resend. `GET /api/auth/verify` confirms the
+  address, and a rate-limited `POST /api/auth/resend-verification` re-sends it with a
+  generic response (no account enumeration).
+- `frontend/verify.html` — friendly confirmation page with an OK button, and an inline
+  resend form when the link is invalid or expired.
+- "Email not verified" banner with a resend button on the account page.
+- `email_service` module using the Resend HTTP API, with a console fallback when
+  `RESEND_API_KEY` is not set; new `RESEND_API_KEY`, `EMAIL_FROM` and `PUBLIC_BASE_URL`
+  environment variables.
+- `User.email_verified` / `email_verified_at`, added to existing databases by an
+  idempotent startup migration (`ADD COLUMN IF NOT EXISTS`).
+
+### Changed
+
+- The registration response and `GET /api/auth/me` now include `email_verified`.
+- Bearer authentication rejects purpose-scoped (verification) tokens.
+- Backend API version bumped to `4.2.0`; frontend version strings updated to v4.2.
+
 ## v4.1.2 — Production hardening: proxy-aware rate limiting, hidden docs
 
 ### Fixed

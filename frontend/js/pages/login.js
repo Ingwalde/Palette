@@ -73,7 +73,7 @@ async function handleRegister() {
     elements.loginPassword.value = "";
     elements.loginPassword.focus();
 
-    showToast("Account created. Now log in with your password.");
+    showToast("Account created. Check your email for a verification link.");
   } catch (error) {
     showToast(error.message, "error");
   } finally {

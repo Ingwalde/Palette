@@ -1,4 +1,4 @@
-import { changePassword, getCurrentUser } from "../api/authApi.js";
+import { changePassword, getCurrentUser, resendVerification } from "../api/authApi.js";
 import { clearAuth, getAccessToken, getStoredUser, saveAuth } from "../utils/authStorage.js";
 import { qs } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
@@ -7,6 +7,8 @@ const elements = {
   avatar: qs("#accountAvatar"),
   username: qs("#accountUsername"),
   email: qs("#accountEmail"),
+  verifyBanner: qs("#verifyBanner"),
+  resendVerificationButton: qs("#resendVerificationButton"),
   logoutButton: qs("#logoutButton"),
   togglePasswordFormButton: qs("#togglePasswordFormButton"),
   cancelPasswordChangeButton: qs("#cancelPasswordChangeButton"),
@@ -15,6 +17,8 @@ const elements = {
   newPassword: qs("#newPassword"),
   confirmPassword: qs("#confirmPassword")
 };
+
+let currentEmail = "";
 
 initProfilePage();
 
@@ -28,6 +32,7 @@ function initProfilePage() {
   elements.togglePasswordFormButton.addEventListener("click", showPasswordForm);
   elements.cancelPasswordChangeButton.addEventListener("click", hidePasswordForm);
   elements.passwordForm.addEventListener("submit", handlePasswordChange);
+  elements.resendVerificationButton.addEventListener("click", handleResendVerification);
 
   renderStoredUser();
   refreshUserFromBackend();
@@ -64,6 +69,27 @@ function renderUser(user) {
   elements.avatar.textContent = initial;
   elements.username.textContent = user.username;
   elements.email.textContent = user.email;
+
+  currentEmail = user.email || "";
+  elements.verifyBanner.classList.toggle("hidden", user.email_verified !== false);
+}
+
+async function handleResendVerification() {
+  if (!currentEmail) {
+    return;
+  }
+
+  const button = elements.resendVerificationButton;
+  setButtonLoading(button, "Sending...");
+
+  try {
+    const result = await resendVerification(currentEmail);
+    showToast(result.message);
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    resetButton(button, "Resend link");
+  }
 }
 
 function showPasswordForm() {

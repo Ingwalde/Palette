@@ -6,7 +6,7 @@ python-dotenv
 PyJWT
 slowapi
 psycopg[binary]
+httpx
 
 # Testing
 pytest
-httpx
