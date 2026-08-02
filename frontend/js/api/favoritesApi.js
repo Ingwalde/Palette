@@ -1,10 +1,10 @@
 import { getAccessToken } from "../utils/authStorage.js";
-
-const API_BASE_URL =
-  location.protocol === "https:" ? "/api" : `http://${location.hostname}:8000/api`;
+import { request } from "./httpClient.js";
 
 let favoriteKeysCache = null;
 
+// Favorites always require a logged-in user; inject the token and give a friendlier
+// message on auth failure. The rest is the shared JSON request helper.
 async function apiRequest(endpoint, options = {}) {
   const token = getAccessToken();
 
@@ -12,39 +12,20 @@ async function apiRequest(endpoint, options = {}) {
     throw new Error("Log in to use favorites");
   }
 
-  const { headers = {}, ...requestOptions } = options;
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...requestOptions,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...headers
+  try {
+    return await request(endpoint, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {})
+      }
+    });
+  } catch (error) {
+    if (error.status === 401) {
+      throw new Error("Log in again to use favorites");
     }
-  });
-
-  if (!response.ok) {
-    let message = `API request failed with status ${response.status}`;
-
-    try {
-      const errorData = await response.json();
-      message = formatApiError(errorData.detail) || message;
-    } catch {
-      // Keep the default message if the response is not JSON.
-    }
-
-    if (response.status === 401) {
-      message = "Log in again to use favorites";
-    }
-
-    throw new Error(message);
+    throw error;
   }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
 }
 
 export async function getFavoritePalettes() {
@@ -92,25 +73,3 @@ export async function clearFavoritePalettes() {
   return result;
 }
 
-export function resetFavoritesCache() {
-  favoriteKeysCache = null;
-}
-
-function formatApiError(detail) {
-  if (typeof detail === "string") {
-    return detail;
-  }
-
-  if (Array.isArray(detail)) {
-    return detail
-      .map((item) => item?.msg || JSON.stringify(item))
-      .filter(Boolean)
-      .join("; ");
-  }
-
-  if (detail && typeof detail === "object") {
-    return detail.message || JSON.stringify(detail);
-  }
-
-  return "";
-}

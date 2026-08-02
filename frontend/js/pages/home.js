@@ -1,6 +1,6 @@
 import { getPalettes, getTags } from "../api/palettesApi.js";
 import { createPaletteCard } from "../components/paletteCard.js";
-import { createEmptyState } from "../components/emptyState.js";
+import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
 import { clearElement, createElement, qs, qsa } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 import { initCustomSelects, syncCustomSelect } from "../utils/customSelect.js";
@@ -133,10 +133,7 @@ async function renderPalettes() {
   } catch (error) {
     clearElement(elements.grid);
     elements.resultCount.textContent = "API error";
-    elements.grid.append(createEmptyState(
-      "Backend is not available",
-      "Start FastAPI with: uvicorn app.main:app --reload"
-    ));
+    elements.grid.append(createBackendErrorState());
     showToast(error.message, "error");
   }
 }

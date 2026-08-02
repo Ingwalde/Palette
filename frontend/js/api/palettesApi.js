@@ -1,38 +1,5 @@
 import { getAccessToken } from "../utils/authStorage.js";
-
-const API_BASE_URL =
-  location.protocol === "https:" ? "/api" : `http://${location.hostname}:8000/api`;
-
-async function apiRequest(endpoint, options = {}) {
-  const { headers = {}, ...requestOptions } = options;
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...requestOptions,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers
-    }
-  });
-
-  if (!response.ok) {
-    let message = `API request failed with status ${response.status}`;
-
-    try {
-      const errorData = await response.json();
-      message = errorData.detail || message;
-    } catch {
-      // Keep the default message if the response is not JSON.
-    }
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
-}
+import { request as apiRequest } from "./httpClient.js";
 
 function getAuthHeaders() {
   const token = getAccessToken();
@@ -57,10 +24,6 @@ export function buildPaletteQuery(params = {}) {
 
 export function getPalettes(params = {}) {
   return apiRequest(`/palettes${buildPaletteQuery(params)}`);
-}
-
-export function getPalette(slug) {
-  return apiRequest(`/palettes/${slug}`);
 }
 
 export function getTags() {

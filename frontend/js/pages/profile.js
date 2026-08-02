@@ -1,6 +1,6 @@
 import { changePassword, deleteAccount, getCurrentUser, resendVerification } from "../api/authApi.js";
 import { clearAuth, getAccessToken, getStoredUser, saveAuth } from "../utils/authStorage.js";
-import { qs } from "../utils/dom.js";
+import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -154,18 +154,19 @@ function handleLogout() {
 }
 
 async function handleDeleteAccount() {
-  const confirmed = window.confirm(
-    "Delete your account? This is permanent and also removes your saved favorites."
+  const password = window.prompt(
+    "Deleting your account is permanent and also removes your saved favorites.\n\n" +
+      "Enter your password to confirm:"
   );
 
-  if (!confirmed) {
+  if (!password) {
     return;
   }
 
   setButtonLoading(elements.deleteAccountButton, "Deleting...");
 
   try {
-    await deleteAccount();
+    await deleteAccount(password);
     clearAuth();
     showToast("Account deleted");
     window.setTimeout(() => {
@@ -177,17 +178,3 @@ async function handleDeleteAccount() {
   }
 }
 
-function setButtonLoading(button, text) {
-  if (!button) return;
-
-  button.dataset.originalText = button.textContent;
-  button.textContent = text;
-  button.disabled = true;
-}
-
-function resetButton(button, fallbackText) {
-  if (!button) return;
-
-  button.textContent = button.dataset.originalText || fallbackText;
-  button.disabled = false;
-}

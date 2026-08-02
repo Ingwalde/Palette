@@ -23,11 +23,3 @@ export function clearAuth() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 }
-
-export function isLoggedIn() {
-  return Boolean(getAccessToken());
-}
-
-export function isStoredAdmin() {
-  return Boolean(getStoredUser()?.is_admin);
-}

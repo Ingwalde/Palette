@@ -11,3 +11,10 @@ export function createEmptyState(title, text) {
   wrapper.append(heading, paragraph);
   return wrapper;
 }
+
+export function createBackendErrorState() {
+  return createEmptyState(
+    "Backend is not available",
+    "Start the stack with: docker compose up"
+  );
+}

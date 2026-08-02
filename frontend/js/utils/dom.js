@@ -34,3 +34,16 @@ export function clearElement(element) {
   if (!element) return;
   element.replaceChildren();
 }
+
+export function setButtonLoading(button, text) {
+  if (!button) return;
+  button.dataset.originalText = button.textContent;
+  button.textContent = text;
+  button.disabled = true;
+}
+
+export function resetButton(button, fallbackText) {
+  if (!button) return;
+  button.textContent = button.dataset.originalText || fallbackText;
+  button.disabled = false;
+}
