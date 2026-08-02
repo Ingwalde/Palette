@@ -1,9 +1,17 @@
 import { resendVerification, verifyEmail } from "../api/authApi.js";
+import { saveAuth } from "../utils/authStorage.js";
 import { qs } from "../utils/dom.js";
 
 const title = qs("#verifyTitle");
 const message = qs("#verifyMessage");
 const actions = qs("#verifyActions");
+
+const SUCCESS_LINES = [
+  "Boom — inbox conquered. You're in and ready to collect colors.",
+  "Email confirmed and you're already signed in. Let's go make something bright.",
+  "That's the one. You're verified, logged in, and the palettes are waiting.",
+  "Handshake complete. Your account is live — time to hoard some gradients."
+];
 
 initVerifyPage();
 
@@ -16,21 +24,24 @@ async function initVerifyPage() {
   }
 
   try {
-    await verifyEmail(token);
-    showSuccess();
+    const result = await verifyEmail(token);
+    // Signed link — log the user straight in so they land on their account.
+    saveAuth(result.access_token, result.user);
+    showSuccess(result.user);
   } catch (error) {
     showError(error.message || "We could not verify your email.");
   }
 }
 
-function showSuccess() {
-  title.textContent = "You're verified 🎉";
-  message.textContent = "Your email address has been confirmed. You can log in now.";
+function showSuccess(user) {
+  const name = user?.username ? `, ${user.username}` : "";
+  title.textContent = `You're in${name}! 🎉`;
+  message.textContent = SUCCESS_LINES[Math.floor(Math.random() * SUCCESS_LINES.length)];
 
   const okButton = document.createElement("a");
   okButton.className = "button button--primary";
-  okButton.href = "login.html";
-  okButton.textContent = "OK";
+  okButton.href = "profile.html";
+  okButton.textContent = "Go to my account";
 
   actions.replaceChildren(okButton);
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.2.1 — Verify page polish and auto-login
+
+### Changed
+
+- Clicking the email verification link now signs the user in automatically: `GET
+  /api/auth/verify` returns an access token, and the verify page stores the session and
+  sends the user straight to their account.
+- Friendlier, randomized success message on the verify page.
+
+### Fixed
+
+- The verify page now centers its card in the viewport with clear spacing below the header.
+
 ## v4.2.0 — Email verification
 
 ### Release summary
