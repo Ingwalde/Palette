@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 from typing import Iterable
 
 from sqlalchemy.orm import Session
@@ -161,14 +162,24 @@ def create_user(
     user_data: schemas.UserCreate,
     password_hash: str,
     is_admin: bool = False,
+    email_verified: bool = False,
 ) -> models.User:
     user = models.User(
         username=user_data.username,
         email=user_data.email,
         password_hash=password_hash,
         is_admin=is_admin,
+        email_verified=email_verified,
     )
     db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def set_email_verified(db: Session, user: models.User) -> models.User:
+    user.email_verified = True
+    user.email_verified_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(user)
     return user
@@ -177,8 +188,14 @@ def create_user(
 def create_admin_if_missing(db: Session, username: str, email: str, password_hash: str) -> models.User | None:
     admin_exists = db.query(models.User).filter(models.User.is_admin.is_(True)).first()
     if admin_exists:
+        changed = False
         if not admin_exists.email:
             admin_exists.email = email
+            changed = True
+        if not admin_exists.email_verified:
+            admin_exists.email_verified = True
+            changed = True
+        if changed:
             db.commit()
             db.refresh(admin_exists)
         return None
@@ -188,6 +205,7 @@ def create_admin_if_missing(db: Session, username: str, email: str, password_has
         existing_user.is_admin = True
         existing_user.email = existing_user.email or email
         existing_user.password_hash = password_hash
+        existing_user.email_verified = True
         db.commit()
         db.refresh(existing_user)
         return existing_user
@@ -197,6 +215,7 @@ def create_admin_if_missing(db: Session, username: str, email: str, password_has
         email=email,
         password_hash=password_hash,
         is_admin=True,
+        email_verified=True,
     )
     db.add(user)
     db.commit()

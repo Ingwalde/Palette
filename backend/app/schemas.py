@@ -139,9 +139,26 @@ class UserRead(UserBase):
     id: int
     email: str
     is_admin: bool
+    email_verified: bool
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ResendVerificationRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, email: str) -> str:
+        email = email.strip().lower()
+        if not EMAIL_PATTERN.match(email):
+            raise ValueError("Enter a valid email address")
+        return email
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class Token(BaseModel):

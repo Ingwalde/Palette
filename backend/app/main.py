@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from .config import CORS_ORIGINS, ENABLE_API_DOCS
-from .database import Base, SessionLocal, engine
+from .database import Base, SessionLocal, engine, run_startup_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes
 from .seed import seed_default_admin_user, seed_default_palettes
@@ -16,6 +16,7 @@ from .seed import seed_default_admin_user, seed_default_palettes
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    run_startup_migrations()
 
     db = SessionLocal()
     try:

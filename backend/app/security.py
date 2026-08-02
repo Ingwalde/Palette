@@ -10,12 +10,13 @@ from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
 from . import crud, models
-from .config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
+from .config import ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_EXPIRE_HOURS, SECRET_KEY
 from .database import get_db
 
 ALGORITHM = "HS256"
 HASH_NAME = "pbkdf2_sha256"
 HASH_ITERATIONS = 210_000
+EMAIL_VERIFICATION_PURPOSE = "verify_email"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -81,6 +82,27 @@ def create_access_token(user: models.User) -> str:
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def create_email_verification_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(hours=EMAIL_VERIFICATION_EXPIRE_HOURS)
+    payload = {
+        "sub": str(user_id),
+        "purpose": EMAIL_VERIFICATION_PURPOSE,
+        "exp": expire,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_email_verification_token(token: str) -> int | None:
+    """Return the user id from a valid, unexpired email verification token, else None."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("purpose") != EMAIL_VERIFICATION_PURPOSE:
+            return None
+        return int(payload["sub"])
+    except (InvalidTokenError, TypeError, ValueError, KeyError):
+        return None
+
+
 def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
@@ -93,6 +115,9 @@ def get_current_user(
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
+        if payload.get("purpose") is not None:
+            raise credentials_exception
         user_id = int(payload.get("sub"))
     except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception from None
