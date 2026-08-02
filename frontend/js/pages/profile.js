@@ -1,4 +1,4 @@
-import { changePassword, getCurrentUser, resendVerification } from "../api/authApi.js";
+import { changePassword, deleteAccount, getCurrentUser, resendVerification } from "../api/authApi.js";
 import { clearAuth, getAccessToken, getStoredUser, saveAuth } from "../utils/authStorage.js";
 import { qs } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
@@ -15,7 +15,8 @@ const elements = {
   passwordForm: qs("#passwordForm"),
   currentPassword: qs("#currentPassword"),
   newPassword: qs("#newPassword"),
-  confirmPassword: qs("#confirmPassword")
+  confirmPassword: qs("#confirmPassword"),
+  deleteAccountButton: qs("#deleteAccountButton")
 };
 
 let currentEmail = "";
@@ -33,6 +34,7 @@ function initProfilePage() {
   elements.cancelPasswordChangeButton.addEventListener("click", hidePasswordForm);
   elements.passwordForm.addEventListener("submit", handlePasswordChange);
   elements.resendVerificationButton.addEventListener("click", handleResendVerification);
+  elements.deleteAccountButton.addEventListener("click", handleDeleteAccount);
 
   renderStoredUser();
   refreshUserFromBackend();
@@ -149,6 +151,30 @@ function handleLogout() {
   window.setTimeout(() => {
     window.location.href = "index.html";
   }, 400);
+}
+
+async function handleDeleteAccount() {
+  const confirmed = window.confirm(
+    "Delete your account? This is permanent and also removes your saved favorites."
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setButtonLoading(elements.deleteAccountButton, "Deleting...");
+
+  try {
+    await deleteAccount();
+    clearAuth();
+    showToast("Account deleted");
+    window.setTimeout(() => {
+      window.location.href = "index.html";
+    }, 600);
+  } catch (error) {
+    showToast(error.message, "error");
+    resetButton(elements.deleteAccountButton, "Delete account");
+  }
 }
 
 function setButtonLoading(button, text) {

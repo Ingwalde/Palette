@@ -69,7 +69,8 @@ async function renderTagFilters() {
 
   try {
     const tags = await getTags();
-    ["all", ...tags].forEach((tag) => {
+    const randomTags = pickRandom(tags, 10);
+    ["all", ...randomTags].forEach((tag) => {
       const button = createElement("button", {
         className: `tag-button${tag === state.tag ? " tag-button--active" : ""}`,
         text: tag === "all" ? "All" : `#${tag}`,
@@ -138,6 +139,16 @@ async function renderPalettes() {
     ));
     showToast(error.message, "error");
   }
+}
+
+// Show a rotating sample of tags instead of the full list — a lighter home filter.
+function pickRandom(list, count) {
+  const shuffled = [...list];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
 }
 
 function debounce(callback, delay = 250) {

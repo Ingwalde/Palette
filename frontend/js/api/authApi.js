@@ -27,6 +27,10 @@ async function apiRequest(endpoint, options = {}) {
     throw new Error(message);
   }
 
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
 }
 
@@ -84,6 +88,21 @@ export function changePassword(payload) {
       Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(payload)
+  });
+}
+
+export function deleteAccount() {
+  const token = getAccessToken();
+
+  if (!token) {
+    throw new Error("User is not logged in");
+  }
+
+  return apiRequest("/auth/me", {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
   });
 }
 

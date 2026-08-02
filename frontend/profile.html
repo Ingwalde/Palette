@@ -45,8 +45,12 @@
           <div>
             <p class="eyebrow">Logged in as</p>
             <h2 id="accountUsername">Loading...</h2>
-            <p class="muted" id="accountEmail">Checking session...</p>
           </div>
+        </div>
+
+        <div class="account-detail">
+          <span class="account-detail__label">Email</span>
+          <span class="account-detail__value" id="accountEmail">Checking session…</span>
         </div>
 
         <div class="verify-banner hidden" id="verifyBanner" role="status">
@@ -94,6 +98,14 @@
             <button class="button button--secondary" id="cancelPasswordChangeButton" type="button">Cancel</button>
           </div>
         </form>
+
+        <div class="account-danger">
+          <div>
+            <p class="eyebrow">Danger zone</p>
+            <p class="muted">Deleting your account is permanent and also removes your saved favorites.</p>
+          </div>
+          <button class="button button--danger" id="deleteAccountButton" type="button">Delete account</button>
+        </div>
       </article>
     </section>
   </main>
