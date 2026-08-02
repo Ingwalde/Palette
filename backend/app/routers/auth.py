@@ -57,7 +57,7 @@ def register_user(
     return user
 
 
-@router.get("/verify", response_model=schemas.MessageResponse)
+@router.get("/verify", response_model=schemas.Token)
 def verify_email(token: str, db: Session = Depends(get_db)):
     user_id = decode_email_verification_token(token)
 
@@ -71,7 +71,8 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user.email_verified:
         crud.set_email_verified(db, user)
 
-    return schemas.MessageResponse(message="Email verified successfully")
+    # Log the user straight in from the email link — return a real access token.
+    return schemas.Token(access_token=create_access_token(user), user=user)
 
 
 @router.post("/resend-verification", response_model=schemas.MessageResponse)

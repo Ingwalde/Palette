@@ -23,13 +23,16 @@ def test_verify_marks_user_verified(client, db_session):
     resp = client.get("/api/auth/verify", params={"token": token})
     assert resp.status_code == 200
 
-    login = client.post(
-        "/api/auth/login", json={"username": "carol", "password": "strong-password"}
-    )
+    body = resp.json()
+    # Verifying via the email link logs the user straight in.
+    assert body["access_token"]
+    assert body["user"]["email_verified"] is True
+
     me = client.get(
         "/api/auth/me",
-        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+        headers={"Authorization": f"Bearer {body['access_token']}"},
     )
+    assert me.status_code == 200
     assert me.json()["email_verified"] is True
 
 
