@@ -1,0 +1,44 @@
+# Tooling config for the Palette backend (ruff, mypy, coverage).
+# The project installs deps from backend/requirements*.txt; this file is config only.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["backend/.venv", "graphify-out"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "RET", "SIM", "C4"]
+# B008: FastAPI Depends()/Query() in argument defaults is the idiomatic pattern.
+ignore = ["B008"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# conftest.py must set os.environ before importing the app, so its imports can't all sit
+# at the top of the file.
+"backend/tests/conftest.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.12"
+# Pragmatic gradual-typing baseline: catch real type errors without demanding full
+# annotations on every function yet. Tighten over time.
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+exclude = ["backend/.venv", "backend/tests", "graphify-out"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/seed.py", "tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

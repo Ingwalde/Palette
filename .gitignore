@@ -35,3 +35,8 @@ build/
 
 # graphify knowledge-graph output/cache
 graphify-out/
+
+# Coverage artifacts
+.coverage
+backend/.coverage
+htmlcov/
