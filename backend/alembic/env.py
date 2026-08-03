@@ -1,19 +1,19 @@
 from alembic import context
+from sqlalchemy import create_engine
 
 from app import models  # noqa: F401 — imported so every table registers on Base.metadata
-from app.config import settings
-from app.database import Base, engine
+from app.database import SYNC_DATABASE_URL, Base
 
-# Alembic Config object (values come from alembic.ini + runtime overrides).
+# Alembic runs synchronously against the sync (psycopg) URL.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
     context.configure(
-        url=settings.database_url,
+        url=SYNC_DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -23,8 +23,8 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    # Reuse the application engine (built from settings.database_url).
-    with engine.connect() as connection:
+    connectable = create_engine(SYNC_DATABASE_URL)
+    with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()

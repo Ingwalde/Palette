@@ -27,7 +27,7 @@ services:
     environment:
       # Container-only DB URL (host `db` resolves on the compose network). Overrides
       # the SQLite default so local non-Docker runs stay on SQLite.
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-palette}:${POSTGRES_PASSWORD:-palette}@db:5432/${POSTGRES_DB:-palette}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-palette}:${POSTGRES_PASSWORD:-palette}@db:5432/${POSTGRES_DB:-palette}
       # Shared rate-limit storage so limits hold across worker processes / instances.
       REDIS_URL: redis://redis:6379
     depends_on:
@@ -71,7 +71,7 @@ services:
         condition: service_healthy
     environment:
       SECRET_KEY: test-secret-key-not-a-placeholder-0123456789
-      DATABASE_URL: postgresql+psycopg://palette:palette@test-db:5432/palette_test
+      DATABASE_URL: postgresql+asyncpg://palette:palette@test-db:5432/palette_test
       # The source is bind-mounted read-writable only by the host user; write coverage
       # data to /tmp so pytest-cov does not fail on a root-owned mount (e.g. in CI).
       COVERAGE_FILE: /tmp/.coverage

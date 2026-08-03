@@ -9,7 +9,7 @@ from argon2.exceptions import InvalidHash, VerifyMismatchError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import crud, models
 from .config import settings
@@ -70,13 +70,13 @@ def _pbkdf2_hash(password: str, salt: str, iterations: int = _LEGACY_ITERATIONS)
     ).hex()
 
 
-def authenticate_user(db: Session, username: str, password: str) -> models.User | None:
+async def authenticate_user(db: AsyncSession, username: str, password: str) -> models.User | None:
     login_value = username.strip().lower()
 
     if "@" in login_value:
-        user = crud.get_user_by_email(db, login_value)
+        user = await crud.get_user_by_email(db, login_value)
     else:
-        user = crud.get_user_by_username(db, username.strip())
+        user = await crud.get_user_by_username(db, username.strip())
 
     if user is None:
         return None
@@ -86,7 +86,7 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
 
     # Transparently upgrade legacy/outdated hashes to current Argon2id parameters.
     if password_needs_rehash(user.password_hash):
-        crud.update_user_password(db, user, hash_password(password))
+        await crud.update_user_password(db, user, hash_password(password))
 
     return user
 
@@ -125,42 +125,42 @@ def _hash_refresh_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def create_refresh_token(db: Session, user: models.User) -> str:
+async def create_refresh_token(db: AsyncSession, user: models.User) -> str:
     """Issue an opaque refresh token, storing only its hash."""
     token = secrets.token_urlsafe(48)
     expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
-    crud.create_refresh_token(db, user.id, _hash_refresh_token(token), expires_at)
+    await crud.create_refresh_token(db, user.id, _hash_refresh_token(token), expires_at)
     return token
 
 
-def _active_refresh_token(db: Session, token: str) -> models.RefreshToken | None:
-    stored = crud.get_refresh_token(db, _hash_refresh_token(token))
+async def _active_refresh_token(db: AsyncSession, token: str) -> models.RefreshToken | None:
+    stored = await crud.get_refresh_token(db, _hash_refresh_token(token))
     if stored is None or stored.revoked or stored.expires_at < datetime.now(UTC):
         return None
     return stored
 
 
-def rotate_refresh_token(db: Session, token: str) -> tuple[models.User, str] | None:
+async def rotate_refresh_token(db: AsyncSession, token: str) -> tuple[models.User, str] | None:
     """Validate a refresh token, revoke it (single use) and issue a fresh one."""
-    stored = _active_refresh_token(db, token)
+    stored = await _active_refresh_token(db, token)
     if stored is None:
         return None
-    user = crud.get_user(db, stored.user_id)
+    user = await crud.get_user(db, stored.user_id)
     if user is None:
         return None
-    crud.revoke_refresh_token(db, stored)
-    return user, create_refresh_token(db, user)
+    await crud.revoke_refresh_token(db, stored)
+    return user, await create_refresh_token(db, user)
 
 
-def revoke_refresh_token(db: Session, token: str) -> None:
-    stored = crud.get_refresh_token(db, _hash_refresh_token(token))
+async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
+    stored = await crud.get_refresh_token(db, _hash_refresh_token(token))
     if stored is not None and not stored.revoked:
-        crud.revoke_refresh_token(db, stored)
+        await crud.revoke_refresh_token(db, stored)
 
 
-def get_current_user(
+async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -180,7 +180,7 @@ def get_current_user(
     except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception from None
 
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(db, user_id)
     if user is None:
         raise credentials_exception
 

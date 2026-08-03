@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
 from ..database import get_db
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/palettes", tags=["palettes"])
 
 
 @router.get("", response_model=schemas.PaletteList)
-def read_palettes(
+async def read_palettes(
     response: Response,
     search: str | None = Query(
         default=None, description="Search by name, description, slug or tag"
@@ -18,23 +18,25 @@ def read_palettes(
     sort: str = Query(default="default", pattern="^(default|az|za)$"),
     limit: int = Query(default=100, ge=1, le=500, description="Max results to return"),
     offset: int = Query(default=0, ge=0, description="Number of results to skip"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    items = crud.get_palettes(db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset)
-    total = crud.count_palettes(db=db, search=search, tag=tag)
+    items = await crud.get_palettes(
+        db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset
+    )
+    total = await crud.count_palettes(db=db, search=search, tag=tag)
     response.headers["X-Total-Count"] = str(total)
     # Returned as a dict; FastAPI serialises it through the PaletteList response_model.
     return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/tags", response_model=list[str])
-def read_tags(db: Session = Depends(get_db)):
-    return crud.get_tags(db)
+async def read_tags(db: AsyncSession = Depends(get_db)):
+    return await crud.get_tags(db)
 
 
 @router.get("/{slug}", response_model=schemas.PaletteRead)
-def read_palette(slug: str, db: Session = Depends(get_db)):
-    palette = crud.get_palette_by_slug(db, slug)
+async def read_palette(slug: str, db: AsyncSession = Depends(get_db)):
+    palette = await crud.get_palette_by_slug(db, slug)
 
     if palette is None:
         raise HTTPException(status_code=404, detail="Palette not found")
@@ -43,39 +45,39 @@ def read_palette(slug: str, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.PaletteRead, status_code=status.HTTP_201_CREATED)
-def create_palette(
+async def create_palette(
     palette_data: schemas.PaletteCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
 ):
-    return crud.create_palette(db, palette_data)
+    return await crud.create_palette(db, palette_data)
 
 
 @router.put("/{palette_id}", response_model=schemas.PaletteRead)
-def update_palette(
+async def update_palette(
     palette_id: int,
     palette_data: schemas.PaletteUpdate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
 ):
-    palette = crud.get_palette(db, palette_id)
+    palette = await crud.get_palette(db, palette_id)
 
     if palette is None:
         raise HTTPException(status_code=404, detail="Palette not found")
 
-    return crud.update_palette(db, palette, palette_data)
+    return await crud.update_palette(db, palette, palette_data)
 
 
 @router.delete("/{palette_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_palette(
+async def delete_palette(
     palette_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
 ):
-    palette = crud.get_palette(db, palette_id)
+    palette = await crud.get_palette(db, palette_id)
 
     if palette is None:
         raise HTTPException(status_code=404, detail="Palette not found")
 
-    crud.delete_palette(db, palette)
+    await crud.delete_palette(db, palette)
     return

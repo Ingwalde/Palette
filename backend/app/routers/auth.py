@@ -1,5 +1,5 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
 from ..database import get_db
@@ -23,39 +23,35 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 _VERIFY_LINK_INVALID = "Invalid or expired verification link"
 
 
-def _issue_tokens(db: Session, user) -> schemas.Token:
+async def _issue_tokens(db: AsyncSession, user) -> schemas.Token:
     return schemas.Token(
         access_token=create_access_token(user),
-        refresh_token=create_refresh_token(db, user),
+        refresh_token=await create_refresh_token(db, user),
         user=user,
     )
 
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit("10/hour")
-def register_user(
+async def register_user(
     request: Request,
     user_data: schemas.UserCreate,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    existing_user = crud.get_user_by_username(db, user_data.username)
-
-    if existing_user:
+    if await crud.get_user_by_username(db, user_data.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username is already registered",
         )
 
-    existing_email = crud.get_user_by_email(db, user_data.email)
-
-    if existing_email:
+    if await crud.get_user_by_email(db, user_data.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Email is already registered",
         )
 
-    user = crud.create_user(
+    user = await crud.create_user(
         db=db,
         user_data=user_data,
         password_hash=hash_password(user_data.password),
@@ -69,32 +65,32 @@ def register_user(
 
 
 @router.get("/verify", response_model=schemas.Token)
-def verify_email(token: str, db: Session = Depends(get_db)):
+async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
     user_id = decode_email_verification_token(token)
 
     if user_id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_VERIFY_LINK_INVALID)
 
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_VERIFY_LINK_INVALID)
 
     if not user.email_verified:
-        crud.set_email_verified(db, user)
+        await crud.set_email_verified(db, user)
 
     # Log the user straight in from the email link.
-    return _issue_tokens(db, user)
+    return await _issue_tokens(db, user)
 
 
 @router.post("/resend-verification", response_model=schemas.MessageResponse)
 @limiter.limit("3/hour")
-def resend_verification(
+async def resend_verification(
     request: Request,
     payload: schemas.ResendVerificationRequest,
     background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    user = crud.get_user_by_email(db, payload.email)
+    user = await crud.get_user_by_email(db, payload.email)
 
     # Only send for an existing, still-unverified account, but always return the same
     # generic message so the endpoint cannot be used to probe which emails are registered.
@@ -109,8 +105,10 @@ def resend_verification(
 
 @router.post("/login", response_model=schemas.Token)
 @limiter.limit("5/minute")
-def login_user(request: Request, login_data: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = authenticate_user(db, login_data.username, login_data.password)
+async def login_user(
+    request: Request, login_data: schemas.UserLogin, db: AsyncSession = Depends(get_db)
+):
+    user = await authenticate_user(db, login_data.username, login_data.password)
 
     if user is None:
         raise HTTPException(
@@ -118,17 +116,17 @@ def login_user(request: Request, login_data: schemas.UserLogin, db: Session = De
             detail="Invalid username or password",
         )
 
-    return _issue_tokens(db, user)
+    return await _issue_tokens(db, user)
 
 
 @router.post("/refresh", response_model=schemas.Token)
 @limiter.limit("30/minute")
-def refresh_tokens(
+async def refresh_tokens(
     request: Request,
     payload: schemas.RefreshRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    result = rotate_refresh_token(db, payload.refresh_token)
+    result = await rotate_refresh_token(db, payload.refresh_token)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -144,9 +142,9 @@ def refresh_tokens(
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(payload: schemas.RefreshRequest, db: Session = Depends(get_db)):
+async def logout(payload: schemas.RefreshRequest, db: AsyncSession = Depends(get_db)):
     # Revoke the refresh token server-side (access tokens expire on their own).
-    revoke_refresh_token(db, payload.refresh_token)
+    await revoke_refresh_token(db, payload.refresh_token)
 
 
 @router.get("/me", response_model=schemas.UserRead)
@@ -155,9 +153,9 @@ def read_current_user(current_user=Depends(get_current_user)):
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
-def delete_account(
+async def delete_account(
     payload: schemas.AccountDeleteRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     # Re-authenticate before an irreversible account deletion.
@@ -168,19 +166,19 @@ def delete_account(
         )
 
     # Refuse to delete the last admin, otherwise the admin panel becomes unreachable.
-    if crud.is_only_admin(db, current_user):
+    if await crud.is_only_admin(db, current_user):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete the only admin account",
         )
 
-    crud.delete_user(db, current_user)
+    await crud.delete_user(db, current_user)
 
 
 @router.put("/password", response_model=schemas.UserRead)
-def change_password(
+async def change_password(
     password_data: schemas.PasswordChange,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     if not verify_password(password_data.current_password, current_user.password_hash):
@@ -189,7 +187,7 @@ def change_password(
             detail="Current password is incorrect",
         )
 
-    crud.update_user_password(
+    await crud.update_user_password(
         db=db,
         user=current_user,
         password_hash=hash_password(password_data.new_password),
