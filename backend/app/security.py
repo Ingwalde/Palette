@@ -116,7 +116,10 @@ def get_current_user(
         # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
         if payload.get("purpose") is not None:
             raise credentials_exception
-        user_id = int(payload.get("sub"))
+        sub = payload.get("sub")
+        if sub is None:
+            raise credentials_exception
+        user_id = int(sub)
     except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception from None
 
