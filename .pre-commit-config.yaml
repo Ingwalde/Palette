@@ -1,0 +1,14 @@
+# Pre-commit hooks for the Palette backend. Install once with:
+#   pip install pre-commit && pre-commit install
+# Config for ruff lives in pyproject.toml.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.1
+    hooks:
+      - id: ruff
+        name: ruff (lint + autofix)
+        args: [--fix]
+        files: ^backend/(app|tests)/
+      - id: ruff-format
+        name: ruff (format)
+        files: ^backend/(app|tests)/

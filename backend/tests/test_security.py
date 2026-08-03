@@ -1,13 +1,12 @@
 import jwt
-
 from app import models
+from app.config import settings
 from app.security import (
     ALGORITHM,
     create_access_token,
     hash_password,
     verify_password,
 )
-from app.config import SECRET_KEY
 
 
 def test_hash_verify_round_trip():
@@ -40,7 +39,7 @@ def test_hash_format():
 def test_access_token_carries_claims():
     user = models.User(id=7, username="carol", email="carol@test.com", is_admin=True)
     token = create_access_token(user)
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     assert payload["sub"] == "7"
     assert payload["username"] == "carol"
     assert payload["is_admin"] is True

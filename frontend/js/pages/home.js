@@ -1,6 +1,6 @@
 import { getPalettes, getTags } from "../api/palettesApi.js";
 import { createPaletteCard } from "../components/paletteCard.js";
-import { createEmptyState } from "../components/emptyState.js";
+import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
 import { clearElement, createElement, qs, qsa } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 import { initCustomSelects, syncCustomSelect } from "../utils/customSelect.js";
@@ -69,7 +69,8 @@ async function renderTagFilters() {
 
   try {
     const tags = await getTags();
-    ["all", ...tags].forEach((tag) => {
+    const randomTags = pickRandom(tags, 10);
+    ["all", ...randomTags].forEach((tag) => {
       const button = createElement("button", {
         className: `tag-button${tag === state.tag ? " tag-button--active" : ""}`,
         text: tag === "all" ? "All" : `#${tag}`,
@@ -132,12 +133,19 @@ async function renderPalettes() {
   } catch (error) {
     clearElement(elements.grid);
     elements.resultCount.textContent = "API error";
-    elements.grid.append(createEmptyState(
-      "Backend is not available",
-      "Start FastAPI with: uvicorn app.main:app --reload"
-    ));
+    elements.grid.append(createBackendErrorState());
     showToast(error.message, "error");
   }
+}
+
+// Show a rotating sample of tags instead of the full list — a lighter home filter.
+function pickRandom(list, count) {
+  const shuffled = [...list];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
 }
 
 function debounce(callback, delay = 250) {

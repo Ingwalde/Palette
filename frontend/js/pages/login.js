@@ -1,6 +1,6 @@
 import { getCurrentUser, loginUser, registerUser } from "../api/authApi.js";
 import { clearAuth, getAccessToken, saveAuth } from "../utils/authStorage.js";
-import { qs } from "../utils/dom.js";
+import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -97,17 +97,3 @@ async function refreshCurrentUser() {
   }
 }
 
-function setButtonLoading(button, text) {
-  if (!button) return;
-
-  button.dataset.originalText = button.textContent;
-  button.textContent = text;
-  button.disabled = true;
-}
-
-function resetButton(button, fallbackText) {
-  if (!button) return;
-
-  button.textContent = button.dataset.originalText || fallbackText;
-  button.disabled = false;
-}

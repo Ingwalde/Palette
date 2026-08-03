@@ -31,9 +31,7 @@ def test_create_and_get_by_slug(db_session):
 
 def test_update_palette_changes_slug(db_session):
     palette = crud.create_palette(db_session, _palette("Old Name"))
-    updated = crud.update_palette(
-        db_session, palette, schemas.PaletteUpdate(name="Brand New Name")
-    )
+    updated = crud.update_palette(db_session, palette, schemas.PaletteUpdate(name="Brand New Name"))
     assert updated.slug == "brand-new-name"
 
 

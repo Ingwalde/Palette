@@ -3,13 +3,20 @@
 Base URL:
 
 ```text
-http://localhost:8000/api
+http://localhost:8000/api/v1
 ```
 
-Swagger UI:
+Conventions:
+
+- List endpoints are paginated and return an envelope `{ items, total, limit, offset }`
+  with an `X-Total-Count` header (`limit` / `offset` query params).
+- Errors are returned as `application/problem+json` (RFC 7807):
+  `{ "type", "title", "status", "detail" }`.
+
+Swagger UI (enable with `ENABLE_API_DOCS=true`):
 
 ```text
-http://localhost:8000/docs
+http://localhost:8000/api/docs
 ```
 
 ---
@@ -27,7 +34,7 @@ Authorization: Bearer your_access_token
 The token is returned by:
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 ```
 
 ---
@@ -37,7 +44,7 @@ POST /api/auth/login
 ### Get all palettes
 
 ```http
-GET /api/palettes
+GET /api/v1/palettes
 ```
 
 Optional query parameters:
@@ -51,10 +58,10 @@ sort   — default | az | za
 Examples:
 
 ```http
-GET /api/palettes?search=dark
-GET /api/palettes?tag=nature
-GET /api/palettes?sort=az
-GET /api/palettes?search=blue&tag=cold&sort=az
+GET /api/v1/palettes?search=dark
+GET /api/v1/palettes?tag=nature
+GET /api/v1/palettes?sort=az
+GET /api/v1/palettes?search=blue&tag=cold&sort=az
 ```
 
 ---
@@ -62,7 +69,7 @@ GET /api/palettes?search=blue&tag=cold&sort=az
 ### Get all tags
 
 ```http
-GET /api/palettes/tags
+GET /api/v1/palettes/tags
 ```
 
 Example response:
@@ -76,13 +83,13 @@ Example response:
 ### Get one palette
 
 ```http
-GET /api/palettes/{slug}
+GET /api/v1/palettes/{slug}
 ```
 
 Example:
 
 ```http
-GET /api/palettes/navy-orange
+GET /api/v1/palettes/navy-orange
 ```
 
 ---
@@ -92,7 +99,7 @@ GET /api/palettes/navy-orange
 ### Register user
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 ```
 
 Body:
@@ -112,7 +119,7 @@ Returns the created user without the password.
 ### Login
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 ```
 
 Body:
@@ -145,7 +152,7 @@ Example response:
 ### Get current user
 
 ```http
-GET /api/auth/me
+GET /api/v1/auth/me
 ```
 
 Headers:
@@ -159,7 +166,7 @@ Authorization: Bearer your_access_token
 ### Change password
 
 ```http
-PUT /api/auth/password
+PUT /api/v1/auth/password
 ```
 
 Headers:
@@ -188,7 +195,7 @@ All favorites endpoints require a logged-in user.
 ### Get current user's favorite palettes
 
 ```http
-GET /api/favorites
+GET /api/v1/favorites
 ```
 
 Headers:
@@ -202,7 +209,7 @@ Authorization: Bearer your_access_token
 ### Get current user's favorite keys
 
 ```http
-GET /api/favorites/keys
+GET /api/v1/favorites/keys
 ```
 
 Returns palette slugs:
@@ -216,13 +223,13 @@ Returns palette slugs:
 ### Add palette to favorites
 
 ```http
-POST /api/favorites/{slug}
+POST /api/v1/favorites/{slug}
 ```
 
 Example:
 
 ```http
-POST /api/favorites/navy-orange
+POST /api/v1/favorites/navy-orange
 ```
 
 Headers:
@@ -236,13 +243,13 @@ Authorization: Bearer your_access_token
 ### Remove palette from favorites
 
 ```http
-DELETE /api/favorites/{slug}
+DELETE /api/v1/favorites/{slug}
 ```
 
 Example:
 
 ```http
-DELETE /api/favorites/navy-orange
+DELETE /api/v1/favorites/navy-orange
 ```
 
 ---
@@ -250,7 +257,7 @@ DELETE /api/favorites/navy-orange
 ### Clear all favorites
 
 ```http
-DELETE /api/favorites
+DELETE /api/v1/favorites
 ```
 
 Example response:
@@ -280,7 +287,7 @@ Authorization: Bearer admin_access_token
 ### Create palette
 
 ```http
-POST /api/palettes
+POST /api/v1/palettes
 ```
 
 Body:
@@ -299,7 +306,7 @@ Body:
 ### Update palette
 
 ```http
-PUT /api/palettes/{id}
+PUT /api/v1/palettes/{id}
 ```
 
 Body can include one or more fields:
@@ -318,7 +325,7 @@ Body can include one or more fields:
 ### Delete palette
 
 ```http
-DELETE /api/palettes/{id}
+DELETE /api/v1/palettes/{id}
 ```
 
 Returns:

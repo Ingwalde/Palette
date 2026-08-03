@@ -3,11 +3,12 @@
 When ``RESEND_API_KEY`` is not configured the message is logged instead of sent, so the
 verification flow works end to end in local development without an email provider.
 """
+
 import logging
 
 import httpx
 
-from .config import EMAIL_FROM, PUBLIC_BASE_URL, RESEND_API_KEY
+from .config import settings
 
 logger = logging.getLogger("palette.email")
 
@@ -16,22 +17,20 @@ RESEND_ENDPOINT = "https://api.resend.com/emails"
 
 def build_verification_link(token: str) -> str:
     """Link the user clicks in the email — points at the frontend verify page."""
-    return f"{PUBLIC_BASE_URL}/verify.html?token={token}"
+    return f"{settings.public_base_url}/verify.html?token={token}"
 
 
 def send_email(to: str, subject: str, html: str) -> None:
-    if not RESEND_API_KEY:
-        logger.warning(
-            "RESEND_API_KEY is not set; email to %s not sent. Subject: %s", to, subject
-        )
+    if not settings.resend_api_key:
+        logger.warning("RESEND_API_KEY is not set; email to %s not sent. Subject: %s", to, subject)
         logger.info("Email body (dev fallback):\n%s", html)
         return
 
     try:
         response = httpx.post(
             RESEND_ENDPOINT,
-            headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
-            json={"from": EMAIL_FROM, "to": [to], "subject": subject, "html": html},
+            headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+            json={"from": settings.email_from, "to": [to], "subject": subject, "html": html},
             timeout=10.0,
         )
         response.raise_for_status()

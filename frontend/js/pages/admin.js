@@ -5,7 +5,7 @@ import {
   updatePalette
 } from "../api/palettesApi.js";
 import { getCurrentUser } from "../api/authApi.js";
-import { createEmptyState } from "../components/emptyState.js";
+import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
 import { parseCommaSeparatedList } from "../utils/color.js";
 import { clearElement, createElement, qs } from "../utils/dom.js";
 import { clearAuth, getStoredUser } from "../utils/authStorage.js";
@@ -143,10 +143,7 @@ async function renderAdminList() {
   } catch (error) {
     clearElement(elements.adminItems);
     elements.adminCount.textContent = "API error";
-    elements.adminItems.append(createEmptyState(
-      "Backend is not available",
-      "Start FastAPI with: uvicorn app.main:app --reload"
-    ));
+    elements.adminItems.append(createBackendErrorState());
     showToast(error.message, "error");
   }
 }

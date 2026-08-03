@@ -21,7 +21,7 @@ Then verify:
 
 ```text
 http://localhost:8000/docs
-http://localhost:8000/api/palettes
+http://localhost:8000/api/v1/palettes
 ```
 
 ---
@@ -81,7 +81,7 @@ docker compose up --build  # recreates schema, reseeds palettes + admin
 ## Favorites not loading
 
 Favorites require login. Check: backend is running, user is logged in, token exists in
-localStorage, and `/api/favorites` works in Swagger with a Bearer token.
+localStorage, and `/api/v1/favorites` works in Swagger with a Bearer token.
 
 ---
 

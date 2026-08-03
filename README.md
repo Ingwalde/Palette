@@ -1,8 +1,8 @@
-# Palette v4.2 — Full-Stack Color Palette App
+# Palette v4.3 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.2** adds email verification on registration: new accounts receive a Resend-backed verification link, a friendly verify page confirms the address, an "email not verified" banner with a resend button appears on the account page, and login is still allowed while unverified. It builds on **4.1** (GitHub Actions CI and a broad pass of mobile/UX fixes) and the **4.1.2** production hardening (proxy-aware rate limiting, API docs hidden by default), on top of the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.3** rounds out account management: the account page shows your email in a clear labeled field and adds a "Delete account" flow (removing the account and its favorites), and the home page now shows a lighter, rotating set of ten random tag filters. It builds on **4.2** (email verification with verify-link auto-login), **4.1** (CI and mobile/UX fixes), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -12,19 +12,19 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 
 ## What changed by version
 
-| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 | v4.0 | v4.1 | v4.2 |
-|---|---|---|---|---|---|---|---|---|
-| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened | Containerized full-stack | Containerized full-stack | Containerized full-stack |
-| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database | PostgreSQL only | PostgreSQL only | PostgreSQL only |
-| Deployment | None | Local scripts | Local scripts | Local scripts | Local scripts | Docker Compose | Docker Compose | Docker Compose |
-| CI | None | None | None | None | None | None | GitHub Actions (pytest) | GitHub Actions (pytest) |
-| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites |
-| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow |
-| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Email verification on registration |
-| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets | Same, plus containerized secrets | Same, plus proxy-aware rate limiting |
-| Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) | pytest suite + CI | pytest suite + CI |
-| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
-| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes + UX polish | Email verify page + resend banner |
+| Area | v2.0 | v3.0 | v3.1 | v3.2 | v3.3 | v4.0 | v4.1 | v4.2 | v4.3 |
+|---|---|---|---|---|---|---|---|---|---|
+| Architecture | Frontend-only | Frontend + backend | Full-stack with authentication | Full-stack with UX/export polish | Full-stack, security-hardened | Containerized full-stack | Containerized full-stack | Containerized full-stack | Containerized full-stack |
+| Palette data | Static JS data | SQLite database | SQLite database | SQLite database | SQLite database | PostgreSQL only | PostgreSQL only | PostgreSQL only | PostgreSQL only |
+| Deployment | None | Local scripts | Local scripts | Local scripts | Local scripts | Docker Compose | Docker Compose | Docker Compose | Docker Compose |
+| CI | None | None | None | None | None | None | GitHub Actions (pytest) | GitHub Actions (pytest) | GitHub Actions (pytest) |
+| Favorites | Browser localStorage | Browser localStorage | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites | User-based favorites |
+| Admin | No backend admin | Admin token | Admin role with Bearer token | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow | Protected admin flow |
+| Auth | None | Planned | Username/email/password auth | Login/Account flow refined | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Login-by-email fixed, rate-limited | Email verification on registration | Email verification + delete account |
+| Security | None | Admin token | Password hashing + JWT | Password hashing + JWT | Mandatory secret, CORS allowlist, rate limiting, timing-safe compare | Same, plus containerized secrets | Same, plus containerized secrets | Same, plus proxy-aware rate limiting | Same, plus proxy-aware rate limiting |
+| Tests | None | None | None | None | pytest suite (auth/CRUD/API) | pytest suite (auth/CRUD/API) | pytest suite + CI | pytest suite + CI | pytest suite + CI |
+| Export | CSS/SCSS/JSON/TXT | CSS/SCSS/JSON/TXT/PNG | Account-based favorites export | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card | Selected palette export + PNG palette card |
+| UI | Native selects | Custom dropdowns | Account/admin visibility | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Footer panels, changelog page, stable navigation | Mobile display fixes + UX polish | Email verify page + resend banner | Account email field, delete account, random home tags |
 
 ---
 
@@ -76,10 +76,20 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 - Explicit CORS origin allowlist (no wildcard).
 - Timezone-aware timestamps.
 - Admin-only create/update/delete palette actions.
-- Automatic default palette seeding.
+- Automatic default palette seeding from `seed_palettes.json`.
 - Automatic first admin user creation from `.env` settings.
-- Swagger UI documentation.
-- Automated test suite with pytest (auth, CRUD, API).
+- Versioned API under `/api/v1`.
+- Paginated palette list (`{ items, total, limit, offset }` + `X-Total-Count` header).
+- RFC 7807 `application/problem+json` error responses.
+- SQL-side search, tag filtering and sorting; `colors`/`tags` stored as JSONB with a GIN
+  index on `tags`.
+- Typed configuration via `pydantic-settings` with fail-fast validation.
+- Alembic database migrations (safe adoption of a pre-Alembic database on startup).
+- Structured application logging (`LOG_LEVEL`).
+- Swagger UI documentation (served at `/api/docs`, off by default — enable with
+  `ENABLE_API_DOCS=true`).
+- Automated test suite with pytest (auth, CRUD, API); ruff, mypy and an 80% coverage gate
+  in CI.
 
 ---
 
@@ -120,7 +130,7 @@ together. This is the only supported way to run it (there is no SQLite / non-Doc
 docker compose up --build
 ```
 
-- Backend: `http://localhost:8000` (Swagger at `/docs`)
+- Backend: `http://localhost:8000` (Swagger at `/api/docs` when `ENABLE_API_DOCS=true`)
 - Frontend: `http://localhost:5500`
 - Database: PostgreSQL in the `db` service, data persisted in the `pgdata` volume.
 
@@ -138,6 +148,32 @@ docker compose --profile test run --rm tests
 
 ---
 
+## Development
+
+Backend code quality is enforced with ruff (lint + format), mypy and a pytest coverage
+gate; the same checks run in CI. Install the dev tools and hooks:
+
+```bash
+pip install -r backend/requirements-dev.txt
+pre-commit install
+```
+
+```bash
+ruff check backend/app backend/tests     # lint
+ruff format backend/app backend/tests    # format
+mypy backend/app                          # type-check
+```
+
+Database schema changes are managed with Alembic (`backend/alembic/`). The app runs
+migrations automatically on startup and adopts an existing pre-Alembic database safely.
+To add a migration during development:
+
+```bash
+docker compose run --rm backend alembic revision -m "describe change"
+```
+
+---
+
 ## Environment variables
 
 Create a local file:
@@ -151,6 +187,8 @@ Use `backend/.env.example` as a template:
 ```env
 SECRET_KEY=change-this-secret-key-before-sharing
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+LOG_LEVEL=INFO
+ENABLE_API_DOCS=false
 CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 # DATABASE_URL is mandatory (PostgreSQL). Docker Compose sets it from the values below.
 POSTGRES_USER=palette
@@ -159,6 +197,10 @@ POSTGRES_DB=palette
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
+# Email verification (Resend). Without RESEND_API_KEY the app logs the link instead.
+RESEND_API_KEY=
+EMAIL_FROM=Palette <noreply@palettes-app.com>
+PUBLIC_BASE_URL=http://localhost:5500
 ```
 
 `SECRET_KEY` is **mandatory** — the backend raises an error at startup if it is
@@ -177,19 +219,23 @@ Do not commit `backend/.env`.
 ## API overview
 
 ```text
-GET    /api/palettes
-POST   /api/auth/register
-POST   /api/auth/login
-GET    /api/auth/me
-GET    /api/auth/verify?token=...
-POST   /api/auth/resend-verification
-PUT    /api/auth/password
-GET    /api/favorites
-POST   /api/favorites/{slug}
-DELETE /api/favorites/{slug}
+GET    /api/v1/palettes
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+GET    /api/v1/auth/me
+DELETE /api/v1/auth/me
+GET    /api/v1/auth/verify?token=...
+POST   /api/v1/auth/resend-verification
+PUT    /api/v1/auth/password
+GET    /api/v1/favorites
+POST   /api/v1/favorites/{slug}
+DELETE /api/v1/favorites/{slug}
 ```
 
-Admin actions require a Bearer token and `is_admin = true`.
+Admin actions require a Bearer token and `is_admin = true`. `GET /api/v1/palettes` is
+paginated (`{ items, total, limit, offset }` with an `X-Total-Count` header; `limit` /
+`offset` / `search` / `tag` / `sort` query params). Errors are returned as
+`application/problem+json` (RFC 7807).
 
 ---
 
@@ -219,5 +265,5 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.2.1
+v4.3.0
 ```

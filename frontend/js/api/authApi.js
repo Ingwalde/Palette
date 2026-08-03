@@ -1,34 +1,5 @@
 import { getAccessToken } from "../utils/authStorage.js";
-
-const API_BASE_URL =
-  location.protocol === "https:" ? "/api" : `http://${location.hostname}:8000/api`;
-
-async function apiRequest(endpoint, options = {}) {
-  const { headers = {}, ...requestOptions } = options;
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...requestOptions,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers
-    }
-  });
-
-  if (!response.ok) {
-    let message = `API request failed with status ${response.status}`;
-
-    try {
-      const errorData = await response.json();
-      message = formatApiError(errorData.detail) || message;
-    } catch {
-      // Keep the default message if the response is not JSON.
-    }
-
-    throw new Error(message);
-  }
-
-  return response.json();
-}
+import { request as apiRequest } from "./httpClient.js";
 
 export function registerUser(payload) {
   return apiRequest("/auth/register", {
@@ -87,22 +58,18 @@ export function changePassword(payload) {
   });
 }
 
+export function deleteAccount(password) {
+  const token = getAccessToken();
 
-function formatApiError(detail) {
-  if (typeof detail === "string") {
-    return detail;
+  if (!token) {
+    throw new Error("User is not logged in");
   }
 
-  if (Array.isArray(detail)) {
-    return detail
-      .map((item) => item?.msg || JSON.stringify(item))
-      .filter(Boolean)
-      .join("; ");
-  }
-
-  if (detail && typeof detail === "object") {
-    return detail.message || JSON.stringify(detail);
-  }
-
-  return "";
+  return apiRequest("/auth/me", {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ password })
+  });
 }
