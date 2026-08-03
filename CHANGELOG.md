@@ -1,5 +1,27 @@
 # Changelog
 
+## v4.3.1 — Security and infrastructure hardening
+
+### Added
+
+- Rotating refresh tokens: login and email verification issue an access + refresh pair;
+  `POST /api/v1/auth/refresh` rotates them (single-use), `POST /api/v1/auth/logout` revokes
+  the refresh token server-side. The frontend transparently refreshes an expired access
+  token and retries the request.
+- Redis-backed rate limiting so limits are shared across worker processes / instances
+  (adds a `redis` service to Docker Compose).
+
+### Changed
+
+- Passwords are hashed with **Argon2id**; existing PBKDF2-SHA256 hashes still verify and are
+  transparently upgraded to Argon2 on the next successful login.
+- The application request path runs on **async SQLAlchemy** (asyncpg); Alembic migrations
+  stay synchronous (psycopg).
+
+### Fixed
+
+- Even vertical spacing in the account card.
+
 ## v4.3.0 — Account management and backend hardening
 
 ### Added — account & UI
