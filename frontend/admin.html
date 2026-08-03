@@ -72,11 +72,14 @@
           <textarea class="textarea" id="descriptionInput" rows="4" placeholder="Short description..." required></textarea>
         </label>
 
-        <label class="field">
+        <div class="field">
           <span>Colors</span>
-          <input class="input" id="colorsInput" type="text" placeholder="#1b263b, #415a77, #778da9, #e0e1dd" required />
-          <small class="hint">Use comma-separated HEX colors.</small>
-        </label>
+          <div class="color-editor" id="colorEditor"></div>
+          <div class="color-editor__footer">
+            <button class="button button--ghost" id="addColorBtn" type="button">+ Add color</button>
+            <small class="hint">1–8 HEX colors.</small>
+          </div>
+        </div>
 
         <label class="field">
           <span>Tags</span>

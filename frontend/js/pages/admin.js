@@ -24,7 +24,8 @@ const elements = {
   paletteId: qs("#paletteId"),
   nameInput: qs("#nameInput"),
   descriptionInput: qs("#descriptionInput"),
-  colorsInput: qs("#colorsInput"),
+  colorEditor: qs("#colorEditor"),
+  addColorBtn: qs("#addColorBtn"),
   tagsInput: qs("#tagsInput"),
   submitButton: qs("#submitButton"),
   cancelEditButton: qs("#cancelEditButton"),
@@ -36,6 +37,7 @@ initAdminPage();
 
 function initAdminPage() {
   bindEvents();
+  renderColors([]);
   checkAdminAccess();
 }
 
@@ -55,6 +57,71 @@ function bindEvents() {
   });
 
   elements.cancelEditButton.addEventListener("click", resetForm);
+  elements.addColorBtn.addEventListener("click", () => addColorRow());
+}
+
+const DEFAULT_COLOR = "#3f4e4f";
+const MAX_COLORS = 8;
+
+function createColorRow(value = DEFAULT_COLOR) {
+  const row = createElement("div", { className: "color-row" });
+  const picker = createElement("input", {
+    className: "color-row__picker",
+    attrs: { type: "color", value }
+  });
+  const hex = createElement("input", {
+    className: "input color-row__hex",
+    attrs: { type: "text", value: value.toUpperCase(), maxlength: "7", "aria-label": "HEX color" }
+  });
+  const remove = createElement("button", {
+    className: "button button--ghost color-row__remove",
+    text: "✕",
+    attrs: { type: "button", "aria-label": "Remove color" }
+  });
+
+  picker.addEventListener("input", () => {
+    hex.value = picker.value.toUpperCase();
+  });
+  hex.addEventListener("input", () => {
+    if (/^#[0-9a-fA-F]{6}$/.test(hex.value)) {
+      picker.value = hex.value;
+    }
+  });
+  remove.addEventListener("click", () => {
+    if (elements.colorEditor.querySelectorAll(".color-row").length > 1) {
+      row.remove();
+      updateAddColorState();
+    }
+  });
+
+  row.append(picker, hex, remove);
+  return row;
+}
+
+function renderColors(colors) {
+  clearElement(elements.colorEditor);
+  const list = colors && colors.length ? colors : [DEFAULT_COLOR];
+  list.slice(0, MAX_COLORS).forEach((color) => elements.colorEditor.append(createColorRow(color)));
+  updateAddColorState();
+}
+
+function addColorRow(value = DEFAULT_COLOR) {
+  if (elements.colorEditor.querySelectorAll(".color-row").length >= MAX_COLORS) {
+    return;
+  }
+  elements.colorEditor.append(createColorRow(value));
+  updateAddColorState();
+}
+
+function updateAddColorState() {
+  const count = elements.colorEditor.querySelectorAll(".color-row").length;
+  elements.addColorBtn.disabled = count >= MAX_COLORS;
+}
+
+function readColors() {
+  return [...elements.colorEditor.querySelectorAll(".color-row__hex")]
+    .map((input) => input.value.trim())
+    .filter(Boolean);
 }
 
 async function checkAdminAccess() {
@@ -99,7 +166,7 @@ async function savePalette() {
   const payload = {
     name: elements.nameInput.value.trim(),
     description: elements.descriptionInput.value.trim(),
-    colors: parseCommaSeparatedList(elements.colorsInput.value),
+    colors: readColors(),
     tags: parseCommaSeparatedList(elements.tagsInput.value).map((tag) => tag.toLowerCase())
   };
 
@@ -195,7 +262,7 @@ function fillForm(palette) {
   elements.paletteId.value = palette.id;
   elements.nameInput.value = palette.name;
   elements.descriptionInput.value = palette.description;
-  elements.colorsInput.value = palette.colors.join(", ");
+  renderColors(palette.colors);
   elements.tagsInput.value = palette.tags.join(", ");
   elements.formTitle.textContent = "Edit palette";
   elements.submitButton.textContent = "Update palette";
@@ -221,6 +288,7 @@ async function removePalette(id) {
 
 function resetForm() {
   elements.form.reset();
+  renderColors([]);
   elements.paletteId.value = "";
   elements.formTitle.textContent = "Add palette";
   elements.submitButton.textContent = "Create palette";
