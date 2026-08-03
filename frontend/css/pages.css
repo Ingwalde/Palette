@@ -384,6 +384,9 @@
 }
 
 .account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
   width: min(560px, 100%);
   padding: 28px;
   border: 1px solid var(--color-border);
@@ -397,7 +400,6 @@
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-bottom: 28px;
 }
 
 .account-avatar {
@@ -434,7 +436,6 @@
 .password-form {
   display: grid;
   gap: 16px;
-  margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid var(--color-border);
 }
