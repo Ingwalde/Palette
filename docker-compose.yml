@@ -60,6 +60,9 @@ services:
     environment:
       SECRET_KEY: test-secret-key-not-a-placeholder-0123456789
       DATABASE_URL: postgresql+psycopg://palette:palette@test-db:5432/palette_test
+      # The source is bind-mounted read-writable only by the host user; write coverage
+      # data to /tmp so pytest-cov does not fail on a root-owned mount (e.g. in CI).
+      COVERAGE_FILE: /tmp/.coverage
     volumes:
       - ./backend:/app
     command: ["python", "-m", "pytest", "-q"]
