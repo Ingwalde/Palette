@@ -1,9 +1,10 @@
 import hashlib
 import hmac
-import os
 from datetime import UTC, datetime, timedelta
 
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHash, VerifyMismatchError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
@@ -14,38 +15,52 @@ from .config import settings
 from .database import get_db
 
 ALGORITHM = "HS256"
-HASH_NAME = "pbkdf2_sha256"
-HASH_ITERATIONS = 210_000
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
+
+# Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
+# Argon2 on the next successful login (see authenticate_user).
+_password_hasher = PasswordHasher()
+_LEGACY_HASH_NAME = "pbkdf2_sha256"
+_LEGACY_ITERATIONS = 210_000
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_password(password: str) -> str:
-    salt = os.urandom(16).hex()
-    password_hash = _pbkdf2_hash(password=password, salt=salt)
-    return f"{HASH_NAME}${HASH_ITERATIONS}${salt}${password_hash}"
+    return _password_hasher.hash(password)
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
+    if stored_hash.startswith("$argon2"):
+        try:
+            return _password_hasher.verify(stored_hash, password)
+        except (VerifyMismatchError, InvalidHash):
+            return False
+    return _verify_legacy_pbkdf2(password, stored_hash)
+
+
+def password_needs_rehash(stored_hash: str) -> bool:
+    """True if the hash should be replaced (legacy scheme, or outdated Argon2 parameters)."""
+    if not stored_hash.startswith("$argon2"):
+        return True
+    try:
+        return _password_hasher.check_needs_rehash(stored_hash)
+    except InvalidHash:
+        return True
+
+
+def _verify_legacy_pbkdf2(password: str, stored_hash: str) -> bool:
     try:
         hash_name, iterations_raw, salt, expected_hash = stored_hash.split("$", 3)
     except ValueError:
         return False
-
-    if hash_name != HASH_NAME:
+    if hash_name != _LEGACY_HASH_NAME:
         return False
-
-    password_hash = _pbkdf2_hash(
-        password=password,
-        salt=salt,
-        iterations=int(iterations_raw),
-    )
-
-    return hmac.compare_digest(password_hash, expected_hash)
+    computed = _pbkdf2_hash(password, salt, int(iterations_raw))
+    return hmac.compare_digest(computed, expected_hash)
 
 
-def _pbkdf2_hash(password: str, salt: str, iterations: int = HASH_ITERATIONS) -> str:
+def _pbkdf2_hash(password: str, salt: str, iterations: int = _LEGACY_ITERATIONS) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
@@ -67,6 +82,10 @@ def authenticate_user(db: Session, username: str, password: str) -> models.User 
 
     if not verify_password(password, user.password_hash):
         return None
+
+    # Transparently upgrade legacy/outdated hashes to current Argon2id parameters.
+    if password_needs_rehash(user.password_hash):
+        crud.update_user_password(db, user, hash_password(password))
 
     return user
 

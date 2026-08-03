@@ -100,6 +100,26 @@ def test_password_change_success(client, user_token):
     assert new.status_code == 200
 
 
+def test_login_upgrades_legacy_hash(client, db_session):
+    from app import models
+    from app.security import _pbkdf2_hash
+
+    salt = "aa" * 16
+    legacy = f"pbkdf2_sha256$210000${salt}${_pbkdf2_hash('strong-password', salt)}"
+    user = models.User(username="legacyuser", email="legacy@test.com", password_hash=legacy)
+    db_session.add(user)
+    db_session.commit()
+
+    resp = client.post(
+        "/api/v1/auth/login",
+        json={"username": "legacyuser", "password": "strong-password"},
+    )
+    assert resp.status_code == 200
+
+    db_session.refresh(user)
+    assert user.password_hash.startswith("$argon2")
+
+
 def test_admin_gate_blocks_regular_user(client, user_token):
     resp = client.post(
         "/api/v1/palettes",
