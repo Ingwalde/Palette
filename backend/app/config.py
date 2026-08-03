@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     enable_api_docs: bool = False
     log_level: str = "INFO"
 
+    # Rate-limit storage backend. Defaults to in-memory; set to redis://host:port in
+    # production so limits are shared across processes/instances.
+    redis_url: str = "memory://"
+
     # Database — PostgreSQL only, mandatory (Compose supplies it).
     database_url: str = ""
 

@@ -13,6 +13,14 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build: ./backend
     env_file: backend/.env
@@ -20,8 +28,12 @@ services:
       # Container-only DB URL (host `db` resolves on the compose network). Overrides
       # the SQLite default so local non-Docker runs stay on SQLite.
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-palette}:${POSTGRES_PASSWORD:-palette}@db:5432/${POSTGRES_DB:-palette}
+      # Shared rate-limit storage so limits hold across worker processes / instances.
+      REDIS_URL: redis://redis:6379
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8000:8000"
