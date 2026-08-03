@@ -1,20 +1,41 @@
 # Changelog
 
-## v4.3.0 — Account email, delete account, random home tags
+## v4.3.0 — Account management and backend hardening
 
-### Added
+### Added — account & UI
 
-- Delete account: `DELETE /api/auth/me` removes the current account and its favorites
-  (204). A "Danger zone" button on the account page asks for confirmation, then deletes,
-  logs out and returns to the home page. The last remaining admin account cannot be
-  deleted (guarded server-side).
+- Delete account: `DELETE /api/v1/auth/me` removes the current account and its favorites
+  (204), re-authenticated with the account password. A "Danger zone" button confirms,
+  deletes, logs out and returns home. The last remaining admin account cannot be deleted
+  (guarded server-side).
+- The account page shows the signed-in email in a clear labeled field.
+- The home page tag filter shows `All` plus up to ten random tags (a lighter, rotating set).
 
-### Changed
+### Added — API & backend
 
-- The account page shows the signed-in email in a clear labeled field instead of faint
-  muted text.
-- The home page tag filter now shows `All` plus up to ten random tags, instead of the full
-  tag list, for a lighter and rotating set of filters.
+- Versioned API: all routes are served under `/api/v1`.
+- `GET /api/v1/palettes` is paginated — it returns `{ items, total, limit, offset }` with an
+  `X-Total-Count` header and `limit` / `offset` query parameters.
+- Errors follow RFC 7807: responses use `application/problem+json`
+  (`type` / `title` / `status` / `detail`).
+- Palette search, tag filtering and sorting run in SQL; `colors` / `tags` are stored as
+  JSONB with a GIN index on `tags` for indexed tag containment.
+- Structured startup logging (configurable with `LOG_LEVEL`).
+
+### Changed — configuration & database
+
+- Settings are a typed `pydantic-settings` model with fail-fast validation, replacing the
+  scattered `os.getenv` calls.
+- The schema is managed by Alembic migrations. On startup the app adopts a pre-Alembic
+  database safely (stamp baseline + idempotent upgrade), replacing the ad-hoc startup
+  `ALTER`. Default palettes moved to `seed_palettes.json`.
+
+### Changed — tooling & code quality
+
+- Ruff (lint + format), mypy and a pytest coverage gate (80%) run in CI and via pre-commit;
+  dependencies are pinned.
+- Frontend API modules share one HTTP client (`httpClient.js`); dead code removed (the old
+  `storage.js`, unused exports) and UI helpers deduplicated.
 
 ## v4.2.1 — Verify page polish and auto-login
 

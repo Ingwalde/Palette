@@ -76,10 +76,20 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 - Explicit CORS origin allowlist (no wildcard).
 - Timezone-aware timestamps.
 - Admin-only create/update/delete palette actions.
-- Automatic default palette seeding.
+- Automatic default palette seeding from `seed_palettes.json`.
 - Automatic first admin user creation from `.env` settings.
-- Swagger UI documentation.
-- Automated test suite with pytest (auth, CRUD, API).
+- Versioned API under `/api/v1`.
+- Paginated palette list (`{ items, total, limit, offset }` + `X-Total-Count` header).
+- RFC 7807 `application/problem+json` error responses.
+- SQL-side search, tag filtering and sorting; `colors`/`tags` stored as JSONB with a GIN
+  index on `tags`.
+- Typed configuration via `pydantic-settings` with fail-fast validation.
+- Alembic database migrations (safe adoption of a pre-Alembic database on startup).
+- Structured application logging (`LOG_LEVEL`).
+- Swagger UI documentation (served at `/api/docs`, off by default — enable with
+  `ENABLE_API_DOCS=true`).
+- Automated test suite with pytest (auth, CRUD, API); ruff, mypy and an 80% coverage gate
+  in CI.
 
 ---
 
@@ -120,7 +130,7 @@ together. This is the only supported way to run it (there is no SQLite / non-Doc
 docker compose up --build
 ```
 
-- Backend: `http://localhost:8000` (Swagger at `/docs`)
+- Backend: `http://localhost:8000` (Swagger at `/api/docs` when `ENABLE_API_DOCS=true`)
 - Frontend: `http://localhost:5500`
 - Database: PostgreSQL in the `db` service, data persisted in the `pgdata` volume.
 
@@ -138,6 +148,32 @@ docker compose --profile test run --rm tests
 
 ---
 
+## Development
+
+Backend code quality is enforced with ruff (lint + format), mypy and a pytest coverage
+gate; the same checks run in CI. Install the dev tools and hooks:
+
+```bash
+pip install -r backend/requirements-dev.txt
+pre-commit install
+```
+
+```bash
+ruff check backend/app backend/tests     # lint
+ruff format backend/app backend/tests    # format
+mypy backend/app                          # type-check
+```
+
+Database schema changes are managed with Alembic (`backend/alembic/`). The app runs
+migrations automatically on startup and adopts an existing pre-Alembic database safely.
+To add a migration during development:
+
+```bash
+docker compose run --rm backend alembic revision -m "describe change"
+```
+
+---
+
 ## Environment variables
 
 Create a local file:
@@ -151,6 +187,8 @@ Use `backend/.env.example` as a template:
 ```env
 SECRET_KEY=change-this-secret-key-before-sharing
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
+LOG_LEVEL=INFO
+ENABLE_API_DOCS=false
 CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500
 # DATABASE_URL is mandatory (PostgreSQL). Docker Compose sets it from the values below.
 POSTGRES_USER=palette
@@ -159,6 +197,10 @@ POSTGRES_DB=palette
 DEFAULT_ADMIN_USERNAME=admin
 DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
+# Email verification (Resend). Without RESEND_API_KEY the app logs the link instead.
+RESEND_API_KEY=
+EMAIL_FROM=Palette <noreply@palettes-app.com>
+PUBLIC_BASE_URL=http://localhost:5500
 ```
 
 `SECRET_KEY` is **mandatory** — the backend raises an error at startup if it is
@@ -190,7 +232,10 @@ POST   /api/v1/favorites/{slug}
 DELETE /api/v1/favorites/{slug}
 ```
 
-Admin actions require a Bearer token and `is_admin = true`.
+Admin actions require a Bearer token and `is_admin = true`. `GET /api/v1/palettes` is
+paginated (`{ items, total, limit, offset }` with an `X-Total-Count` header; `limit` /
+`offset` / `search` / `tag` / `sort` query params). Errors are returned as
+`application/problem+json` (RFC 7807).
 
 ---
 

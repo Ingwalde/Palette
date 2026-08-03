@@ -17,7 +17,7 @@ password
 Endpoint:
 
 ```http
-POST /api/auth/register
+POST /api/v1/auth/register
 ```
 
 The backend validates:
@@ -41,7 +41,7 @@ is_admin = false
 Endpoint:
 
 ```http
-POST /api/auth/login
+POST /api/v1/auth/login
 ```
 
 The user logs in with:
@@ -117,7 +117,7 @@ allows the user to:
 Endpoint:
 
 ```http
-PUT /api/auth/password
+PUT /api/v1/auth/password
 ```
 
 Requires login.
