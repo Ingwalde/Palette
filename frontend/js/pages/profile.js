@@ -1,5 +1,17 @@
-import { changePassword, deleteAccount, getCurrentUser, resendVerification } from "../api/authApi.js";
-import { clearAuth, getAccessToken, getStoredUser, saveAuth } from "../utils/authStorage.js";
+import {
+  changePassword,
+  deleteAccount,
+  getCurrentUser,
+  logoutUser,
+  resendVerification
+} from "../api/authApi.js";
+import {
+  clearAuth,
+  getAccessToken,
+  getRefreshToken,
+  getStoredUser,
+  saveAuth
+} from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 
@@ -144,7 +156,16 @@ async function handlePasswordChange(event) {
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
+  const refreshToken = getRefreshToken();
+  if (refreshToken) {
+    try {
+      await logoutUser(refreshToken);
+    } catch {
+      // Revoking failed — clear the local session anyway.
+    }
+  }
+
   clearAuth();
   showToast("Logged out");
 

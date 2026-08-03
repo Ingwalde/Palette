@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = ""
     access_token_expire_minutes: int = 1440
+    refresh_token_expire_days: int = 30
     email_verification_expire_hours: int = 24
     enable_api_docs: bool = False
     log_level: str = "INFO"

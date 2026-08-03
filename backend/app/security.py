@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -118,6 +119,43 @@ def decode_email_verification_token(token: str) -> int | None:
         return int(payload["sub"])
     except (InvalidTokenError, TypeError, ValueError, KeyError):
         return None
+
+
+def _hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def create_refresh_token(db: Session, user: models.User) -> str:
+    """Issue an opaque refresh token, storing only its hash."""
+    token = secrets.token_urlsafe(48)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
+    crud.create_refresh_token(db, user.id, _hash_refresh_token(token), expires_at)
+    return token
+
+
+def _active_refresh_token(db: Session, token: str) -> models.RefreshToken | None:
+    stored = crud.get_refresh_token(db, _hash_refresh_token(token))
+    if stored is None or stored.revoked or stored.expires_at < datetime.now(UTC):
+        return None
+    return stored
+
+
+def rotate_refresh_token(db: Session, token: str) -> tuple[models.User, str] | None:
+    """Validate a refresh token, revoke it (single use) and issue a fresh one."""
+    stored = _active_refresh_token(db, token)
+    if stored is None:
+        return None
+    user = crud.get_user(db, stored.user_id)
+    if user is None:
+        return None
+    crud.revoke_refresh_token(db, stored)
+    return user, create_refresh_token(db, user)
+
+
+def revoke_refresh_token(db: Session, token: str) -> None:
+    stored = crud.get_refresh_token(db, _hash_refresh_token(token))
+    if stored is not None and not stored.revoked:
+        crud.revoke_refresh_token(db, stored)
 
 
 def get_current_user(

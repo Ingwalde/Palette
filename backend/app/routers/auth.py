@@ -9,15 +9,26 @@ from ..security import (
     authenticate_user,
     create_access_token,
     create_email_verification_token,
+    create_refresh_token,
     decode_email_verification_token,
     get_current_user,
     hash_password,
+    revoke_refresh_token,
+    rotate_refresh_token,
     verify_password,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 _VERIFY_LINK_INVALID = "Invalid or expired verification link"
+
+
+def _issue_tokens(db: Session, user) -> schemas.Token:
+    return schemas.Token(
+        access_token=create_access_token(user),
+        refresh_token=create_refresh_token(db, user),
+        user=user,
+    )
 
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
@@ -71,8 +82,8 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     if not user.email_verified:
         crud.set_email_verified(db, user)
 
-    # Log the user straight in from the email link — return a real access token.
-    return schemas.Token(access_token=create_access_token(user), user=user)
+    # Log the user straight in from the email link.
+    return _issue_tokens(db, user)
 
 
 @router.post("/resend-verification", response_model=schemas.MessageResponse)
@@ -107,10 +118,35 @@ def login_user(request: Request, login_data: schemas.UserLogin, db: Session = De
             detail="Invalid username or password",
         )
 
+    return _issue_tokens(db, user)
+
+
+@router.post("/refresh", response_model=schemas.Token)
+@limiter.limit("30/minute")
+def refresh_tokens(
+    request: Request,
+    payload: schemas.RefreshRequest,
+    db: Session = Depends(get_db),
+):
+    result = rotate_refresh_token(db, payload.refresh_token)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+
+    user, new_refresh_token = result
     return schemas.Token(
         access_token=create_access_token(user),
+        refresh_token=new_refresh_token,
         user=user,
     )
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(payload: schemas.RefreshRequest, db: Session = Depends(get_db)):
+    # Revoke the refresh token server-side (access tokens expire on their own).
+    revoke_refresh_token(db, payload.refresh_token)
 
 
 @router.get("/me", response_model=schemas.UserRead)

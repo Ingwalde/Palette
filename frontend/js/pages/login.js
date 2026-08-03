@@ -1,5 +1,5 @@
 import { getCurrentUser, loginUser, registerUser } from "../api/authApi.js";
-import { clearAuth, getAccessToken, saveAuth } from "../utils/authStorage.js";
+import { clearAuth, getAccessToken, saveAuth, saveRefreshToken } from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { showToast } from "../utils/toast.js";
 
@@ -44,6 +44,7 @@ async function handleLogin() {
     });
 
     saveAuth(result.access_token, result.user);
+    saveRefreshToken(result.refresh_token);
     elements.loginPassword.value = "";
     showToast("Logged in");
 

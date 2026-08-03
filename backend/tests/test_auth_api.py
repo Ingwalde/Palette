@@ -100,6 +100,45 @@ def test_password_change_success(client, user_token):
     assert new.status_code == 200
 
 
+def _login(client, username="alice", password="strong-password"):
+    return client.post(
+        "/api/v1/auth/login", json={"username": username, "password": password}
+    ).json()
+
+
+def test_login_returns_refresh_token(client):
+    _register(client)
+    assert _login(client)["refresh_token"]
+
+
+def test_refresh_rotates_and_revokes_old(client):
+    _register(client)
+    old_refresh = _login(client)["refresh_token"]
+
+    rotated = client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    assert rotated.status_code == 200
+    body = rotated.json()
+    assert body["access_token"]
+    assert body["refresh_token"] != old_refresh
+
+    # single-use: the old refresh token no longer works
+    reused = client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    assert reused.status_code == 401
+
+
+def test_refresh_invalid_token(client):
+    resp = client.post("/api/v1/auth/refresh", json={"refresh_token": "not-a-token"})
+    assert resp.status_code == 401
+
+
+def test_logout_revokes_refresh_token(client):
+    _register(client)
+    refresh = _login(client)["refresh_token"]
+
+    assert client.post("/api/v1/auth/logout", json={"refresh_token": refresh}).status_code == 204
+    assert client.post("/api/v1/auth/refresh", json={"refresh_token": refresh}).status_code == 401
+
+
 def test_login_upgrades_legacy_hash(client, db_session):
     from app import models
     from app.security import _pbkdf2_hash

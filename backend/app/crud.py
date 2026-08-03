@@ -337,7 +337,31 @@ def is_only_admin(db: Session, user: models.User) -> bool:
 
 
 def delete_user(db: Session, user: models.User) -> None:
-    # Favorites have no ON DELETE cascade, so remove them before deleting the user.
+    # No ON DELETE cascade, so remove dependent rows before deleting the user.
     clear_user_favorites(db, user)
+    db.query(models.RefreshToken).filter(models.RefreshToken.user_id == user.id).delete(
+        synchronize_session=False
+    )
     db.delete(user)
+    db.commit()
+
+
+def create_refresh_token(
+    db: Session, user_id: int, token_hash: str, expires_at: datetime
+) -> models.RefreshToken:
+    token = models.RefreshToken(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
+    db.add(token)
+    db.commit()
+    db.refresh(token)
+    return token
+
+
+def get_refresh_token(db: Session, token_hash: str) -> models.RefreshToken | None:
+    return (
+        db.query(models.RefreshToken).filter(models.RefreshToken.token_hash == token_hash).first()
+    )
+
+
+def revoke_refresh_token(db: Session, token: models.RefreshToken) -> None:
+    token.revoked = True
     db.commit()
