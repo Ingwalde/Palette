@@ -62,16 +62,16 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 
 - FastAPI backend.
 - PostgreSQL database (psycopg 3).
-- SQLAlchemy models.
+- Async SQLAlchemy models on the request path (asyncpg).
 - Pydantic validation.
 - Public palette API.
 - Authentication API.
 - User-based favorites API.
-- Password hashing with PBKDF2-SHA256 (210k iterations).
+- Password hashing with Argon2id (legacy PBKDF2 hashes upgraded on next login).
 - Timing-safe password comparison.
-- JWT/Bearer token authentication with PyJWT.
+- JWT/Bearer access tokens with PyJWT plus rotating refresh tokens (server-side revocation).
 - Login by username or email.
-- Login and registration rate limiting with slowapi.
+- Login and registration rate limiting with slowapi (Redis-backed, shared across instances).
 - Mandatory `SECRET_KEY` — the app refuses to start without a real secret.
 - Explicit CORS origin allowlist (no wildcard).
 - Timezone-aware timestamps.
@@ -265,5 +265,5 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.3.0
+v4.3.1
 ```

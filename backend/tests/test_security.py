@@ -3,8 +3,10 @@ from app import models
 from app.config import settings
 from app.security import (
     ALGORITHM,
+    _pbkdf2_hash,
     create_access_token,
     hash_password,
+    password_needs_rehash,
     verify_password,
 )
 
@@ -28,12 +30,18 @@ def test_hash_uses_random_salt():
     assert hash_password("same") != hash_password("same")
 
 
-def test_hash_format():
+def test_hash_format_is_argon2():
     stored = hash_password("pw")
-    name, iterations, salt, digest = stored.split("$", 3)
-    assert name == "pbkdf2_sha256"
-    assert int(iterations) >= 210_000
-    assert len(salt) == 32  # 16 bytes hex
+    assert stored.startswith("$argon2id$")
+    assert password_needs_rehash(stored) is False
+
+
+def test_legacy_pbkdf2_hash_verifies_and_needs_rehash():
+    salt = "00112233445566778899aabbccddeeff"
+    legacy = f"pbkdf2_sha256$210000${salt}${_pbkdf2_hash('correct horse', salt)}"
+    assert verify_password("correct horse", legacy) is True
+    assert verify_password("wrong horse", legacy) is False
+    assert password_needs_rehash(legacy) is True
 
 
 def test_access_token_carries_claims():

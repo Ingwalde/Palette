@@ -13,7 +13,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
-from .database import SessionLocal, run_migrations
+from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes
 from .seed import seed_default_admin_user, seed_default_palettes
@@ -30,12 +30,9 @@ logging.basicConfig(
 async def lifespan(app: FastAPI):
     run_migrations()
 
-    db = SessionLocal()
-    try:
-        seed_default_palettes(db)
-        seed_default_admin_user(db)
-    finally:
-        db.close()
+    async with AsyncSessionLocal() as db:
+        await seed_default_palettes(db)
+        await seed_default_admin_user(db)
 
     yield
 
@@ -43,7 +40,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Palette API",
     description="Backend API for Palette v4.3 with auth, favorites, PostgreSQL and Docker.",
-    version="4.3.0",
+    version="4.3.1",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -98,7 +95,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.3.0",
+        "version": "4.3.1",
         "docs": "/api/docs",
         "health": "/health",
     }

@@ -27,9 +27,14 @@ class Settings(BaseSettings):
     # Security
     secret_key: str = ""
     access_token_expire_minutes: int = 1440
+    refresh_token_expire_days: int = 30
     email_verification_expire_hours: int = 24
     enable_api_docs: bool = False
     log_level: str = "INFO"
+
+    # Rate-limit storage backend. Defaults to in-memory; set to redis://host:port in
+    # production so limits are shared across processes/instances.
+    redis_url: str = "memory://"
 
     # Database — PostgreSQL only, mandatory (Compose supplies it).
     database_url: str = ""

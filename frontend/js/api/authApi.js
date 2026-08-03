@@ -15,6 +15,13 @@ export function loginUser(payload) {
   });
 }
 
+export function logoutUser(refreshToken) {
+  return apiRequest("/auth/logout", {
+    method: "POST",
+    body: JSON.stringify({ refresh_token: refreshToken })
+  });
+}
+
 export function verifyEmail(token) {
   return apiRequest(`/auth/verify?token=${encodeURIComponent(token)}`, {
     method: "GET"

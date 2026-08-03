@@ -5,10 +5,14 @@ alembic==1.18.5
 pydantic==2.13.4
 pydantic-settings==2.14.2
 PyJWT==2.13.0
+argon2-cffi==25.1.0
 slowapi==0.1.10
+redis==8.1.0
 psycopg[binary]==3.3.4
+asyncpg==0.31.0
 httpx==0.28.1
 
 # Testing
 pytest==9.1.1
 pytest-cov==7.1.0
+pytest-asyncio==1.4.0

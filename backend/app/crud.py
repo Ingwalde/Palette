@@ -2,8 +2,8 @@ import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import Text, cast, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import Select, Text, cast, delete, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
 
@@ -15,17 +15,19 @@ def slugify(value: str) -> str:
     return value or "palette"
 
 
-def get_unique_slug(db: Session, base_slug: str, current_palette_id: int | None = None) -> str:
+async def get_unique_slug(
+    db: AsyncSession, base_slug: str, current_palette_id: int | None = None
+) -> str:
     base_slug = slugify(base_slug)
     slug = base_slug
     counter = 2
 
     while True:
-        query = db.query(models.Palette).filter(models.Palette.slug == slug)
+        stmt = select(models.Palette).where(models.Palette.slug == slug)
         if current_palette_id is not None:
-            query = query.filter(models.Palette.id != current_palette_id)
+            stmt = stmt.where(models.Palette.id != current_palette_id)
 
-        exists = query.first()
+        exists = (await db.execute(stmt)).scalars().first()
         if not exists:
             return slug
 
@@ -33,20 +35,21 @@ def get_unique_slug(db: Session, base_slug: str, current_palette_id: int | None 
         counter += 1
 
 
-def get_palette(db: Session, palette_id: int) -> models.Palette | None:
-    return db.query(models.Palette).filter(models.Palette.id == palette_id).first()
+async def get_palette(db: AsyncSession, palette_id: int) -> models.Palette | None:
+    return await db.get(models.Palette, palette_id)
 
 
-def get_palette_by_slug(db: Session, slug: str) -> models.Palette | None:
-    return db.query(models.Palette).filter(models.Palette.slug == slug).first()
+async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | None:
+    stmt = select(models.Palette).where(models.Palette.slug == slug)
+    return (await db.execute(stmt)).scalars().first()
 
 
-def _filtered_palettes_query(db: Session, search: str | None, tag: str | None):
-    query = db.query(models.Palette)
+def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
+    stmt = select(models.Palette)
 
     if search:
         like = f"%{search.strip()}%"
-        query = query.filter(
+        stmt = stmt.where(
             or_(
                 models.Palette.name.ilike(like),
                 models.Palette.description.ilike(like),
@@ -58,53 +61,58 @@ def _filtered_palettes_query(db: Session, search: str | None, tag: str | None):
     if tag:
         tag_value = tag.strip().lower().replace("#", "")
         # JSONB containment (@>) uses the GIN index: palettes whose tags include the value.
-        query = query.filter(models.Palette.tags.contains([tag_value]))
+        stmt = stmt.where(models.Palette.tags.contains([tag_value]))
 
-    return query
+    return stmt
 
 
-def get_palettes(
-    db: Session,
+async def get_palettes(
+    db: AsyncSession,
     search: str | None = None,
     tag: str | None = None,
     sort: str = "default",
     limit: int | None = None,
     offset: int = 0,
 ) -> list[models.Palette]:
-    query = _filtered_palettes_query(db, search, tag)
+    stmt = _filtered_palettes_stmt(search, tag)
 
     if sort == "az":
-        query = query.order_by(func.lower(models.Palette.name).asc())
+        stmt = stmt.order_by(func.lower(models.Palette.name).asc())
     elif sort == "za":
-        query = query.order_by(func.lower(models.Palette.name).desc())
+        stmt = stmt.order_by(func.lower(models.Palette.name).desc())
     else:
-        query = query.order_by(models.Palette.id.asc())
+        stmt = stmt.order_by(models.Palette.id.asc())
 
     if offset:
-        query = query.offset(offset)
+        stmt = stmt.offset(offset)
     if limit is not None:
-        query = query.limit(limit)
+        stmt = stmt.limit(limit)
 
-    return query.all()
-
-
-def count_palettes(db: Session, search: str | None = None, tag: str | None = None) -> int:
-    return _filtered_palettes_query(db, search, tag).count()
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
 
 
-def get_tags(db: Session) -> list[str]:
+async def count_palettes(
+    db: AsyncSession, search: str | None = None, tag: str | None = None
+) -> int:
+    stmt = select(func.count()).select_from(_filtered_palettes_stmt(search, tag).subquery())
+    return await db.scalar(stmt) or 0
+
+
+async def get_tags(db: AsyncSession) -> list[str]:
     all_tags: set[str] = set()
 
     # tags is a JSONB array — SQLAlchemy returns a native list, no JSON parsing needed.
-    for (tags,) in db.query(models.Palette.tags).all():
+    result = await db.execute(select(models.Palette.tags))
+    for (tags,) in result.all():
         all_tags.update(tags or [])
 
     return sorted(all_tags)
 
 
-def create_palette(db: Session, palette_data: schemas.PaletteCreate) -> models.Palette:
+async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) -> models.Palette:
     desired_slug = palette_data.slug or palette_data.name
-    slug = get_unique_slug(db, desired_slug)
+    slug = await get_unique_slug(db, desired_slug)
 
     palette = models.Palette(
         slug=slug,
@@ -115,13 +123,13 @@ def create_palette(db: Session, palette_data: schemas.PaletteCreate) -> models.P
     )
 
     db.add(palette)
-    db.commit()
-    db.refresh(palette)
+    await db.commit()
+    await db.refresh(palette)
     return palette
 
 
-def update_palette(
-    db: Session,
+async def update_palette(
+    db: AsyncSession,
     palette: models.Palette,
     palette_data: schemas.PaletteUpdate,
 ) -> models.Palette:
@@ -129,7 +137,7 @@ def update_palette(
 
     if "name" in data and data["name"] is not None:
         palette.name = data["name"]
-        palette.slug = get_unique_slug(db, palette.name, current_palette_id=palette.id)
+        palette.slug = await get_unique_slug(db, palette.name, current_palette_id=palette.id)
 
     if "description" in data and data["description"] is not None:
         palette.description = data["description"]
@@ -140,43 +148,45 @@ def update_palette(
     if "tags" in data and data["tags"] is not None:
         palette.tags = data["tags"]
 
-    db.commit()
-    db.refresh(palette)
+    await db.commit()
+    await db.refresh(palette)
     return palette
 
 
-def delete_palette(db: Session, palette: models.Palette) -> None:
-    db.delete(palette)
-    db.commit()
+async def delete_palette(db: AsyncSession, palette: models.Palette) -> None:
+    await db.delete(palette)
+    await db.commit()
 
 
-def create_many_if_empty(db: Session, palettes: Iterable[schemas.PaletteCreate]) -> int:
-    existing_count = db.query(models.Palette).count()
-    if existing_count > 0:
+async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.PaletteCreate]) -> int:
+    existing_count = await db.scalar(select(func.count(models.Palette.id)))
+    if existing_count and existing_count > 0:
         return 0
 
     created_count = 0
     for palette_data in palettes:
-        create_palette(db, palette_data)
+        await create_palette(db, palette_data)
         created_count += 1
 
     return created_count
 
 
-def get_user(db: Session, user_id: int) -> models.User | None:
-    return db.query(models.User).filter(models.User.id == user_id).first()
+async def get_user(db: AsyncSession, user_id: int) -> models.User | None:
+    return await db.get(models.User, user_id)
 
 
-def get_user_by_username(db: Session, username: str) -> models.User | None:
-    return db.query(models.User).filter(models.User.username == username).first()
+async def get_user_by_username(db: AsyncSession, username: str) -> models.User | None:
+    stmt = select(models.User).where(models.User.username == username)
+    return (await db.execute(stmt)).scalars().first()
 
 
-def get_user_by_email(db: Session, email: str) -> models.User | None:
-    return db.query(models.User).filter(models.User.email == email.lower()).first()
+async def get_user_by_email(db: AsyncSession, email: str) -> models.User | None:
+    stmt = select(models.User).where(models.User.email == email.lower())
+    return (await db.execute(stmt)).scalars().first()
 
 
-def create_user(
-    db: Session,
+async def create_user(
+    db: AsyncSession,
     user_data: schemas.UserCreate,
     password_hash: str,
     is_admin: bool = False,
@@ -190,23 +200,36 @@ def create_user(
         email_verified=email_verified,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def set_email_verified(db: Session, user: models.User) -> models.User:
+async def set_email_verified(db: AsyncSession, user: models.User) -> models.User:
     user.email_verified = True
     user.email_verified_at = datetime.now(UTC)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def create_admin_if_missing(
-    db: Session, username: str, email: str, password_hash: str
+async def is_only_admin(db: AsyncSession, user: models.User) -> bool:
+    if not user.is_admin:
+        return False
+
+    stmt = select(models.User).where(models.User.is_admin.is_(True), models.User.id != user.id)
+    other_admin = (await db.execute(stmt)).scalars().first()
+    return other_admin is None
+
+
+async def create_admin_if_missing(
+    db: AsyncSession, username: str, email: str, password_hash: str
 ) -> models.User | None:
-    admin_exists = db.query(models.User).filter(models.User.is_admin.is_(True)).first()
+    admin_exists = (
+        (await db.execute(select(models.User).where(models.User.is_admin.is_(True))))
+        .scalars()
+        .first()
+    )
     if admin_exists:
         changed = False
         if not admin_exists.email:
@@ -216,18 +239,18 @@ def create_admin_if_missing(
             admin_exists.email_verified = True
             changed = True
         if changed:
-            db.commit()
-            db.refresh(admin_exists)
+            await db.commit()
+            await db.refresh(admin_exists)
         return None
 
-    existing_user = get_user_by_username(db, username)
+    existing_user = await get_user_by_username(db, username)
     if existing_user:
         existing_user.is_admin = True
         existing_user.email = existing_user.email or email
         existing_user.password_hash = password_hash
         existing_user.email_verified = True
-        db.commit()
-        db.refresh(existing_user)
+        await db.commit()
+        await db.refresh(existing_user)
         return existing_user
 
     user = models.User(
@@ -238,106 +261,106 @@ def create_admin_if_missing(
         email_verified=True,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def get_user_favorite_palettes(db: Session, user: models.User) -> list[models.Palette]:
-    return (
-        db.query(models.Palette)
+async def get_user_favorite_palettes(db: AsyncSession, user: models.User) -> list[models.Palette]:
+    stmt = (
+        select(models.Palette)
         .join(models.Favorite, models.Favorite.palette_id == models.Palette.id)
-        .filter(models.Favorite.user_id == user.id)
+        .where(models.Favorite.user_id == user.id)
         .order_by(models.Favorite.created_at.desc())
-        .all()
     )
+    return list((await db.execute(stmt)).scalars().all())
 
 
-def get_user_favorite_keys(db: Session, user: models.User) -> list[str]:
-    return [palette.slug for palette in get_user_favorite_palettes(db, user)]
+async def get_user_favorite_keys(db: AsyncSession, user: models.User) -> list[str]:
+    return [palette.slug for palette in await get_user_favorite_palettes(db, user)]
 
 
-def is_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
-    return (
-        db.query(models.Favorite)
-        .filter(
-            models.Favorite.user_id == user.id,
-            models.Favorite.palette_id == palette.id,
-        )
-        .first()
-        is not None
+async def is_user_favorite(db: AsyncSession, user: models.User, palette: models.Palette) -> bool:
+    stmt = select(models.Favorite).where(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
     )
+    return (await db.execute(stmt)).scalars().first() is not None
 
 
-def add_user_favorite(db: Session, user: models.User, palette: models.Palette) -> models.Palette:
-    existing_favorite = (
-        db.query(models.Favorite)
-        .filter(
-            models.Favorite.user_id == user.id,
-            models.Favorite.palette_id == palette.id,
-        )
-        .first()
+async def add_user_favorite(
+    db: AsyncSession, user: models.User, palette: models.Palette
+) -> models.Palette:
+    stmt = select(models.Favorite).where(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
     )
-
-    if existing_favorite:
+    if (await db.execute(stmt)).scalars().first():
         return palette
 
-    favorite = models.Favorite(
-        user_id=user.id,
-        palette_id=palette.id,
-    )
+    favorite = models.Favorite(user_id=user.id, palette_id=palette.id)
     db.add(favorite)
-    db.commit()
+    await db.commit()
     return palette
 
 
-def remove_user_favorite(db: Session, user: models.User, palette: models.Palette) -> bool:
-    favorite = (
-        db.query(models.Favorite)
-        .filter(
-            models.Favorite.user_id == user.id,
-            models.Favorite.palette_id == palette.id,
-        )
-        .first()
+async def remove_user_favorite(
+    db: AsyncSession, user: models.User, palette: models.Palette
+) -> bool:
+    stmt = select(models.Favorite).where(
+        models.Favorite.user_id == user.id,
+        models.Favorite.palette_id == palette.id,
     )
-
+    favorite = (await db.execute(stmt)).scalars().first()
     if favorite is None:
         return False
 
-    db.delete(favorite)
-    db.commit()
+    await db.delete(favorite)
+    await db.commit()
     return True
 
 
-def clear_user_favorites(db: Session, user: models.User) -> int:
-    favorites_query = db.query(models.Favorite).filter(models.Favorite.user_id == user.id)
-    deleted_count = favorites_query.count()
-    favorites_query.delete(synchronize_session=False)
-    db.commit()
-    return deleted_count
+async def clear_user_favorites(db: AsyncSession, user: models.User) -> int:
+    deleted_count = await db.scalar(
+        select(func.count(models.Favorite.id)).where(models.Favorite.user_id == user.id)
+    )
+    await db.execute(delete(models.Favorite).where(models.Favorite.user_id == user.id))
+    await db.commit()
+    return deleted_count or 0
 
 
-def update_user_password(db: Session, user: models.User, password_hash: str) -> models.User:
+async def update_user_password(
+    db: AsyncSession, user: models.User, password_hash: str
+) -> models.User:
     user.password_hash = password_hash
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user
 
 
-def is_only_admin(db: Session, user: models.User) -> bool:
-    if not user.is_admin:
-        return False
-
-    other_admin = (
-        db.query(models.User)
-        .filter(models.User.is_admin.is_(True), models.User.id != user.id)
-        .first()
-    )
-    return other_admin is None
+async def delete_user(db: AsyncSession, user: models.User) -> None:
+    # No ON DELETE cascade, so remove dependent rows before deleting the user.
+    await db.execute(delete(models.Favorite).where(models.Favorite.user_id == user.id))
+    await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user.id))
+    await db.delete(user)
+    await db.commit()
 
 
-def delete_user(db: Session, user: models.User) -> None:
-    # Favorites have no ON DELETE cascade, so remove them before deleting the user.
-    clear_user_favorites(db, user)
-    db.delete(user)
-    db.commit()
+async def create_refresh_token(
+    db: AsyncSession, user_id: int, token_hash: str, expires_at: datetime
+) -> models.RefreshToken:
+    token = models.RefreshToken(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
+    db.add(token)
+    await db.commit()
+    await db.refresh(token)
+    return token
+
+
+async def get_refresh_token(db: AsyncSession, token_hash: str) -> models.RefreshToken | None:
+    stmt = select(models.RefreshToken).where(models.RefreshToken.token_hash == token_hash)
+    return (await db.execute(stmt)).scalars().first()
+
+
+async def revoke_refresh_token(db: AsyncSession, token: models.RefreshToken) -> None:
+    token.revoked = True
+    await db.commit()

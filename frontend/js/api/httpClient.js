@@ -1,3 +1,4 @@
+import { clearAuth, getRefreshToken, saveAuth, saveRefreshToken } from "../utils/authStorage.js";
 import { API_BASE_URL } from "./apiBase.js";
 
 // Turn a FastAPI `detail` (string, validation-error array, or object) into a message.
@@ -20,19 +21,73 @@ export function formatApiError(detail) {
   return "";
 }
 
-// Shared JSON request helper for every api/* module. Sends/receives JSON, unwraps FastAPI
-// error details, returns null on 204, and attaches the HTTP status to thrown errors so
-// callers can special-case (e.g. 401).
-export async function request(endpoint, options = {}) {
-  const { headers = {}, ...requestOptions } = options;
+let refreshInFlight = null;
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+async function requestNewAccessToken() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+
+    if (!response.ok) {
+      clearAuth();
+      return null;
+    }
+
+    const data = await response.json();
+    saveAuth(data.access_token, data.user);
+    saveRefreshToken(data.refresh_token);
+    return data.access_token;
+  } catch {
+    return null;
+  }
+}
+
+// Single-flight: concurrent 401s share one refresh so the rotating token isn't raced.
+function refreshAccessToken() {
+  if (!refreshInFlight) {
+    refreshInFlight = requestNewAccessToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+function sendRequest(endpoint, headers, requestOptions) {
+  return fetch(`${API_BASE_URL}${endpoint}`, {
     ...requestOptions,
     headers: {
       "Content-Type": "application/json",
       ...headers
     }
   });
+}
+
+// Shared JSON request helper for every api/* module. Sends/receives JSON, transparently
+// refreshes an expired access token once and retries, unwraps FastAPI error details,
+// returns null on 204, and attaches the HTTP status to thrown errors.
+export async function request(endpoint, options = {}) {
+  const { headers = {}, ...requestOptions } = options;
+
+  let response = await sendRequest(endpoint, headers, requestOptions);
+
+  if (response.status === 401 && !endpoint.startsWith("/auth/refresh")) {
+    const newAccessToken = await refreshAccessToken();
+    if (newAccessToken) {
+      const retryHeaders = { ...headers };
+      if (retryHeaders.Authorization) {
+        retryHeaders.Authorization = `Bearer ${newAccessToken}`;
+      }
+      response = await sendRequest(endpoint, retryHeaders, requestOptions);
+    }
+  }
 
   if (!response.ok) {
     let message = `API request failed with status ${response.status}`;

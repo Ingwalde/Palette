@@ -40,6 +40,17 @@
 
     <section class="section changelog-layout">
       <article class="changelog-card">
+        <p class="changelog-card__version">v4.3.1</p>
+        <h2>Security and infrastructure hardening</h2>
+        <ul>
+          <li>Argon2id password hashing (legacy hashes upgraded on login).</li>
+          <li>Rotating refresh tokens with server-side revocation and silent refresh.</li>
+          <li>Redis-backed rate limiting, shared across processes.</li>
+          <li>Async request path (async SQLAlchemy + asyncpg).</li>
+        </ul>
+      </article>
+
+      <article class="changelog-card">
         <p class="changelog-card__version">v4.3</p>
         <h2>Account email, delete account, random tags</h2>
         <ul>

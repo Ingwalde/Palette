@@ -1,51 +1,67 @@
 import hashlib
 import hmac
-import os
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import jwt
+from argon2 import PasswordHasher
+from argon2.exceptions import InvalidHash, VerifyMismatchError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import crud, models
 from .config import settings
 from .database import get_db
 
 ALGORITHM = "HS256"
-HASH_NAME = "pbkdf2_sha256"
-HASH_ITERATIONS = 210_000
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
+
+# Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
+# Argon2 on the next successful login (see authenticate_user).
+_password_hasher = PasswordHasher()
+_LEGACY_HASH_NAME = "pbkdf2_sha256"
+_LEGACY_ITERATIONS = 210_000
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_password(password: str) -> str:
-    salt = os.urandom(16).hex()
-    password_hash = _pbkdf2_hash(password=password, salt=salt)
-    return f"{HASH_NAME}${HASH_ITERATIONS}${salt}${password_hash}"
+    return _password_hasher.hash(password)
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
+    if stored_hash.startswith("$argon2"):
+        try:
+            return _password_hasher.verify(stored_hash, password)
+        except (VerifyMismatchError, InvalidHash):
+            return False
+    return _verify_legacy_pbkdf2(password, stored_hash)
+
+
+def password_needs_rehash(stored_hash: str) -> bool:
+    """True if the hash should be replaced (legacy scheme, or outdated Argon2 parameters)."""
+    if not stored_hash.startswith("$argon2"):
+        return True
+    try:
+        return _password_hasher.check_needs_rehash(stored_hash)
+    except InvalidHash:
+        return True
+
+
+def _verify_legacy_pbkdf2(password: str, stored_hash: str) -> bool:
     try:
         hash_name, iterations_raw, salt, expected_hash = stored_hash.split("$", 3)
     except ValueError:
         return False
-
-    if hash_name != HASH_NAME:
+    if hash_name != _LEGACY_HASH_NAME:
         return False
-
-    password_hash = _pbkdf2_hash(
-        password=password,
-        salt=salt,
-        iterations=int(iterations_raw),
-    )
-
-    return hmac.compare_digest(password_hash, expected_hash)
+    computed = _pbkdf2_hash(password, salt, int(iterations_raw))
+    return hmac.compare_digest(computed, expected_hash)
 
 
-def _pbkdf2_hash(password: str, salt: str, iterations: int = HASH_ITERATIONS) -> str:
+def _pbkdf2_hash(password: str, salt: str, iterations: int = _LEGACY_ITERATIONS) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
@@ -54,19 +70,23 @@ def _pbkdf2_hash(password: str, salt: str, iterations: int = HASH_ITERATIONS) ->
     ).hex()
 
 
-def authenticate_user(db: Session, username: str, password: str) -> models.User | None:
+async def authenticate_user(db: AsyncSession, username: str, password: str) -> models.User | None:
     login_value = username.strip().lower()
 
     if "@" in login_value:
-        user = crud.get_user_by_email(db, login_value)
+        user = await crud.get_user_by_email(db, login_value)
     else:
-        user = crud.get_user_by_username(db, username.strip())
+        user = await crud.get_user_by_username(db, username.strip())
 
     if user is None:
         return None
 
     if not verify_password(password, user.password_hash):
         return None
+
+    # Transparently upgrade legacy/outdated hashes to current Argon2id parameters.
+    if password_needs_rehash(user.password_hash):
+        await crud.update_user_password(db, user, hash_password(password))
 
     return user
 
@@ -101,9 +121,46 @@ def decode_email_verification_token(token: str) -> int | None:
         return None
 
 
-def get_current_user(
+def _hash_refresh_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+async def create_refresh_token(db: AsyncSession, user: models.User) -> str:
+    """Issue an opaque refresh token, storing only its hash."""
+    token = secrets.token_urlsafe(48)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
+    await crud.create_refresh_token(db, user.id, _hash_refresh_token(token), expires_at)
+    return token
+
+
+async def _active_refresh_token(db: AsyncSession, token: str) -> models.RefreshToken | None:
+    stored = await crud.get_refresh_token(db, _hash_refresh_token(token))
+    if stored is None or stored.revoked or stored.expires_at < datetime.now(UTC):
+        return None
+    return stored
+
+
+async def rotate_refresh_token(db: AsyncSession, token: str) -> tuple[models.User, str] | None:
+    """Validate a refresh token, revoke it (single use) and issue a fresh one."""
+    stored = await _active_refresh_token(db, token)
+    if stored is None:
+        return None
+    user = await crud.get_user(db, stored.user_id)
+    if user is None:
+        return None
+    await crud.revoke_refresh_token(db, stored)
+    return user, await create_refresh_token(db, user)
+
+
+async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
+    stored = await crud.get_refresh_token(db, _hash_refresh_token(token))
+    if stored is not None and not stored.revoked:
+        await crud.revoke_refresh_token(db, stored)
+
+
+async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -123,7 +180,7 @@ def get_current_user(
     except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception from None
 
-    user = crud.get_user(db, user_id)
+    user = await crud.get_user(db, user_id)
     if user is None:
         raise credentials_exception
 

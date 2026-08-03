@@ -1,0 +1,10 @@
+[run]
+source = app
+# SQLAlchemy async runs through greenlets; track them so async code is measured.
+concurrency = greenlet, thread
+omit =
+    app/seed.py
+    tests/*
+
+[report]
+show_missing = true

@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .crud import create_many_if_empty
 from .schemas import PaletteCreate
@@ -20,16 +20,16 @@ def _load_default_palettes() -> list[PaletteCreate]:
 DEFAULT_PALETTES = _load_default_palettes()
 
 
-def seed_default_palettes(db: Session) -> int:
-    return create_many_if_empty(db, DEFAULT_PALETTES)
+async def seed_default_palettes(db: AsyncSession) -> int:
+    return await create_many_if_empty(db, DEFAULT_PALETTES)
 
 
-def seed_default_admin_user(db: Session) -> bool:
+async def seed_default_admin_user(db: AsyncSession) -> bool:
     from .config import settings
     from .crud import create_admin_if_missing
     from .security import hash_password
 
-    created_user = create_admin_if_missing(
+    created_user = await create_admin_if_missing(
         db=db,
         username=settings.default_admin_username,
         email=settings.default_admin_email,
