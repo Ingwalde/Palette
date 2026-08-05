@@ -1,5 +1,19 @@
 # Changelog
 
+## v4.4.0 — Diverse palettes and dynamic colour editor
+
+### Added
+
+- Seed palettes now include 3- and 5-colour sets (previously every default was 4 colours).
+- The admin colour input is a dynamic list of HEX rows — each with a native colour picker and
+  a hex field — with add/remove controls, bounded to 1–8 colours (was a comma-separated text
+  field).
+
+### Changed
+
+- Palette swatch grids (palette card, admin list, export picker) auto-flow so any colour count
+  fills the row evenly, instead of assuming exactly four columns.
+
 ## v4.3.1 — Security and infrastructure hardening
 
 ### Added

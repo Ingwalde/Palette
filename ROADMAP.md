@@ -126,3 +126,20 @@ Deferred to a later release:
 - Better logging.
 - Alembic migrations.
 - Refresh token or improved session strategy.
+
+## v4.3.1 — Security and Infrastructure Hardening
+
+Status: completed.
+
+- Argon2id password hashing with transparent upgrade of legacy PBKDF2 hashes on login.
+- Rotating, single-use refresh tokens with server-side revocation and silent refresh.
+- Redis-backed rate limiting shared across worker processes.
+- Async request path (async SQLAlchemy + asyncpg); Alembic migrations stay synchronous.
+
+## v4.4 — Diverse Palettes and Dynamic Colour Editor
+
+Status: completed.
+
+- Seed palettes now include 3- and 5-colour sets (was uniformly 4).
+- Admin colour input is a dynamic list of HEX rows (colour picker + hex, add/remove, 1–8).
+- Palette swatch grids (card, admin list, export picker) auto-flow to any colour count.
