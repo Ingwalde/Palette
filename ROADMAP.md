@@ -143,3 +143,11 @@ Status: completed.
 - Seed palettes now include 3- and 5-colour sets (was uniformly 4).
 - Admin colour input is a dynamic list of HEX rows (colour picker + hex, add/remove, 1–8).
 - Palette swatch grids (card, admin list, export picker) auto-flow to any colour count.
+
+## v4.4.1 — Session-Expiry Message and Swatch Polish
+
+Status: completed.
+
+- Favorites page shows a "Please log in again" prompt (with a login button) on an expired
+  session, instead of a misleading backend-unavailable message.
+- Admin colour picker renders the colour as a clean rounded square with hover/focus states.
