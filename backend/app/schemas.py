@@ -219,6 +219,31 @@ class ResendVerificationRequest(BaseModel):
         return normalize_email(email)
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=254)
+
+    @field_validator("email")
+    @classmethod
+    def _normalize_email(cls, email: str) -> str:
+        return normalize_email(email)
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1)
+    new_password: str = Field(min_length=6, max_length=128)
+    confirm_password: str = Field(min_length=6, max_length=128)
+
+    @field_validator("confirm_password")
+    @classmethod
+    def validate_password_confirmation(cls, confirm_password: str, info) -> str:
+        new_password = info.data.get("new_password")
+
+        if new_password and confirm_password != new_password:
+            raise ValueError("Password confirmation does not match")
+
+        return confirm_password
+
+
 class MessageResponse(BaseModel):
     message: str
 

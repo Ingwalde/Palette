@@ -3,14 +3,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
 from ..database import get_db
-from ..email_service import send_verification_email
+from ..email_service import send_password_reset_email, send_verification_email
 from ..rate_limit import limiter
 from ..security import (
     authenticate_user,
     create_access_token,
     create_email_verification_token,
+    create_password_reset_token,
     create_refresh_token,
     decode_email_verification_token,
+    decode_password_reset_token,
     get_current_user,
     hash_password,
     revoke_refresh_token,
@@ -21,6 +23,8 @@ from ..security import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 _VERIFY_LINK_INVALID = "Invalid or expired verification link"
+_RESET_LINK_INVALID = "Invalid or expired password reset link"
+_RESET_GENERIC_MESSAGE = "If that email is registered, a password reset link has been sent."
 
 
 async def _issue_tokens(db: AsyncSession, user) -> schemas.Token:
@@ -101,6 +105,48 @@ async def resend_verification(
     return schemas.MessageResponse(
         message="If that email is registered and unverified, a verification link has been sent.",
     )
+
+
+@router.post("/forgot-password", response_model=schemas.MessageResponse)
+@limiter.limit("3/hour")
+async def forgot_password(
+    request: Request,
+    payload: schemas.ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    user = await crud.get_user_by_email(db, payload.email)
+
+    # Only send for an existing account, but always return the same generic message so the
+    # endpoint cannot be used to probe which emails are registered.
+    if user is not None:
+        token = create_password_reset_token(user.id)
+        background_tasks.add_task(send_password_reset_email, user.email, user.username, token)
+
+    return schemas.MessageResponse(message=_RESET_GENERIC_MESSAGE)
+
+
+@router.post("/reset-password", response_model=schemas.MessageResponse)
+@limiter.limit("5/hour")
+async def reset_password(
+    request: Request,
+    payload: schemas.ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = decode_password_reset_token(payload.token)
+
+    if user_id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
+
+    user = await crud.get_user(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
+
+    await crud.update_user_password(db, user, hash_password(payload.new_password))
+    # Log out any existing sessions once the password changes.
+    await crud.revoke_all_refresh_tokens(db, user.id)
+
+    return schemas.MessageResponse(message="Your password has been reset. You can now log in.")
 
 
 @router.post("/login", response_model=schemas.Token)

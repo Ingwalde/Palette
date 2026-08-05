@@ -451,3 +451,10 @@ async def get_refresh_token(db: AsyncSession, token_hash: str) -> models.Refresh
 async def revoke_refresh_token(db: AsyncSession, token: models.RefreshToken) -> None:
     token.revoked = True
     await db.commit()
+
+
+async def revoke_all_refresh_tokens(db: AsyncSession, user_id: int) -> None:
+    """Invalidate every refresh token for a user — used after a password reset so any
+    existing sessions are logged out."""
+    await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user_id))
+    await db.commit()

@@ -1,12 +1,13 @@
 import {
   createPalette,
   deletePalette,
-  getPalettes,
+  getPalettesPage,
   updatePalette
 } from "../api/palettesApi.js";
 import { createTag, deleteTag, getTagCatalog, updateTag } from "../api/tagsApi.js";
 import { getCurrentUser } from "../api/authApi.js";
 import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
+import { confirmDialog, promptDialog } from "../components/modal.js";
 import { clearElement, createElement, qs } from "../utils/dom.js";
 import { clearAuth, getStoredUser } from "../utils/authStorage.js";
 import { showToast } from "../utils/toast.js";
@@ -37,6 +38,11 @@ const elements = {
   cancelEditButton: qs("#cancelEditButton"),
   adminItems: qs("#adminItems"),
   adminCount: qs("#adminCount"),
+  adminSearch: qs("#adminSearch"),
+  adminPagination: qs("#adminPagination"),
+  adminPrevButton: qs("#adminPrevBtn"),
+  adminNextButton: qs("#adminNextBtn"),
+  adminPageInfo: qs("#adminPageInfo"),
   tagForm: qs("#tagForm"),
   newTagName: qs("#newTagName"),
   newTagKind: qs("#newTagKind"),
@@ -47,8 +53,11 @@ const elements = {
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
 const MAX_TAGS = 12;
+const PAGE_SIZE = 10;
 
 let tagCatalog = [];
+const adminList = { search: "", offset: 0, total: 0 };
+let searchDebounce = null;
 
 initAdminPage();
 
@@ -88,6 +97,26 @@ function bindEvents() {
   // Admin mode switch (Palettes / Tags).
   elements.modePalettesButton.addEventListener("click", () => switchMode("palettes"));
   elements.modeTagsButton.addEventListener("click", () => switchMode("tags"));
+
+  // Admin palette list search + pagination.
+  elements.adminSearch.addEventListener("input", () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      adminList.search = elements.adminSearch.value.trim();
+      adminList.offset = 0;
+      renderAdminList();
+    }, 250);
+  });
+  elements.adminPrevButton.addEventListener("click", () => {
+    adminList.offset = Math.max(0, adminList.offset - PAGE_SIZE);
+    renderAdminList();
+  });
+  elements.adminNextButton.addEventListener("click", () => {
+    if (adminList.offset + PAGE_SIZE < adminList.total) {
+      adminList.offset += PAGE_SIZE;
+      renderAdminList();
+    }
+  });
 
   // Tag catalog management.
   elements.tagForm.addEventListener("submit", async (event) => {
@@ -316,25 +345,54 @@ async function renderAdminList() {
   elements.adminItems.append(createEmptyState("Loading palettes", "The admin panel is requesting database data."));
 
   try {
-    const palettes = await getPalettes({ sort: "az" });
+    const data = await getPalettesPage({
+      sort: "az",
+      search: adminList.search,
+      limit: PAGE_SIZE,
+      offset: adminList.offset
+    });
+    adminList.total = data.total;
+
+    // A delete can empty the current page (offset past the end); jump back to the first page.
+    if (data.items.length === 0 && adminList.offset > 0) {
+      adminList.offset = 0;
+      return renderAdminList();
+    }
 
     clearElement(elements.adminItems);
-    elements.adminCount.textContent = `${palettes.length} palette${palettes.length === 1 ? "" : "s"}`;
+    elements.adminCount.textContent = `${data.total} palette${data.total === 1 ? "" : "s"}`;
 
-    if (palettes.length === 0) {
-      elements.adminItems.append(createEmptyState("No palettes in database", "Create your first palette using the form."));
+    if (data.items.length === 0) {
+      const empty = adminList.search
+        ? createEmptyState("No matches", "No palettes match that search.")
+        : createEmptyState("No palettes in database", "Create your first palette using the form.");
+      elements.adminItems.append(empty);
+      renderPagination();
       return;
     }
 
-    palettes.forEach((palette) => {
+    data.items.forEach((palette) => {
       elements.adminItems.append(createAdminItem(palette));
     });
+    renderPagination();
   } catch (error) {
     clearElement(elements.adminItems);
     elements.adminCount.textContent = "API error";
     elements.adminItems.append(createBackendErrorState());
+    elements.adminPagination.hidden = true;
     showToast(error.message, "error");
   }
+}
+
+function renderPagination() {
+  const { total, offset } = adminList;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
+
+  elements.adminPagination.hidden = total <= PAGE_SIZE;
+  elements.adminPageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+  elements.adminPrevButton.disabled = offset === 0;
+  elements.adminNextButton.disabled = offset + PAGE_SIZE >= total;
 }
 
 function createAdminItem(palette) {
@@ -393,7 +451,12 @@ function fillForm(palette) {
 }
 
 async function removePalette(id) {
-  const confirmed = window.confirm("Delete this palette from the database?");
+  const confirmed = await confirmDialog({
+    title: "Delete palette",
+    message: "Delete this palette from the database? This cannot be undone.",
+    confirmLabel: "Delete",
+    danger: true
+  });
 
   if (!confirmed) {
     return;
@@ -523,7 +586,12 @@ async function toggleTagKind(tag) {
 }
 
 async function renameTag(tag) {
-  const next = window.prompt(`Rename "${tag.name}" to:`, tag.name);
+  const next = await promptDialog({
+    title: "Rename tag",
+    message: `Rename "${tag.name}" to:`,
+    value: tag.name,
+    confirmLabel: "Rename"
+  });
 
   if (next === null) {
     return;
@@ -548,7 +616,14 @@ async function removeTag(tag) {
     ? `Delete "${tag.name}"? It will be removed from ${tag.count} palette${tag.count === 1 ? "" : "s"}.`
     : `Delete "${tag.name}"?`;
 
-  if (!window.confirm(message)) {
+  const confirmed = await confirmDialog({
+    title: "Delete tag",
+    message,
+    confirmLabel: "Delete",
+    danger: true
+  });
+
+  if (!confirmed) {
     return;
   }
 
