@@ -4,16 +4,16 @@
   <script>document.documentElement.classList.add("js");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Palette v4.4.2 admin panel protected by username and password authentication." />
+  <meta name="description" content="Palette v4.4.3 admin panel protected by username and password authentication." />
   <title>Palette | Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css?v=4.4.2" />
-  <link rel="stylesheet" href="css/components.css?v=4.4.2" />
-  <link rel="stylesheet" href="css/pages.css?v=4.4.2" />
+  <link rel="stylesheet" href="css/base.css?v=4.4.3" />
+  <link rel="stylesheet" href="css/components.css?v=4.4.3" />
+  <link rel="stylesheet" href="css/pages.css?v=4.4.3" />
 </head>
 <body>
   <header class="site-header">
@@ -119,7 +119,19 @@
             <p class="result-count" id="adminCount"></p>
           </div>
 
+          <label class="search-field admin-list__search" for="adminSearch">
+            <span class="visually-hidden">Search palettes</span>
+            <input id="adminSearch" type="search" placeholder="Search by name, description or tag..." autocomplete="off" />
+            <button type="button" class="search-clear" data-clear-target="adminSearch" aria-label="Clear search"></button>
+          </label>
+
           <div class="admin-items" id="adminItems"></div>
+
+          <div class="admin-pagination" id="adminPagination" hidden>
+            <button class="button button--ghost" id="adminPrevBtn" type="button">← Prev</button>
+            <span class="admin-pagination__info" id="adminPageInfo"></span>
+            <button class="button button--ghost" id="adminNextBtn" type="button">Next →</button>
+          </div>
         </section>
       </div>
 
@@ -161,7 +173,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v4.4.2</p>
+        <p class="site-footer__eyebrow">Palette v4.4.3</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -183,8 +195,8 @@
 
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="js/utils/authNav.js?v=4.4.2"></script>
-  <script type="module" src="js/router.js?v=4.4.2"></script>
-  <script type="module" src="js/pages/admin.js?v=4.4.2"></script>
+  <script type="module" src="js/utils/authNav.js?v=4.4.3"></script>
+  <script type="module" src="js/router.js?v=4.4.3"></script>
+  <script type="module" src="js/pages/admin.js?v=4.4.3"></script>
 </body>
 </html>

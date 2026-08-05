@@ -192,9 +192,26 @@
   min-width: 0;
 }
 
+.admin-list__search {
+  margin-bottom: 16px;
+}
+
 .admin-items {
   display: grid;
   gap: 14px;
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.admin-pagination__info {
+  color: var(--color-muted);
+  font-size: 0.9rem;
 }
 
 .admin-item {
@@ -499,6 +516,22 @@
 .auth-page .auth-card .form-actions .button {
   width: auto;
   min-width: 170px;
+}
+
+.auth-page .auth-layout--single {
+  grid-template-columns: minmax(0, 460px);
+  justify-content: center;
+}
+
+.auth-card__aside {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.auth-card__result {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
 }
 
 @media (max-width: 920px) {

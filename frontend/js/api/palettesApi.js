@@ -29,6 +29,12 @@ export async function getPalettes(params = {}) {
   return data.items;
 }
 
+export function getPalettesPage(params = {}) {
+  // Returns the full paginated envelope { items, total, limit, offset } — used by the admin
+  // list, which needs the total for pagination.
+  return apiRequest(`/palettes${buildPaletteQuery(params)}`);
+}
+
 export function getTags() {
   return apiRequest("/palettes/tags");
 }
