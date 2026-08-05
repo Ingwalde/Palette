@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 1440
     refresh_token_expire_days: int = 30
     email_verification_expire_hours: int = 24
+    password_reset_expire_hours: int = 1
     enable_api_docs: bool = False
     log_level: str = "INFO"
 

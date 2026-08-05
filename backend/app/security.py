@@ -17,6 +17,7 @@ from .database import get_db
 
 ALGORITHM = "HS256"
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
+PASSWORD_RESET_PURPOSE = "reset_password"
 
 # Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
 # Argon2 on the next successful login (see authenticate_user).
@@ -115,6 +116,27 @@ def decode_email_verification_token(token: str) -> int | None:
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         if payload.get("purpose") != EMAIL_VERIFICATION_PURPOSE:
+            return None
+        return int(payload["sub"])
+    except (InvalidTokenError, TypeError, ValueError, KeyError):
+        return None
+
+
+def create_password_reset_token(user_id: int) -> str:
+    return _encode_token(
+        {"sub": str(user_id), "purpose": PASSWORD_RESET_PURPOSE},
+        timedelta(hours=settings.password_reset_expire_hours),
+    )
+
+
+def decode_password_reset_token(token: str) -> int | None:
+    """Return the user id from a valid, unexpired password reset token, else None.
+
+    The distinct purpose claim means an email-verification token cannot be replayed as a
+    password-reset token (or vice versa)."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        if payload.get("purpose") != PASSWORD_RESET_PURPOSE:
             return None
         return int(payload["sub"])
     except (InvalidTokenError, TypeError, ValueError, KeyError):
