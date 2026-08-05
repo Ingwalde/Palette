@@ -1,8 +1,8 @@
-# Palette v4.4 — Full-Stack Color Palette App
+# Palette v4.4.1 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.4** diversifies the palette library with 3- and 5-colour sets and replaces the admin colour text field with a dynamic list of HEX rows (colour picker + hex, add/remove, 1–8 colours); palette swatch grids now auto-flow so any colour count fills the row evenly. It builds on **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.4.1** is a UX patch: the favorites page now asks you to log in again when a session has expired (instead of blaming the backend), and the admin colour swatch renders as a clean rounded square. It builds on **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -265,5 +265,5 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.4.0
+v4.4.1
 ```

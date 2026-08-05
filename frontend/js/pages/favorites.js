@@ -55,11 +55,26 @@ async function renderFavorites() {
     });
   } catch (error) {
     clearElement(elements.grid);
-    elements.favoriteCount.textContent = "API error";
     elements.clearButton.disabled = true;
+
+    if (error.status === 401 || error.status === 403) {
+      // The access token expired and the refresh token is gone/rejected, so the client
+      // has already been logged out. Ask the user to sign in again instead of blaming
+      // the backend.
+      elements.favoriteCount.textContent = "Login required";
+      elements.grid.append(createEmptyState(
+        "Please log in again",
+        "Your session has expired. Log in again to view and manage your saved palettes.",
+        { label: "Log in", href: "login.html" }
+      ));
+      showToast("Session expired — please log in again", "error");
+      return;
+    }
+
+    elements.favoriteCount.textContent = "API error";
     elements.grid.append(createEmptyState(
       "Favorites are not available",
-      "Check that FastAPI is running and that your session is valid."
+      "We couldn't reach the server just now. Check your connection and try again."
     ));
     showToast(error.message, "error");
   }

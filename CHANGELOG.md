@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.4.1 — Session-expiry message and colour-swatch polish
+
+### Fixed
+
+- The favorites page now shows a "Please log in again" prompt (with a login button) when
+  the session has expired, instead of a misleading "backend is not available" message.
+
+### Changed
+
+- The admin colour picker renders the colour as a clean rounded square (styled swatch), with
+  hover and focus states.
+
 ## v4.4.0 — Diverse palettes and dynamic colour editor
 
 ### Added

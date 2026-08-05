@@ -39,8 +39,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.4 with auth, favorites, PostgreSQL and Docker.",
-    version="4.4.0",
+    description="Backend API for Palette v4.4.1 with auth, favorites, PostgreSQL and Docker.",
+    version="4.4.1",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -95,7 +95,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.4.0",
+        "version": "4.4.1",
         "docs": "/api/docs",
         "health": "/health",
     }
