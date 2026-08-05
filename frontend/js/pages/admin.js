@@ -4,9 +4,9 @@ import {
   getPalettes,
   updatePalette
 } from "../api/palettesApi.js";
+import { createTag, deleteTag, getTagCatalog, updateTag } from "../api/tagsApi.js";
 import { getCurrentUser } from "../api/authApi.js";
 import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
-import { parseCommaSeparatedList } from "../utils/color.js";
 import { clearElement, createElement, qs } from "../utils/dom.js";
 import { clearAuth, getStoredUser } from "../utils/authStorage.js";
 import { showToast } from "../utils/toast.js";
@@ -19,6 +19,10 @@ const elements = {
   adminPanel: qs("#adminPanel"),
   adminUserInfo: qs("#adminUserInfo"),
   logoutAdminButton: qs("#logoutAdminBtn"),
+  modePalettesButton: qs("#modePalettesBtn"),
+  modeTagsButton: qs("#modeTagsBtn"),
+  palettesView: qs("#palettesView"),
+  tagsView: qs("#tagsView"),
   form: qs("#paletteForm"),
   formTitle: qs("#formTitle"),
   paletteId: qs("#paletteId"),
@@ -26,15 +30,25 @@ const elements = {
   descriptionInput: qs("#descriptionInput"),
   colorEditor: qs("#colorEditor"),
   addColorBtn: qs("#addColorBtn"),
-  tagsInput: qs("#tagsInput"),
+  tagEditor: qs("#tagEditor"),
+  tagInput: qs("#tagInput"),
+  tagSuggestions: qs("#tagSuggestions"),
   submitButton: qs("#submitButton"),
   cancelEditButton: qs("#cancelEditButton"),
   adminItems: qs("#adminItems"),
-  adminCount: qs("#adminCount")
+  adminCount: qs("#adminCount"),
+  tagForm: qs("#tagForm"),
+  newTagName: qs("#newTagName"),
+  newTagKind: qs("#newTagKind"),
+  tagItems: qs("#tagItems"),
+  tagCount: qs("#tagCount")
 };
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
+const MAX_TAGS = 12;
+
+let tagCatalog = [];
 
 initAdminPage();
 
@@ -61,7 +75,28 @@ function bindEvents() {
 
   elements.cancelEditButton.addEventListener("click", resetForm);
   elements.addColorBtn.addEventListener("click", () => addColorRow());
+
+  // Tag chip editor on the palette form.
+  elements.tagInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      addTag(elements.tagInput.value);
+      elements.tagInput.value = "";
+    }
+  });
+
+  // Admin mode switch (Palettes / Tags).
+  elements.modePalettesButton.addEventListener("click", () => switchMode("palettes"));
+  elements.modeTagsButton.addEventListener("click", () => switchMode("tags"));
+
+  // Tag catalog management.
+  elements.tagForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await addTagFromForm();
+  });
 }
+
+/* ------------------------------- Colour editor ------------------------------ */
 
 function createColorRow(value = DEFAULT_COLOR) {
   const row = createElement("div", { className: "color-row" });
@@ -124,6 +159,89 @@ function readColors() {
     .filter(Boolean);
 }
 
+/* -------------------------------- Tag chips --------------------------------- */
+
+function normalizeTag(value) {
+  return value.trim().toLowerCase().replace(/#/g, "");
+}
+
+function createTagChip(value) {
+  const chip = createElement("span", {
+    className: "tag-chip",
+    text: value,
+    attrs: { "data-value": value }
+  });
+  const remove = createElement("button", {
+    className: "tag-chip__remove",
+    text: "✕",
+    attrs: { type: "button", "aria-label": `Remove ${value}` }
+  });
+  remove.addEventListener("click", () => chip.remove());
+  chip.append(remove);
+  return chip;
+}
+
+function addTag(raw) {
+  const value = normalizeTag(raw);
+  if (!value) {
+    return;
+  }
+
+  const existing = readTags();
+  if (existing.includes(value)) {
+    return;
+  }
+  if (existing.length >= MAX_TAGS) {
+    showToast(`Up to ${MAX_TAGS} tags per palette`, "error");
+    return;
+  }
+
+  elements.tagEditor.append(createTagChip(value));
+}
+
+function renderTags(tags) {
+  clearElement(elements.tagEditor);
+  (tags || []).forEach((tag) => addTag(tag));
+}
+
+function readTags() {
+  return [...elements.tagEditor.querySelectorAll(".tag-chip")]
+    .map((chip) => chip.dataset.value)
+    .filter(Boolean);
+}
+
+function populateTagSuggestions() {
+  clearElement(elements.tagSuggestions);
+  tagCatalog.forEach((tag) => {
+    elements.tagSuggestions.append(createElement("option", { attrs: { value: tag.name } }));
+  });
+}
+
+async function loadTagCatalog() {
+  try {
+    tagCatalog = await getTagCatalog();
+    populateTagSuggestions();
+  } catch {
+    // Suggestions are a nice-to-have; ignore a catalog fetch failure here.
+  }
+}
+
+/* ------------------------------- Mode switch -------------------------------- */
+
+function switchMode(mode) {
+  const tagsMode = mode === "tags";
+  elements.palettesView.hidden = tagsMode;
+  elements.tagsView.hidden = !tagsMode;
+  elements.modePalettesButton.classList.toggle("admin-mode__btn--active", !tagsMode);
+  elements.modeTagsButton.classList.toggle("admin-mode__btn--active", tagsMode);
+
+  if (tagsMode) {
+    renderTagList();
+  }
+}
+
+/* ------------------------------ Admin access -------------------------------- */
+
 async function checkAdminAccess() {
   const storedUser = getStoredUser();
 
@@ -141,6 +259,7 @@ async function checkAdminAccess() {
     }
 
     showAdminPanel(user);
+    await loadTagCatalog();
     await renderAdminList();
   } catch (error) {
     clearAuth();
@@ -162,12 +281,14 @@ function showAccessMessage(title, message) {
   elements.adminAccessMessage.textContent = message;
 }
 
+/* ------------------------------ Palette CRUD -------------------------------- */
+
 async function savePalette() {
   const payload = {
     name: elements.nameInput.value.trim(),
     description: elements.descriptionInput.value.trim(),
     colors: readColors(),
-    tags: parseCommaSeparatedList(elements.tagsInput.value).map((tag) => tag.toLowerCase())
+    tags: readTags()
   };
 
   const editingId = elements.paletteId.value;
@@ -182,6 +303,7 @@ async function savePalette() {
     }
 
     resetForm();
+    await loadTagCatalog();
     await renderAdminList();
   } catch (error) {
     handleAdminError(error);
@@ -263,7 +385,7 @@ function fillForm(palette) {
   elements.nameInput.value = palette.name;
   elements.descriptionInput.value = palette.description;
   renderColors(palette.colors);
-  elements.tagsInput.value = palette.tags.join(", ");
+  renderTags(palette.tags);
   elements.formTitle.textContent = "Edit palette";
   elements.submitButton.textContent = "Update palette";
   elements.cancelEditButton.hidden = false;
@@ -280,6 +402,7 @@ async function removePalette(id) {
   try {
     await deletePalette(id);
     showToast("Palette deleted");
+    await loadTagCatalog();
     await renderAdminList();
   } catch (error) {
     handleAdminError(error);
@@ -289,10 +412,153 @@ async function removePalette(id) {
 function resetForm() {
   elements.form.reset();
   renderColors([]);
+  renderTags([]);
+  elements.tagInput.value = "";
   elements.paletteId.value = "";
   elements.formTitle.textContent = "Add palette";
   elements.submitButton.textContent = "Create palette";
   elements.cancelEditButton.hidden = true;
+}
+
+/* ---------------------------- Tag catalog CRUD ------------------------------ */
+
+async function renderTagList() {
+  clearElement(elements.tagItems);
+  elements.tagCount.textContent = "Loading...";
+
+  try {
+    tagCatalog = await getTagCatalog();
+    populateTagSuggestions();
+
+    clearElement(elements.tagItems);
+    elements.tagCount.textContent = `${tagCatalog.length} tag${tagCatalog.length === 1 ? "" : "s"}`;
+
+    if (tagCatalog.length === 0) {
+      elements.tagItems.append(createEmptyState("No tags yet", "Add your first tag using the form above."));
+      return;
+    }
+
+    tagCatalog.forEach((tag) => {
+      elements.tagItems.append(createTagItem(tag));
+    });
+  } catch (error) {
+    clearElement(elements.tagItems);
+    elements.tagCount.textContent = "API error";
+    elements.tagItems.append(createBackendErrorState());
+    showToast(error.message, "error");
+  }
+}
+
+function createTagItem(tag) {
+  const item = createElement("article", { className: "admin-item admin-item--tag" });
+
+  const top = createElement("div", { className: "admin-item__top" });
+
+  const info = createElement("div", { className: "tag-item__info" });
+  const name = createElement("h3", { className: "admin-item__title", text: tag.name });
+  const badge = createElement("span", {
+    className: `tag-badge tag-badge--${tag.kind}`,
+    text: tag.kind === "purpose" ? "Category" : "Tag"
+  });
+  const count = createElement("span", {
+    className: "tag-item__count",
+    text: `${tag.count} palette${tag.count === 1 ? "" : "s"}`
+  });
+  info.append(name, badge, count);
+
+  const actions = createElement("div", { className: "admin-item__actions" });
+  const toggleButton = createElement("button", {
+    className: "button button--ghost",
+    text: tag.kind === "purpose" ? "Make tag" : "Make category",
+    attrs: { type: "button" }
+  });
+  const renameButton = createElement("button", {
+    className: "button button--ghost",
+    text: "Rename",
+    attrs: { type: "button" }
+  });
+  const deleteButton = createElement("button", {
+    className: "button button--danger",
+    text: "Delete",
+    attrs: { type: "button" }
+  });
+
+  toggleButton.addEventListener("click", () => toggleTagKind(tag));
+  renameButton.addEventListener("click", () => renameTag(tag));
+  deleteButton.addEventListener("click", () => removeTag(tag));
+
+  actions.append(toggleButton, renameButton, deleteButton);
+  top.append(info, actions);
+  item.append(top);
+  return item;
+}
+
+async function addTagFromForm() {
+  const name = elements.newTagName.value.trim();
+  const kind = elements.newTagKind.value;
+
+  if (!name) {
+    return;
+  }
+
+  try {
+    await createTag({ name, kind });
+    showToast("Tag added");
+    elements.newTagName.value = "";
+    await renderTagList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function toggleTagKind(tag) {
+  const kind = tag.kind === "purpose" ? "free" : "purpose";
+
+  try {
+    await updateTag(tag.name, { kind });
+    await renderTagList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function renameTag(tag) {
+  const next = window.prompt(`Rename "${tag.name}" to:`, tag.name);
+
+  if (next === null) {
+    return;
+  }
+
+  const trimmed = next.trim();
+  if (!trimmed || trimmed === tag.name) {
+    return;
+  }
+
+  try {
+    await updateTag(tag.name, { name: trimmed });
+    showToast("Tag renamed");
+    await renderTagList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function removeTag(tag) {
+  const message = tag.count > 0
+    ? `Delete "${tag.name}"? It will be removed from ${tag.count} palette${tag.count === 1 ? "" : "s"}.`
+    : `Delete "${tag.name}"?`;
+
+  if (!window.confirm(message)) {
+    return;
+  }
+
+  try {
+    await deleteTag(tag.name);
+    showToast("Tag deleted");
+    await renderTagList();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
 }
 
 function handleAdminError(error) {
