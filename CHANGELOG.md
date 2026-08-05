@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.4.3 — Password reset, admin modals and list search
+
+### Added
+
+- **Password reset by email**: `POST /api/v1/auth/forgot-password` sends a reset link (always
+  a generic response so it can't probe which emails exist) and `POST /api/v1/auth/reset-password`
+  sets the new password from a purpose-scoped token, logging out existing sessions. New
+  `forgot-password` and `reset-password` frontend pages, linked from the login form.
+- **Search and pagination** on the admin palette list (10 per page, backed by the existing
+  paginated palettes endpoint).
+
+### Changed
+
+- Admin delete/rename actions use styled, accessible **modal dialogs** instead of the browser's
+  `confirm`/`prompt`.
+
 ## v4.4.2 — Tag catalog and admin tag management
 
 ### Added

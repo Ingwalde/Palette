@@ -161,3 +161,13 @@ Status: completed.
 - Admin Palettes / Tags mode switch; the Tags view adds, renames, deletes, and reclassifies
   tags, with rename/delete propagated across palettes.
 - Palette form takes tags as removable chips with catalog autocomplete.
+
+## v4.4.3 — Password Reset, Admin Modals and List Search
+
+Status: completed.
+
+- Password reset by email: `POST /api/v1/auth/forgot-password` and
+  `POST /api/v1/auth/reset-password` (purpose-scoped token, generic responses, sessions
+  revoked on reset); dedicated forgot-password and reset-password pages.
+- Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
+- Search and pagination on the admin palette list (10 per page).
