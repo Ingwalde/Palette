@@ -1,6 +1,6 @@
 import { createElement } from "../utils/dom.js";
 
-export function createEmptyState(title, text) {
+export function createEmptyState(title, text, action) {
   const wrapper = createElement("div", {
     className: "empty-state"
   });
@@ -9,6 +9,16 @@ export function createEmptyState(title, text) {
   const paragraph = createElement("p", { text });
 
   wrapper.append(heading, paragraph);
+
+  if (action && action.label && action.href) {
+    const link = createElement("a", {
+      className: "button button--primary empty-state__action",
+      text: action.label,
+      attrs: { href: action.href }
+    });
+    wrapper.append(link);
+  }
+
   return wrapper;
 }
 

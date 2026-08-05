@@ -22,7 +22,11 @@ async function apiRequest(endpoint, options = {}) {
     });
   } catch (error) {
     if (error.status === 401) {
-      throw new Error("Log in again to use favorites");
+      // Preserve the status so callers can distinguish an expired session from a
+      // backend outage, while still surfacing a friendly message.
+      const authError = new Error("Log in again to use favorites");
+      authError.status = 401;
+      throw authError;
     }
     throw error;
   }
