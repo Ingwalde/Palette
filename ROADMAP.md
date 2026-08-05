@@ -151,3 +151,13 @@ Status: completed.
 - Favorites page shows a "Please log in again" prompt (with a login button) on an expired
   session, instead of a misleading backend-unavailable message.
 - Admin colour picker renders the colour as a clean rounded square with hover/focus states.
+
+## v4.4.2 — Tag Catalog and Admin Tag Management
+
+Status: completed.
+
+- Tag catalog table plus `GET/POST/PATCH/DELETE /api/v1/tags`; tags exist independently of
+  palettes and can be flagged as `purpose` categories (ten seeded on first run).
+- Admin Palettes / Tags mode switch; the Tags view adds, renames, deletes, and reclassifies
+  tags, with rename/delete propagated across palettes.
+- Palette form takes tags as removable chips with catalog autocomplete.
