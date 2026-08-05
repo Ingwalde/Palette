@@ -33,6 +33,13 @@ def normalize_hex_colors(colors: list[str]) -> list[str]:
     return normalized
 
 
+def normalize_tag(tag: str) -> str:
+    cleaned = tag.strip().lower().replace("#", "")
+    if not cleaned:
+        raise ValueError("Tag cannot be empty")
+    return cleaned
+
+
 def normalize_tags(tags: list[str]) -> list[str]:
     cleaned = []
     for tag in tags:
@@ -40,6 +47,9 @@ def normalize_tags(tags: list[str]) -> list[str]:
         if cleaned_tag:
             cleaned.append(cleaned_tag)
     return list(dict.fromkeys(cleaned))
+
+
+TAG_KINDS = ("free", "purpose")
 
 
 class PaletteBase(BaseModel):
@@ -94,6 +104,54 @@ class PaletteList(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class TagBase(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    kind: str = Field(default="free")
+
+    @field_validator("name")
+    @classmethod
+    def _normalize_name(cls, name: str) -> str:
+        return normalize_tag(name)
+
+    @field_validator("kind")
+    @classmethod
+    def _validate_kind(cls, kind: str) -> str:
+        kind = kind.strip().lower()
+        if kind not in TAG_KINDS:
+            raise ValueError(f"kind must be one of {', '.join(TAG_KINDS)}")
+        return kind
+
+
+class TagCreate(TagBase):
+    pass
+
+
+class TagUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=60)
+    kind: str | None = Field(default=None)
+
+    @field_validator("name")
+    @classmethod
+    def _normalize_name(cls, name: str | None) -> str | None:
+        return None if name is None else normalize_tag(name)
+
+    @field_validator("kind")
+    @classmethod
+    def _validate_kind(cls, kind: str | None) -> str | None:
+        if kind is None:
+            return None
+        kind = kind.strip().lower()
+        if kind not in TAG_KINDS:
+            raise ValueError(f"kind must be one of {', '.join(TAG_KINDS)}")
+        return kind
+
+
+class TagRead(BaseModel):
+    name: str
+    kind: str
+    count: int
 
 
 class UserBase(BaseModel):

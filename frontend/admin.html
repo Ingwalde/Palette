@@ -4,16 +4,16 @@
   <script>document.documentElement.classList.add("js");</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Palette v4.4.1 admin panel protected by username and password authentication." />
+  <meta name="description" content="Palette v4.4.2 admin panel protected by username and password authentication." />
   <title>Palette | Admin</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css?v=4.4.1" />
-  <link rel="stylesheet" href="css/components.css?v=4.4.1" />
-  <link rel="stylesheet" href="css/pages.css?v=4.4.1" />
+  <link rel="stylesheet" href="css/base.css?v=4.4.2" />
+  <link rel="stylesheet" href="css/components.css?v=4.4.2" />
+  <link rel="stylesheet" href="css/pages.css?v=4.4.2" />
 </head>
 <body>
   <header class="site-header">
@@ -52,66 +52,116 @@
     </section>
 
     <section class="section admin-layout hidden" id="adminPanel">
-      <form class="admin-form" id="paletteForm">
-        <input type="hidden" id="paletteId" />
+      <div class="admin-toolbar">
+        <div>
+          <p class="eyebrow" id="adminUserInfo">Admin session</p>
+          <h2>Admin panel</h2>
+        </div>
 
-        <div class="section-heading section-heading--compact">
-          <div>
-            <p class="eyebrow" id="adminUserInfo">Admin session</p>
-            <h2 id="formTitle">Add palette</h2>
+        <div class="admin-mode" role="tablist" aria-label="Admin mode">
+          <button class="admin-mode__btn admin-mode__btn--active" id="modePalettesBtn" type="button" data-mode="palettes">Palettes</button>
+          <button class="admin-mode__btn" id="modeTagsBtn" type="button" data-mode="tags">Tags</button>
+        </div>
+
+        <button class="button button--ghost" id="logoutAdminBtn" type="button">Logout</button>
+      </div>
+
+      <div class="admin-view" id="palettesView">
+        <form class="admin-form" id="paletteForm">
+          <input type="hidden" id="paletteId" />
+
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Palette</p>
+              <h2 id="formTitle">Add palette</h2>
+            </div>
           </div>
-        </div>
 
-        <label class="field">
-          <span>Name</span>
-          <input class="input" id="nameInput" type="text" placeholder="Nordic Blue" required />
-        </label>
+          <label class="field">
+            <span>Name</span>
+            <input class="input" id="nameInput" type="text" placeholder="Nordic Blue" required />
+          </label>
 
-        <label class="field">
-          <span>Description</span>
-          <textarea class="textarea" id="descriptionInput" rows="4" placeholder="Short description..." required></textarea>
-        </label>
+          <label class="field">
+            <span>Description</span>
+            <textarea class="textarea" id="descriptionInput" rows="4" placeholder="Short description..." required></textarea>
+          </label>
 
-        <div class="field">
-          <span>Colors</span>
-          <div class="color-editor" id="colorEditor"></div>
-          <div class="color-editor__footer">
-            <button class="button button--ghost" id="addColorBtn" type="button">+ Add color</button>
-            <small class="hint">1–8 HEX colors.</small>
+          <div class="field">
+            <span>Colors</span>
+            <div class="color-editor" id="colorEditor"></div>
+            <div class="color-editor__footer">
+              <button class="button button--ghost" id="addColorBtn" type="button">+ Add color</button>
+              <small class="hint">1–8 HEX colors.</small>
+            </div>
           </div>
-        </div>
 
-        <label class="field">
-          <span>Tags</span>
-          <input class="input" id="tagsInput" type="text" placeholder="cold, nordic, clean" required />
-          <small class="hint">Use comma-separated tags.</small>
-        </label>
-
-        <div class="form-actions">
-          <button class="button button--primary" id="submitButton" type="submit">Create palette</button>
-          <button class="button button--secondary" id="cancelEditButton" type="button" hidden>Cancel edit</button>
-          <button class="button button--ghost" id="logoutAdminBtn" type="button">Logout</button>
-        </div>
-      </form>
-
-      <section class="admin-list" aria-labelledby="admin-list-title">
-        <div class="section-heading section-heading--compact">
-          <div>
-            <p class="eyebrow">Database</p>
-            <h2 id="admin-list-title">Palettes in SQLite</h2>
+          <div class="field">
+            <span>Tags</span>
+            <div class="tag-editor" id="tagEditor"></div>
+            <input class="input" id="tagInput" type="text" placeholder="Type a tag, press Enter" list="tagSuggestions" autocomplete="off" />
+            <datalist id="tagSuggestions"></datalist>
+            <small class="hint">Press Enter or comma to add. Up to 12 tags.</small>
           </div>
-          <p class="result-count" id="adminCount"></p>
-        </div>
 
-        <div class="admin-items" id="adminItems"></div>
-      </section>
+          <div class="form-actions">
+            <button class="button button--primary" id="submitButton" type="submit">Create palette</button>
+            <button class="button button--secondary" id="cancelEditButton" type="button" hidden>Cancel edit</button>
+          </div>
+        </form>
+
+        <section class="admin-list" aria-labelledby="admin-list-title">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Database</p>
+              <h2 id="admin-list-title">Palettes in the database</h2>
+            </div>
+            <p class="result-count" id="adminCount"></p>
+          </div>
+
+          <div class="admin-items" id="adminItems"></div>
+        </section>
+      </div>
+
+      <div class="admin-view" id="tagsView" hidden>
+        <form class="admin-form" id="tagForm">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Tag catalog</p>
+              <h2>Add a tag</h2>
+            </div>
+          </div>
+
+          <div class="tag-add-row">
+            <input class="input" id="newTagName" type="text" placeholder="new-tag" autocomplete="off" />
+            <select class="select" id="newTagKind" aria-label="Tag kind">
+              <option value="free">Tag</option>
+              <option value="purpose">Category</option>
+            </select>
+            <button class="button button--primary" id="addTagBtn" type="submit">Add tag</button>
+          </div>
+          <small class="hint">Categories are the standard "what is this palette for" tags (shown first).</small>
+        </form>
+
+        <section class="admin-list" aria-labelledby="tag-list-title">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Database</p>
+              <h2 id="tag-list-title">All tags</h2>
+            </div>
+            <p class="result-count" id="tagCount"></p>
+          </div>
+
+          <div class="admin-items" id="tagItems"></div>
+        </section>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v4.4.1</p>
+        <p class="site-footer__eyebrow">Palette v4.4.2</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -133,8 +183,8 @@
 
 <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="js/utils/authNav.js?v=4.4.1"></script>
-  <script type="module" src="js/router.js?v=4.4.1"></script>
-  <script type="module" src="js/pages/admin.js?v=4.4.1"></script>
+  <script type="module" src="js/utils/authNav.js?v=4.4.2"></script>
+  <script type="module" src="js/router.js?v=4.4.2"></script>
+  <script type="module" src="js/pages/admin.js?v=4.4.2"></script>
 </body>
 </html>

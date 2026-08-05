@@ -110,6 +110,93 @@ async def get_tags(db: AsyncSession) -> list[str]:
     return sorted(all_tags)
 
 
+async def get_tag_by_name(db: AsyncSession, name: str) -> models.Tag | None:
+    stmt = select(models.Tag).where(models.Tag.name == name)
+    return (await db.execute(stmt)).scalars().first()
+
+
+async def _palette_tag_counts(db: AsyncSession) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    result = await db.execute(select(models.Palette.tags))
+    for (tags,) in result.all():
+        for tag in tags or []:
+            counts[tag] = counts.get(tag, 0) + 1
+    return counts
+
+
+async def list_tag_catalog(db: AsyncSession) -> list[dict]:
+    """Every tag known to the app: catalog rows plus any tag currently used by a palette
+    but not yet in the catalog. Each entry carries its kind and palette usage count."""
+    counts = await _palette_tag_counts(db)
+    catalog = (await db.execute(select(models.Tag))).scalars().all()
+    catalog_by_name = {tag.name: tag for tag in catalog}
+
+    names = set(counts) | set(catalog_by_name)
+    entries = [
+        {
+            "name": name,
+            "kind": catalog_by_name[name].kind if name in catalog_by_name else "free",
+            "count": counts.get(name, 0),
+        }
+        for name in names
+    ]
+    # Purpose categories first, then alphabetical.
+    entries.sort(key=lambda entry: (entry["kind"] != "purpose", entry["name"]))
+    return entries
+
+
+async def create_tag(db: AsyncSession, tag_data: schemas.TagCreate) -> models.Tag:
+    tag = models.Tag(name=tag_data.name, kind=tag_data.kind)
+    db.add(tag)
+    await db.commit()
+    await db.refresh(tag)
+    return tag
+
+
+async def _rename_tag_in_palettes(db: AsyncSession, old: str, new: str) -> int:
+    stmt = select(models.Palette).where(models.Palette.tags.contains([old]))
+    palettes = (await db.execute(stmt)).scalars().all()
+    for palette in palettes:
+        renamed: list[str] = []
+        for tag in palette.tags:
+            value = new if tag == old else tag
+            if value not in renamed:
+                renamed.append(value)
+        palette.tags = renamed
+    return len(palettes)
+
+
+async def update_tag(db: AsyncSession, tag: models.Tag, tag_data: schemas.TagUpdate) -> models.Tag:
+    data = tag_data.model_dump(exclude_unset=True)
+
+    new_name = data.get("name")
+    if new_name is not None and new_name != tag.name:
+        await _rename_tag_in_palettes(db, tag.name, new_name)
+        tag.name = new_name
+
+    if data.get("kind") is not None:
+        tag.kind = data["kind"]
+
+    await db.commit()
+    await db.refresh(tag)
+    return tag
+
+
+async def delete_tag_everywhere(db: AsyncSession, name: str) -> int:
+    """Remove a tag from the catalog (if present) and strip it from every palette."""
+    stmt = select(models.Palette).where(models.Palette.tags.contains([name]))
+    palettes = (await db.execute(stmt)).scalars().all()
+    for palette in palettes:
+        palette.tags = [tag for tag in palette.tags if tag != name]
+
+    tag = await get_tag_by_name(db, name)
+    if tag is not None:
+        await db.delete(tag)
+
+    await db.commit()
+    return len(palettes)
+
+
 async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) -> models.Palette:
     desired_slug = palette_data.slug or palette_data.name
     slug = await get_unique_slug(db, desired_slug)

@@ -1,5 +1,21 @@
 # Changelog
 
+## v4.4.2 — Tag catalog and admin tag management
+
+### Added
+
+- A **tag catalog** table (`tags`) plus `GET/POST/PATCH/DELETE /api/v1/tags`. Tags can exist
+  independently of palettes and be flagged as `purpose` (standard "what is this palette for"
+  categories) or `free`. Ten purpose categories are seeded on first run.
+- The admin panel has a **Palettes / Tags** mode switch. The Tags view lists every tag with
+  its kind and palette usage count, and can add, rename, delete, or reclassify tags.
+- Renaming or deleting a tag propagates across all palettes that use it.
+
+### Changed
+
+- The palette form takes tags as removable **chips** (Enter or comma to add) with
+  autocomplete suggestions from the tag catalog, instead of a comma-separated text field.
+
 ## v4.4.1 — Session-expiry message and colour-swatch polish
 
 ### Fixed
