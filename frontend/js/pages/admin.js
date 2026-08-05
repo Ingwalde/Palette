@@ -33,6 +33,9 @@ const elements = {
   adminCount: qs("#adminCount")
 };
 
+const DEFAULT_COLOR = "#3f4e4f";
+const MAX_COLORS = 8;
+
 initAdminPage();
 
 function initAdminPage() {
@@ -59,9 +62,6 @@ function bindEvents() {
   elements.cancelEditButton.addEventListener("click", resetForm);
   elements.addColorBtn.addEventListener("click", () => addColorRow());
 }
-
-const DEFAULT_COLOR = "#3f4e4f";
-const MAX_COLORS = 8;
 
 function createColorRow(value = DEFAULT_COLOR) {
   const row = createElement("div", { className: "color-row" });
