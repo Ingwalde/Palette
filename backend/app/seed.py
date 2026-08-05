@@ -24,6 +24,34 @@ async def seed_default_palettes(db: AsyncSession) -> int:
     return await create_many_if_empty(db, DEFAULT_PALETTES)
 
 
+# Standard "what is this palette for" categories, seeded into the tag catalog as
+# kind="purpose". Idempotent per name, so editing this list only adds new ones.
+DEFAULT_PURPOSE_TAGS = [
+    "web",
+    "branding",
+    "ui",
+    "print",
+    "poster",
+    "packaging",
+    "illustration",
+    "data-viz",
+    "presentation",
+    "game",
+]
+
+
+async def seed_default_tags(db: AsyncSession) -> int:
+    from .crud import create_tag, get_tag_by_name
+    from .schemas import TagCreate
+
+    created = 0
+    for name in DEFAULT_PURPOSE_TAGS:
+        if await get_tag_by_name(db, name) is None:
+            await create_tag(db, TagCreate(name=name, kind="purpose"))
+            created += 1
+    return created
+
+
 async def seed_default_admin_user(db: AsyncSession) -> bool:
     from .config import settings
     from .crud import create_admin_if_missing

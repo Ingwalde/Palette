@@ -15,8 +15,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from .config import settings
 from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
-from .routers import auth, favorites, palettes
-from .seed import seed_default_admin_user, seed_default_palettes
+from .routers import auth, favorites, palettes, tags
+from .seed import seed_default_admin_user, seed_default_palettes, seed_default_tags
 
 # Configure application logging once at import so every module's getLogger(...) shares a
 # consistent format and level (overridable with the LOG_LEVEL env var).
@@ -32,6 +32,7 @@ async def lifespan(app: FastAPI):
 
     async with AsyncSessionLocal() as db:
         await seed_default_palettes(db)
+        await seed_default_tags(db)
         await seed_default_admin_user(db)
 
     yield
@@ -39,8 +40,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.4.1 with auth, favorites, PostgreSQL and Docker.",
-    version="4.4.1",
+    description="Backend API for Palette v4.4.2 with auth, favorites, PostgreSQL and Docker.",
+    version="4.4.2",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -62,6 +63,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(palettes.router, prefix="/api/v1")
 app.include_router(favorites.router, prefix="/api/v1")
+app.include_router(tags.router, prefix="/api/v1")
 
 
 def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse:
@@ -95,7 +97,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.4.1",
+        "version": "4.4.2",
         "docs": "/api/docs",
         "health": "/health",
     }

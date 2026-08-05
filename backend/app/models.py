@@ -43,6 +43,22 @@ class Palette(Base):
     )
 
 
+class Tag(Base):
+    """Catalog of tags, managed independently of palettes. Palettes still store their tags
+    as a JSONB string array; this table adds a curated vocabulary so tags can exist before
+    any palette uses them and can be flagged as reusable "purpose" categories."""
+
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(60), unique=True, index=True, nullable=False)
+    # "free" (an ordinary tag) or "purpose" (a standard "what is this palette for" category).
+    kind: Mapped[str] = mapped_column(String(16), default="free", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+
+
 class User(Base):
     __tablename__ = "users"
 
