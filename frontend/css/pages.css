@@ -111,7 +111,14 @@
   box-shadow: var(--shadow-soft);
 }
 
-.export-layout,
+.export-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  padding-bottom: 60px;
+}
+
 .admin-layout {
   display: block;
   padding-bottom: 60px;
@@ -127,16 +134,37 @@
 }
 
 .admin-mode {
+  position: relative;
   display: inline-flex;
-  gap: 4px;
-  padding: 4px;
+  padding: 5px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-surface);
 }
 
+/* Sliding pill behind the active tab, mirroring the main nav indicator. */
+.admin-mode__pill {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: calc(50% - 5px);
+  border-radius: 999px;
+  background: var(--color-primary);
+  box-shadow: 0 10px 24px rgba(47, 45, 42, 0.14);
+  transition: left 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.admin-mode[data-active="tags"] .admin-mode__pill {
+  left: 50%;
+}
+
 .admin-mode__btn {
-  padding: 8px 18px;
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 104px;
+  padding: 9px 20px;
   border: none;
   border-radius: 999px;
   background: none;
@@ -144,12 +172,17 @@
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
+  transition: color 200ms ease;
 }
 
 .admin-mode__btn--active {
-  background: var(--color-ink, #2c3639);
   color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-mode__pill {
+    transition: none;
+  }
 }
 
 .admin-view {
@@ -157,6 +190,11 @@
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 24px;
   align-items: start;
+}
+
+/* The [hidden] attribute must win over display:grid so only the active mode shows. */
+.admin-view[hidden] {
+  display: none;
 }
 
 .export-panel,
@@ -175,6 +213,13 @@
   display: grid;
   gap: 18px;
   padding: 20px;
+}
+
+/* The admin form is not sticky, so the whole admin page scrolls together (avoids the form
+   pinning while the list scrolls past it). */
+.admin-form {
+  position: static;
+  top: auto;
 }
 
 .admin-list {
@@ -272,6 +317,59 @@
   display: none;
 }
 
+/* Custom tag suggestions dropdown on the palette form */
+.tag-suggest {
+  position: relative;
+}
+
+.tag-suggest__menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
+}
+
+/* [hidden] must win over display:grid so the menu truly hides (and doesn't leave a strip). */
+.tag-suggest__menu[hidden] {
+  display: none;
+}
+
+.tag-suggest__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.tag-suggest__option:hover {
+  background: var(--color-primary-soft, rgba(0, 0, 0, 0.06));
+}
+
+.tag-suggest__name {
+  font-weight: 600;
+}
+
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -307,11 +405,22 @@
 }
 
 /* Tag catalog management */
+#tagForm {
+  gap: 12px;
+}
+
 .tag-add-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 10px;
-  align-items: center;
+  margin-top: -2px;
+}
+
+.tag-add-row .custom-select {
+  width: 100%;
+}
+
+.tag-add-row .button {
+  justify-self: start;
 }
 
 .admin-item--tag .admin-item__top {
@@ -646,9 +755,6 @@
 .palette-picker__results {
   display: grid;
   gap: 10px;
-  max-height: 330px;
-  overflow: auto;
-  padding-right: 4px;
 }
 
 .palette-picker__option {
@@ -726,24 +832,12 @@
   }
 }
 
-/* Export palette picker compact list — v3.2 */
-.palette-picker__results {
-  max-height: 220px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-}
-
+/* Export palette picker compact list — v3.2. The results list flows with the page (no inner
+   scroll) so scrolling over it scrolls the page, not a nested box. */
 .palette-picker__option {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .palette-picker__swatches {
   width: 112px;
-}
-
-@media (max-width: 920px) {
-  .palette-picker__results {
-    max-height: 260px;
-  }
 }
