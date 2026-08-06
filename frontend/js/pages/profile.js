@@ -13,6 +13,7 @@ import {
   saveAuth
 } from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
+import { initPasswordToggles } from "../utils/passwordToggle.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -47,6 +48,7 @@ function initProfilePage() {
   elements.passwordForm.addEventListener("submit", handlePasswordChange);
   elements.resendVerificationButton.addEventListener("click", handleResendVerification);
   elements.deleteAccountButton.addEventListener("click", handleDeleteAccount);
+  initPasswordToggles();
 
   renderStoredUser();
   refreshUserFromBackend();

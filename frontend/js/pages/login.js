@@ -1,6 +1,7 @@
 import { getCurrentUser, loginUser, registerUser } from "../api/authApi.js";
 import { clearAuth, getAccessToken, saveAuth, saveRefreshToken } from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
+import { initPasswordToggles } from "../utils/passwordToggle.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -17,6 +18,7 @@ initLoginPage();
 
 function initLoginPage() {
   bindEvents();
+  initPasswordToggles();
   refreshCurrentUser();
 }
 
