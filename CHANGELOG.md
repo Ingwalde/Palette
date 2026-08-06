@@ -1,5 +1,35 @@
 # Changelog
 
+## v4.4.4 — Admin & form UX pass
+
+### Added
+
+- Show/hide (eye) toggle on every password field — login, register, change-password and
+  reset-password. A crossed-out eye means the password is hidden; an open eye means it's shown.
+- Styled tag-suggestions dropdown on the palette form (filter as you type, pick to add a chip),
+  replacing the native `<datalist>`.
+- Pagination on the admin tag list (10 per page), matching the palette list.
+
+### Changed
+
+- The admin form no longer sticks while scrolling, so the admin page scrolls as one piece.
+
+- The Palettes/Tags admin switch is an animated sliding tab, matching the main navigation.
+- The palette form's Description is no longer resizable, and the tag-catalog "kind" picker uses
+  the app's custom select styling.
+- The export palette list flows into the page instead of a nested scroll box, so scrolling over
+  it scrolls the page. With no search, it shows just 3 random palettes instead of a long list.
+- Removed the redundant Logout button from the admin panel (log out from the account page).
+- Removed the TXT format from the export page (CSS, SCSS, JSON and PNG remain).
+
+### Fixed
+
+- The admin panel now shows only the selected Palettes **or** Tags view; both were rendering
+  at once because the `hidden` attribute lost to the view's `display: grid`.
+- Restored the export page's two-column layout. A v4.4.2 change to the shared
+  `.export-layout, .admin-layout` rule left the export settings panel and the generated-output
+  preview overlapping.
+
 ## v4.4.3 — Password reset, admin modals and list search
 
 ### Added

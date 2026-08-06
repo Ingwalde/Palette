@@ -1,5 +1,6 @@
 import { resetPassword } from "../api/authApi.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
+import { initPasswordToggles } from "../utils/passwordToggle.js";
 import { showToast } from "../utils/toast.js";
 
 const elements = {
@@ -24,6 +25,8 @@ function initResetPage() {
     event.preventDefault();
     await submitReset();
   });
+
+  initPasswordToggles();
 }
 
 async function submitReset() {

@@ -25,6 +25,20 @@ let currentSelectedPalettes = [];
 let currentPreviewDataUrl = "";
 let allPalettesCache = null;
 let selectedPaletteSlug = "";
+let defaultPalettesCache = null;
+
+const DEFAULT_PICKER_COUNT = 3;
+
+// A stable random sample shown when the search box is empty, so the default picker isn't a
+// long list. Computed once per page load.
+function getDefaultPalettes(palettes) {
+  if (!defaultPalettesCache) {
+    defaultPalettesCache = [...palettes]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, DEFAULT_PICKER_COUNT);
+  }
+  return defaultPalettesCache;
+}
 
 initExportPage();
 
@@ -171,7 +185,10 @@ async function renderPaletteSearchResults() {
 
   const palettes = await loadAllPalettes();
   const query = elements.paletteSearchInput.value.trim().toLowerCase();
-  const visiblePalettes = filterPalettes(palettes, query).slice(0, 8);
+  // With no search, show a small random sample instead of a long list; searching shows matches.
+  const visiblePalettes = query
+    ? filterPalettes(palettes, query).slice(0, 8)
+    : getDefaultPalettes(palettes);
 
   elements.paletteSearchResults.innerHTML = "";
 
@@ -279,8 +296,7 @@ function generateExport(selectedPalettes, format) {
   const generators = {
     css: generateCssVariables,
     scss: generateScssVariables,
-    json: generateJson,
-    txt: generateTxt
+    json: generateJson
   };
 
   return generators[format](selectedPalettes);
@@ -314,21 +330,14 @@ function generateJson(selectedPalettes) {
   return JSON.stringify(selectedPalettes, null, 2);
 }
 
-function generateTxt(selectedPalettes) {
-  return selectedPalettes
-    .map((palette) => `${palette.name}: ${palette.colors.join(", ")}`)
-    .join("\n");
-}
-
 function getFileExtension(format) {
   const extensions = {
     css: "css",
     scss: "scss",
-    json: "json",
-    txt: "txt"
+    json: "json"
   };
 
-  return extensions[format] || "txt";
+  return extensions[format] || "css";
 }
 
 function getExportFilename(extension) {

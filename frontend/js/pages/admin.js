@@ -9,6 +9,7 @@ import { getCurrentUser } from "../api/authApi.js";
 import { createBackendErrorState, createEmptyState } from "../components/emptyState.js";
 import { confirmDialog, promptDialog } from "../components/modal.js";
 import { clearElement, createElement, qs } from "../utils/dom.js";
+import { initCustomSelects } from "../utils/customSelect.js";
 import { clearAuth, getStoredUser } from "../utils/authStorage.js";
 import { showToast } from "../utils/toast.js";
 
@@ -19,7 +20,6 @@ const elements = {
   refreshAccessButton: qs("#refreshAccessBtn"),
   adminPanel: qs("#adminPanel"),
   adminUserInfo: qs("#adminUserInfo"),
-  logoutAdminButton: qs("#logoutAdminBtn"),
   modePalettesButton: qs("#modePalettesBtn"),
   modeTagsButton: qs("#modeTagsBtn"),
   palettesView: qs("#palettesView"),
@@ -33,7 +33,9 @@ const elements = {
   addColorBtn: qs("#addColorBtn"),
   tagEditor: qs("#tagEditor"),
   tagInput: qs("#tagInput"),
-  tagSuggestions: qs("#tagSuggestions"),
+  tagSuggest: qs("#tagSuggest"),
+  tagSuggestMenu: qs("#tagSuggestMenu"),
+  adminMode: qs("#adminMode"),
   submitButton: qs("#submitButton"),
   cancelEditButton: qs("#cancelEditButton"),
   adminItems: qs("#adminItems"),
@@ -47,7 +49,11 @@ const elements = {
   newTagName: qs("#newTagName"),
   newTagKind: qs("#newTagKind"),
   tagItems: qs("#tagItems"),
-  tagCount: qs("#tagCount")
+  tagCount: qs("#tagCount"),
+  tagPagination: qs("#tagPagination"),
+  tagPrevButton: qs("#tagPrevBtn"),
+  tagNextButton: qs("#tagNextBtn"),
+  tagPageInfo: qs("#tagPageInfo")
 };
 
 const DEFAULT_COLOR = "#3f4e4f";
@@ -57,6 +63,7 @@ const PAGE_SIZE = 10;
 
 let tagCatalog = [];
 const adminList = { search: "", offset: 0, total: 0 };
+const tagList = { offset: 0 };
 let searchDebounce = null;
 
 initAdminPage();
@@ -69,13 +76,6 @@ function initAdminPage() {
 
 function bindEvents() {
   elements.refreshAccessButton.addEventListener("click", checkAdminAccess);
-
-  elements.logoutAdminButton.addEventListener("click", () => {
-    clearAuth();
-    resetForm();
-    showAccessMessage("Login required", "You have been logged out. Login with an admin account to continue.");
-    showToast("Logged out");
-  });
 
   elements.form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -91,8 +91,20 @@ function bindEvents() {
       event.preventDefault();
       addTag(elements.tagInput.value);
       elements.tagInput.value = "";
+      renderTagSuggestMenu();
+    } else if (event.key === "Escape") {
+      closeTagSuggest();
     }
   });
+  elements.tagInput.addEventListener("input", renderTagSuggestMenu);
+  elements.tagInput.addEventListener("focus", renderTagSuggestMenu);
+  elements.tagInput.addEventListener("blur", () => setTimeout(closeTagSuggest, 120));
+  document.addEventListener("mousedown", (event) => {
+    if (!event.target.closest("#tagSuggest")) {
+      closeTagSuggest();
+    }
+  });
+  window.addEventListener("scroll", closeTagSuggest, true);
 
   // Admin mode switch (Palettes / Tags).
   elements.modePalettesButton.addEventListener("click", () => switchMode("palettes"));
@@ -122,6 +134,16 @@ function bindEvents() {
   elements.tagForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await addTagFromForm();
+  });
+  elements.tagPrevButton.addEventListener("click", () => {
+    tagList.offset = Math.max(0, tagList.offset - PAGE_SIZE);
+    renderTagList();
+  });
+  elements.tagNextButton.addEventListener("click", () => {
+    if (tagList.offset + PAGE_SIZE < tagCatalog.length) {
+      tagList.offset += PAGE_SIZE;
+      renderTagList();
+    }
   });
 }
 
@@ -239,17 +261,58 @@ function readTags() {
     .filter(Boolean);
 }
 
-function populateTagSuggestions() {
-  clearElement(elements.tagSuggestions);
-  tagCatalog.forEach((tag) => {
-    elements.tagSuggestions.append(createElement("option", { attrs: { value: tag.name } }));
+function renderTagSuggestMenu() {
+  const query = elements.tagInput.value.trim().toLowerCase();
+  const chosen = new Set(readTags());
+  const matches = tagCatalog
+    .filter((tag) => !chosen.has(tag.name) && tag.name.includes(query))
+    .slice(0, 8);
+
+  clearElement(elements.tagSuggestMenu);
+
+  if (matches.length === 0) {
+    closeTagSuggest();
+    return;
+  }
+
+  matches.forEach((tag) => {
+    const option = createElement("button", {
+      className: "tag-suggest__option",
+      attrs: { type: "button", role: "option" }
+    });
+    option.append(createElement("span", { className: "tag-suggest__name", text: tag.name }));
+    if (tag.kind === "purpose") {
+      option.append(createElement("span", {
+        className: "tag-badge tag-badge--purpose",
+        text: "Category"
+      }));
+    }
+    // mousedown (not click) so the choice registers before the input's blur closes the menu.
+    option.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      addTag(tag.name);
+      elements.tagInput.value = "";
+      renderTagSuggestMenu();
+    });
+    elements.tagSuggestMenu.append(option);
   });
+
+  openTagSuggest();
+}
+
+function openTagSuggest() {
+  elements.tagSuggestMenu.hidden = false;
+  elements.tagInput.setAttribute("aria-expanded", "true");
+}
+
+function closeTagSuggest() {
+  elements.tagSuggestMenu.hidden = true;
+  elements.tagInput.setAttribute("aria-expanded", "false");
 }
 
 async function loadTagCatalog() {
   try {
     tagCatalog = await getTagCatalog();
-    populateTagSuggestions();
   } catch {
     // Suggestions are a nice-to-have; ignore a catalog fetch failure here.
   }
@@ -261,8 +324,11 @@ function switchMode(mode) {
   const tagsMode = mode === "tags";
   elements.palettesView.hidden = tagsMode;
   elements.tagsView.hidden = !tagsMode;
+  elements.adminMode.dataset.active = mode;
   elements.modePalettesButton.classList.toggle("admin-mode__btn--active", !tagsMode);
   elements.modeTagsButton.classList.toggle("admin-mode__btn--active", tagsMode);
+  elements.modePalettesButton.setAttribute("aria-selected", String(!tagsMode));
+  elements.modeTagsButton.setAttribute("aria-selected", String(tagsMode));
 
   if (tagsMode) {
     renderTagList();
@@ -288,6 +354,7 @@ async function checkAdminAccess() {
     }
 
     showAdminPanel(user);
+    initCustomSelects(elements.adminPanel);
     await loadTagCatalog();
     await renderAdminList();
   } catch (error) {
@@ -491,25 +558,45 @@ async function renderTagList() {
 
   try {
     tagCatalog = await getTagCatalog();
-    populateTagSuggestions();
+
+    // A delete can empty the current page (offset past the end); jump back a page.
+    if (tagList.offset > 0 && tagList.offset >= tagCatalog.length) {
+      tagList.offset = Math.max(0, (Math.ceil(tagCatalog.length / PAGE_SIZE) - 1) * PAGE_SIZE);
+    }
 
     clearElement(elements.tagItems);
     elements.tagCount.textContent = `${tagCatalog.length} tag${tagCatalog.length === 1 ? "" : "s"}`;
 
     if (tagCatalog.length === 0) {
       elements.tagItems.append(createEmptyState("No tags yet", "Add your first tag using the form above."));
+      renderTagPagination();
       return;
     }
 
-    tagCatalog.forEach((tag) => {
-      elements.tagItems.append(createTagItem(tag));
-    });
+    tagCatalog
+      .slice(tagList.offset, tagList.offset + PAGE_SIZE)
+      .forEach((tag) => {
+        elements.tagItems.append(createTagItem(tag));
+      });
+    renderTagPagination();
   } catch (error) {
     clearElement(elements.tagItems);
     elements.tagCount.textContent = "API error";
     elements.tagItems.append(createBackendErrorState());
+    elements.tagPagination.hidden = true;
     showToast(error.message, "error");
   }
+}
+
+function renderTagPagination() {
+  const total = tagCatalog.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.floor(tagList.offset / PAGE_SIZE) + 1;
+
+  elements.tagPagination.hidden = total <= PAGE_SIZE;
+  elements.tagPageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+  elements.tagPrevButton.disabled = tagList.offset === 0;
+  elements.tagNextButton.disabled = tagList.offset + PAGE_SIZE >= total;
 }
 
 function createTagItem(tag) {

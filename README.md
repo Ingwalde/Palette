@@ -1,8 +1,8 @@
-# Palette v4.4.3 — Full-Stack Color Palette App
+# Palette v4.4.4 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.4.3** adds password reset by email (request a link, choose a new password, existing sessions are logged out), replaces the admin browser confirm/prompt dialogs with styled modals, and adds search + pagination to the admin palette list. It builds on **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.4.4** is a UX pass over the admin panel and forms: password fields get a show/hide (eye) toggle; the Palettes/Tags switch is now an animated sliding tab; the palette form gains a styled tag-suggestions dropdown, a non-resizable description, and a nicer tag-catalog kind picker; the admin view shows only the selected mode; the export page's two-column layout is restored (regressed in 4.4.2) with its palette list flowing into the page (no nested scroll); the redundant admin logout button and the TXT export format are gone. It builds on **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -49,7 +49,7 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 - Account page with session controls and password change.
 - Admin navigation hidden for guests and regular users.
 - Export one selected palette or user favorites.
-- Export formats: CSS, SCSS, JSON, TXT and PNG.
+- Export formats: CSS, SCSS, JSON and PNG.
 - PNG export preview and download.
 - Selected palette PNG export as a standalone palette card.
 - HEX color copying.
@@ -265,7 +265,7 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.4.3
+v4.4.4
 ```
 
 ---

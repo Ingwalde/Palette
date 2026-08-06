@@ -206,12 +206,50 @@
   min-height: 120px;
   padding: 15px 18px;
   border-radius: 22px;
-  resize: vertical;
+  resize: none;
 }
 
 .search-field input,
 .input {
   padding: 0 20px;
+}
+
+/* Password field with a show/hide (eye) toggle */
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field .input {
+  padding-right: 52px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.password-toggle:hover {
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.password-toggle svg {
+  display: block;
 }
 
 .select {

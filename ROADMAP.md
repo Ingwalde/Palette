@@ -171,3 +171,17 @@ Status: completed.
   revoked on reset); dedicated forgot-password and reset-password pages.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
+
+## v4.4.4 — Admin and Form UX Pass
+
+Status: completed.
+
+- Show/hide (eye) toggle on all password fields.
+- Animated sliding Palettes/Tags admin switch; styled tag-suggestions dropdown on the palette
+  form; non-resizable description; custom-styled tag "kind" picker.
+- Admin panel shows only the selected Palettes or Tags view (was rendering both).
+- Pagination on the admin tag list (10 per page); the admin form no longer sticks, so the admin
+  page scrolls as one piece.
+- Restored the export page's two-column layout (regressed in v4.4.2); export palette list flows
+  into the page (no nested scroll).
+- Removed the redundant admin logout button and the TXT export format.
