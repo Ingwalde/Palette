@@ -1,8 +1,8 @@
-# Palette v4.5.0 — Full-Stack Color Palette App
+# Palette v4.6.0 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.5.0** is a security-hardening release: auth tokens move out of `localStorage` into **httpOnly cookies** with **double-submit CSRF** protection (so XSS can no longer steal them), the frontend is served with a strict **Content-Security-Policy** and other security headers, **every mutating endpoint is rate-limited**, secrets can be managed encrypted in git via **SOPS + age**, and a first accessibility pass adds a keyboard-focus ring, a skip-to-content link and tab semantics. It builds on **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.6.0** is an operations/observability release: a **readiness** probe (`/health/ready`) checks the database and Redis and backs the Compose healthcheck, **error tracking via Sentry** is wired in (off unless `SENTRY_DSN` is set), and a **database backup script** (`scripts/backup-db.sh`) with a cron example and retention is added. It builds on **4.5.0** (httpOnly-cookie auth with CSRF, CSP + security headers, rate-limited mutations, SOPS secrets), **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -91,6 +91,11 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 - Typed configuration via `pydantic-settings` with fail-fast validation.
 - Alembic database migrations (safe adoption of a pre-Alembic database on startup).
 - Structured application logging (`LOG_LEVEL`).
+- Liveness (`/health`) and readiness (`/health/ready`, checks database + Redis) probes; the
+  Compose backend healthcheck uses readiness.
+- Optional error tracking via Sentry (off unless `SENTRY_DSN` is set).
+- Database backup script (`scripts/backup-db.sh`) with retention and a cron example
+  (see `docs/ops.md`).
 - Swagger UI documentation (served at `/api/docs`, off by default — enable with
   `ENABLE_API_DOCS=true`).
 - Automated test suite with pytest (auth, CRUD, API); ruff, mypy and an 80% coverage gate
@@ -270,7 +275,7 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.5.0
+v4.6.0
 ```
 
 ---

@@ -172,6 +172,20 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.6.0 — Operations & Observability
+
+Status: completed.
+
+- Readiness probe (`/health/ready`, checks database + Redis) backing the Compose healthcheck;
+  `/health` stays as liveness.
+- Error tracking via Sentry, off unless `SENTRY_DSN` is set.
+- Database backup script (`scripts/backup-db.sh`) with retention and a cron example.
+
+Deferred to a later release:
+
+- CI/CD auto-deploy with a staging environment.
+- Full accessibility (WCAG AA) audit with the frontend rework.
+
 ## v4.5.0 — Security Hardening
 
 Status: completed.
