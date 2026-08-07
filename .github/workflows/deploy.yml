@@ -35,6 +35,11 @@ jobs:
             set -e
             cd ~/Palette
             git pull origin main
+            # Decrypt secrets into backend/.env (SOPS age key lives only on this VM).
+            # Guard: only overwrite .env if the decrypt produced a real SECRET_KEY.
+            sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env.new
+            grep -q '^SECRET_KEY=' backend/.env.new
+            mv backend/.env.new backend/.env
             docker compose up -d --build
             # nginx.conf is a bind mount — restart so config changes take effect.
             docker compose restart frontend

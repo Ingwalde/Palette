@@ -45,11 +45,12 @@ mkdir -p ~/.config/sops/age
 nano ~/.config/sops/age/keys.txt
 ```
 
-Then each deploy decrypts before starting the stack:
+Then each deploy decrypts before starting the stack (the auto-deploy workflow does this for
+you — see `.github/workflows/deploy.yml`):
 
 ```bash
 git pull origin main
-sops --decrypt secrets.enc.env > backend/.env
+sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env
 docker compose up -d --build
 ```
 
