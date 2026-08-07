@@ -1,8 +1,8 @@
-# Palette v4.6.0 — Full-Stack Color Palette App
+# Palette v4.7.0 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.6.0** is an operations/observability release: a **readiness** probe (`/health/ready`) checks the database and Redis and backs the Compose healthcheck, **error tracking via Sentry** is wired in (off unless `SENTRY_DSN` is set), and a **database backup script** (`scripts/backup-db.sh`) with a cron example and retention is added. It builds on **4.5.0** (httpOnly-cookie auth with CSRF, CSP + security headers, rate-limited mutations, SOPS secrets), **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.7.0** adds continuous delivery: a GitHub Actions **deploy workflow** ships production automatically after CI passes on `main` (SSH pull + rebuild + readiness gate), and a **staging** Compose override (`docker-compose.staging.yml`) runs an isolated second stack on the same VM for smoke-testing. See `docs/deploy.md`. It builds on **4.6.0** (readiness probe, Sentry, DB backups), **4.5.0** (httpOnly-cookie auth with CSRF, CSP + security headers, rate-limited mutations, SOPS secrets), **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -100,6 +100,8 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
   `ENABLE_API_DOCS=true`).
 - Automated test suite with pytest (auth, CRUD, API); ruff, mypy and an 80% coverage gate
   in CI.
+- Continuous delivery: production auto-deploys after CI passes on `main`, plus a staging
+  Compose override for an isolated second stack (see `docs/deploy.md`).
 
 ---
 
@@ -275,7 +277,7 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.6.0
+v4.7.0
 ```
 
 ---
