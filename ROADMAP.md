@@ -172,6 +172,20 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.7.1 — Presentation: Screenshots & Diagrams
+
+Status: completed.
+
+- Screenshot-rich README with a live-demo link to palettes-app.com.
+- Mermaid diagrams (`docs/architecture.md`): ER data model, production request path, auth flow;
+  ER and request-path also embedded in the README.
+- Completed the SOPS secret-encryption setup (encrypted `secrets.enc.env`, decrypt-on-deploy).
+
+Planned next:
+
+- Frontend rework to **React + TypeScript** (Vite), migrated incrementally, targeting a
+  senior-level fullstack portfolio; the WCAG AA audit lands with it.
+
 ## v4.7.0 — Continuous Delivery
 
 Status: completed.
