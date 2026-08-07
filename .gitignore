@@ -46,3 +46,4 @@ age.key
 *.agekey
 .config/sops/
 !secrets.enc.env
+backups/
