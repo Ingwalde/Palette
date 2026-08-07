@@ -1,11 +1,24 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Cookie,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
+from ..config import settings
 from ..database import get_db
 from ..email_service import send_password_reset_email, send_verification_email
 from ..rate_limit import limiter
 from ..security import (
+    ACCESS_COOKIE,
+    CSRF_COOKIE,
+    REFRESH_COOKIE,
     authenticate_user,
     create_access_token,
     create_email_verification_token,
@@ -13,6 +26,7 @@ from ..security import (
     create_refresh_token,
     decode_email_verification_token,
     decode_password_reset_token,
+    generate_csrf_token,
     get_current_user,
     hash_password,
     revoke_refresh_token,
@@ -27,12 +41,53 @@ _RESET_LINK_INVALID = "Invalid or expired password reset link"
 _RESET_GENERIC_MESSAGE = "If that email is registered, a password reset link has been sent."
 
 
-async def _issue_tokens(db: AsyncSession, user) -> schemas.Token:
-    return schemas.Token(
-        access_token=create_access_token(user),
-        refresh_token=await create_refresh_token(db, user),
-        user=user,
+def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    secure = settings.cookie_secure
+    samesite = settings.cookie_samesite
+    access_max = settings.access_token_expire_minutes * 60
+    refresh_max = settings.refresh_token_expire_days * 24 * 3600
+    response.set_cookie(
+        ACCESS_COOKIE,
+        access_token,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+        max_age=access_max,
     )
+    response.set_cookie(
+        REFRESH_COOKIE,
+        refresh_token,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+        max_age=refresh_max,
+    )
+    # csrf_token is readable by JS so the frontend can echo it in the X-CSRF-Token header.
+    # It outlives the access token (uses the refresh lifetime) so a token refresh — itself a
+    # CSRF-protected request — still has a valid csrf cookie to present.
+    response.set_cookie(
+        CSRF_COOKIE,
+        generate_csrf_token(),
+        httponly=False,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+        max_age=refresh_max,
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    for name in (ACCESS_COOKIE, REFRESH_COOKIE, CSRF_COOKIE):
+        response.delete_cookie(name, path="/")
+
+
+async def _issue_session(db: AsyncSession, user, response: Response):
+    access_token = create_access_token(user)
+    refresh_token = await create_refresh_token(db, user)
+    _set_auth_cookies(response, access_token, refresh_token)
+    return user
 
 
 @router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
@@ -68,8 +123,8 @@ async def register_user(
     return user
 
 
-@router.get("/verify", response_model=schemas.Token)
-async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
+@router.get("/verify", response_model=schemas.UserRead)
+async def verify_email(token: str, response: Response, db: AsyncSession = Depends(get_db)):
     user_id = decode_email_verification_token(token)
 
     if user_id is None:
@@ -83,7 +138,7 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
         await crud.set_email_verified(db, user)
 
     # Log the user straight in from the email link.
-    return await _issue_tokens(db, user)
+    return await _issue_session(db, user, response)
 
 
 @router.post("/resend-verification", response_model=schemas.MessageResponse)
@@ -149,10 +204,13 @@ async def reset_password(
     return schemas.MessageResponse(message="Your password has been reset. You can now log in.")
 
 
-@router.post("/login", response_model=schemas.Token)
+@router.post("/login", response_model=schemas.UserRead)
 @limiter.limit("5/minute")
 async def login_user(
-    request: Request, login_data: schemas.UserLogin, db: AsyncSession = Depends(get_db)
+    request: Request,
+    response: Response,
+    login_data: schemas.UserLogin,
+    db: AsyncSession = Depends(get_db),
 ):
     user = await authenticate_user(db, login_data.username, login_data.password)
 
@@ -162,17 +220,18 @@ async def login_user(
             detail="Invalid username or password",
         )
 
-    return await _issue_tokens(db, user)
+    return await _issue_session(db, user, response)
 
 
-@router.post("/refresh", response_model=schemas.Token)
+@router.post("/refresh", response_model=schemas.UserRead)
 @limiter.limit("30/minute")
 async def refresh_tokens(
     request: Request,
-    payload: schemas.RefreshRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db),
+    refresh_token: str | None = Cookie(default=None),
 ):
-    result = await rotate_refresh_token(db, payload.refresh_token)
+    result = await rotate_refresh_token(db, refresh_token) if refresh_token else None
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -180,17 +239,20 @@ async def refresh_tokens(
         )
 
     user, new_refresh_token = result
-    return schemas.Token(
-        access_token=create_access_token(user),
-        refresh_token=new_refresh_token,
-        user=user,
-    )
+    _set_auth_cookies(response, create_access_token(user), new_refresh_token)
+    return user
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(payload: schemas.RefreshRequest, db: AsyncSession = Depends(get_db)):
+async def logout(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    refresh_token: str | None = Cookie(default=None),
+):
     # Revoke the refresh token server-side (access tokens expire on their own).
-    await revoke_refresh_token(db, payload.refresh_token)
+    if refresh_token:
+        await revoke_refresh_token(db, refresh_token)
+    _clear_auth_cookies(response)
 
 
 @router.get("/me", response_model=schemas.UserRead)
@@ -199,7 +261,9 @@ def read_current_user(current_user=Depends(get_current_user)):
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/hour")
 async def delete_account(
+    request: Request,
     payload: schemas.AccountDeleteRequest,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -222,7 +286,9 @@ async def delete_account(
 
 
 @router.put("/password", response_model=schemas.UserRead)
+@limiter.limit("10/hour")
 async def change_password(
+    request: Request,
     password_data: schemas.PasswordChange,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),

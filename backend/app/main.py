@@ -1,8 +1,9 @@
+import hmac
 import logging
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,7 +17,21 @@ from .config import settings
 from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes, tags
+from .security import ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE
 from .seed import seed_default_admin_user, seed_default_palettes, seed_default_tags
+
+# Mutating requests must echo the csrf_token cookie in the X-CSRF-Token header (double-submit
+# CSRF). The auth-bootstrap endpoints run before a session/csrf cookie exists, so they are exempt.
+_CSRF_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
+_CSRF_EXEMPT_PATHS = frozenset(
+    {
+        "/api/v1/auth/login",
+        "/api/v1/auth/register",
+        "/api/v1/auth/resend-verification",
+        "/api/v1/auth/forgot-password",
+        "/api/v1/auth/reset-password",
+    }
+)
 
 # Configure application logging once at import so every module's getLogger(...) shares a
 # consistent format and level (overridable with the LOG_LEVEL env var).
@@ -40,8 +55,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.4.4 with auth, favorites, PostgreSQL and Docker.",
-    version="4.4.4",
+    description="Backend API for Palette v4.5.0 with auth, favorites, PostgreSQL and Docker.",
+    version="4.5.0",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -52,6 +67,32 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
+
+@app.middleware("http")
+async def csrf_protect(request: Request, call_next):
+    mutating = request.method not in _CSRF_SAFE_METHODS
+    exempt = request.url.path in _CSRF_EXEMPT_PATHS
+    # Only cookie-authenticated requests are at CSRF risk; without an auth cookie the request
+    # carries no ambient credentials, so let it fall through to the endpoint's own auth check.
+    authenticated = bool(request.cookies.get(ACCESS_COOKIE) or request.cookies.get(REFRESH_COOKIE))
+
+    if mutating and not exempt and authenticated:
+        cookie_token = request.cookies.get(CSRF_COOKIE)
+        header_token = request.headers.get("X-CSRF-Token")
+        if (
+            not cookie_token
+            or not header_token
+            or not hmac.compare_digest(cookie_token, header_token)
+        ):
+            return _problem(
+                HTTPStatus.FORBIDDEN, "CSRF token missing or invalid", title="Forbidden"
+            )
+
+    return await call_next(request)
+
+
+# CORS is added last so it is the outermost middleware — it must wrap the CSRF check so even a
+# 403 carries the CORS headers the browser needs to expose the response.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -97,7 +138,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.4.4",
+        "version": "4.5.0",
         "docs": "/api/docs",
         "health": "/health",
     }

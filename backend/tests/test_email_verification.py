@@ -23,15 +23,11 @@ async def test_verify_marks_user_verified(client, db_session):
     resp = await client.get("/api/v1/auth/verify", params={"token": token})
     assert resp.status_code == 200
 
-    body = resp.json()
-    # Verifying via the email link logs the user straight in.
-    assert body["access_token"]
-    assert body["user"]["email_verified"] is True
+    # Verifying via the email link logs the user straight in (sets auth cookies).
+    assert resp.json()["email_verified"] is True
+    assert "access_token" in resp.cookies
 
-    me = await client.get(
-        "/api/v1/auth/me",
-        headers={"Authorization": f"Bearer {body['access_token']}"},
-    )
+    me = await client.get("/api/v1/auth/me")
     assert me.status_code == 200
     assert me.json()["email_verified"] is True
 
@@ -41,12 +37,13 @@ async def test_verify_invalid_token(client):
     assert resp.status_code == 400
 
 
-async def test_email_token_rejected_as_bearer(client, db_session):
+async def test_email_token_rejected_as_access_cookie(client, db_session):
     await _register(client)
     user = await crud.get_user_by_email(db_session, "carol@test.com")
     token = create_email_verification_token(user.id)
 
-    resp = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    # A purpose-scoped verification token must not be accepted as an access token.
+    resp = await client.get("/api/v1/auth/me", cookies={"access_token": token})
     assert resp.status_code == 401
 
 

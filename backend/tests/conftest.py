@@ -14,6 +14,8 @@ import os
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-a-placeholder-0123456789")
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:5500")
 os.environ.setdefault("DEFAULT_ADMIN_PASSWORD", "test-admin-strong-password")
+# Cookies are set over the test client's http:// base URL, so they must not be Secure-only.
+os.environ.setdefault("COOKIE_SECURE", "false")
 
 # Prefer an explicit test DB; fall back to DATABASE_URL. Must be PostgreSQL.
 _test_db_url = os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
@@ -82,21 +84,49 @@ async def _make_user(db, username, email, password, is_admin=False):
     )
 
 
+def csrf_headers(client):
+    """X-CSRF-Token header echoing the csrf cookie — required on mutating requests."""
+    return {"X-CSRF-Token": client.cookies.get("csrf_token", "")}
+
+
+async def login(client, username, password):
+    """Log a client in (populates its cookie jar) and return the csrf header dict."""
+    resp = await client.post(
+        "/api/v1/auth/login", json={"username": username, "password": password}
+    )
+    assert resp.status_code == 200
+    return csrf_headers(client)
+
+
 @pytest_asyncio.fixture
-async def admin_token(client, db_session):
+async def admin_client(client, db_session):
+    """The shared client, logged in as an admin (auth + csrf cookies in its jar)."""
     await _make_user(db_session, "adminuser", "admin@test.com", "strong-password", is_admin=True)
     resp = await client.post(
         "/api/v1/auth/login",
         json={"username": "adminuser", "password": "strong-password"},
     )
-    return resp.json()["access_token"]
+    assert resp.status_code == 200
+    return client
 
 
 @pytest_asyncio.fixture
-async def user_token(client, db_session):
+async def admin_csrf(admin_client):
+    return csrf_headers(admin_client)
+
+
+@pytest_asyncio.fixture
+async def user_csrf(user_client):
+    return csrf_headers(user_client)
+
+
+@pytest_asyncio.fixture
+async def user_client(client, db_session):
+    """The shared client, logged in as a normal (non-admin) user."""
     await _make_user(db_session, "normaluser", "user@test.com", "strong-password")
     resp = await client.post(
         "/api/v1/auth/login",
         json={"username": "normaluser", "password": "strong-password"},
     )
-    return resp.json()["access_token"]
+    assert resp.status_code == 200
+    return client

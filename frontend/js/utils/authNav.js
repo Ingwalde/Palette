@@ -18,11 +18,31 @@ export function initAuthNav() {
   const authButton = document.querySelector("[data-auth-nav]");
   const user = getStoredUser();
 
+  initSkipLink();
   syncAuthButton(authButton, user);
   syncAdminNavVisibility(user);
   syncAdminOnlyElements(user);
   syncActiveNavItem(nav, user);
   initSlidingNavIndicator(nav);
+}
+
+// Keyboard/screen-reader users get a "Skip to content" link that jumps past the nav.
+function initSkipLink() {
+  const main = document.querySelector("main");
+  if (!main || document.querySelector(".skip-link")) {
+    return;
+  }
+
+  if (!main.id) {
+    main.id = "main-content";
+  }
+  main.setAttribute("tabindex", "-1");
+
+  const link = document.createElement("a");
+  link.className = "skip-link";
+  link.href = `#${main.id}`;
+  link.textContent = "Skip to content";
+  document.body.prepend(link);
 }
 
 function syncAdminOnlyElements(user) {

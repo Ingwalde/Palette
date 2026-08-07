@@ -1,14 +1,17 @@
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
 from ..database import get_db
+from ..rate_limit import limiter
 from ..schemas import normalize_tag
 from ..security import require_admin_user
 
 router = APIRouter(prefix="/tags", tags=["tags"])
+
+_WRITE_LIMIT = "60/minute"
 
 
 @router.get("", response_model=list[schemas.TagRead])
@@ -19,7 +22,9 @@ async def read_tag_catalog(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.TagRead, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_WRITE_LIMIT)
 async def create_tag(
+    request: Request,
     tag_data: schemas.TagCreate,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
@@ -32,7 +37,9 @@ async def create_tag(
 
 
 @router.patch("/{name}", response_model=schemas.TagRead)
+@limiter.limit(_WRITE_LIMIT)
 async def update_tag(
+    request: Request,
     name: str,
     tag_data: schemas.TagUpdate,
     db: AsyncSession = Depends(get_db),
@@ -64,7 +71,9 @@ async def update_tag(
 
 
 @router.delete("/{name}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_WRITE_LIMIT)
 async def delete_tag(
+    request: Request,
     name: str,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),

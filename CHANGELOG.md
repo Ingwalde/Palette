@@ -1,5 +1,25 @@
 # Changelog
 
+## v4.5.0 — Security hardening
+
+### Changed
+
+- **Auth moved to httpOnly cookies.** Access and refresh tokens are now delivered as httpOnly
+  cookies (unreadable to JavaScript) instead of `localStorage`, so an XSS bug can no longer
+  steal them. `localStorage` keeps only the non-sensitive user object for UI state.
+
+### Added
+
+- **CSRF protection** (double-submit): a readable `csrf_token` cookie must be echoed in the
+  `X-CSRF-Token` header on every mutating request; auth-bootstrap endpoints are exempt.
+- **Content-Security-Policy** and security headers (X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy) served with the frontend.
+- **Rate limiting on every mutating endpoint** — palettes, tags and favorites writes, password
+  change and account delete (in addition to the existing auth limits).
+- **Encrypted secrets via SOPS + age** — `.sops.yaml`, a deploy flow and `docs/secrets.md`.
+- First **accessibility** pass: a global keyboard-focus ring, a skip-to-content link, and
+  tab/tabpanel semantics on the admin Palettes/Tags switch.
+
 ## v4.4.4 — Admin & form UX pass
 
 ### Added

@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, models, schemas
 from ..database import get_db
+from ..rate_limit import limiter
 from ..security import get_current_user
 
 router = APIRouter(prefix="/favorites", tags=["favorites"])
+
+# Favorites toggle often, so allow a higher rate than admin content writes.
+_WRITE_LIMIT = "120/minute"
 
 
 @router.get("", response_model=list[schemas.PaletteRead])
@@ -25,7 +29,9 @@ async def read_favorite_keys(
 
 
 @router.post("/{slug}", response_model=schemas.PaletteRead, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_WRITE_LIMIT)
 async def add_favorite(
+    request: Request,
     slug: str,
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -39,7 +45,9 @@ async def add_favorite(
 
 
 @router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_WRITE_LIMIT)
 async def remove_favorite(
+    request: Request,
     slug: str,
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -54,7 +62,9 @@ async def remove_favorite(
 
 
 @router.delete("")
+@limiter.limit(_WRITE_LIMIT)
 async def clear_favorites(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):

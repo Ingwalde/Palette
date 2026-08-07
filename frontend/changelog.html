@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/base.css?v=4.4.4" />
-  <link rel="stylesheet" href="css/components.css?v=4.4.4" />
-  <link rel="stylesheet" href="css/pages.css?v=4.4.4" />
+  <link rel="stylesheet" href="css/base.css?v=4.5.0" />
+  <link rel="stylesheet" href="css/components.css?v=4.5.0" />
+  <link rel="stylesheet" href="css/pages.css?v=4.5.0" />
 </head>
 <body>
   <header class="site-header">
@@ -39,6 +39,17 @@
     </section>
 
     <section class="section changelog-layout">
+      <article class="changelog-card">
+        <p class="changelog-card__version">v4.5.0</p>
+        <h2>Security hardening</h2>
+        <ul>
+          <li>Auth tokens moved to httpOnly cookies with CSRF protection (XSS can't steal them).</li>
+          <li>Content-Security-Policy and security headers on the frontend.</li>
+          <li>Rate limiting on every mutating endpoint.</li>
+          <li>Encrypted secrets via SOPS + age; a first accessibility pass.</li>
+        </ul>
+      </article>
+
       <article class="changelog-card">
         <p class="changelog-card__version">v4.4.4</p>
         <h2>Admin and form UX pass</h2>
@@ -202,7 +213,7 @@
   <footer class="site-footer section">
     <div class="site-footer__panel">
       <div class="site-footer__content">
-        <p class="site-footer__eyebrow">Palette v4.4.4</p>
+        <p class="site-footer__eyebrow">Palette v4.5.0</p>
         <p class="site-footer__text">A personal color workspace for finding palettes, saving favorites, managing a collection and exporting ready-to-use palette assets.</p>
 
         <div class="site-footer__features" aria-label="Project highlights">
@@ -223,7 +234,7 @@
 
   <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="js/utils/authNav.js?v=4.4.4"></script>
-  <script type="module" src="js/router.js?v=4.4.4"></script>
+  <script type="module" src="js/utils/authNav.js?v=4.5.0"></script>
+  <script type="module" src="js/router.js?v=4.5.0"></script>
 </body>
 </html>

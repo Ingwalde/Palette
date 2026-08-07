@@ -1,4 +1,4 @@
-import { clearAuth, getRefreshToken, saveAuth, saveRefreshToken } from "../utils/authStorage.js";
+import { clearAuth } from "../utils/authStorage.js";
 import { API_BASE_URL } from "./apiBase.js";
 
 // Turn a FastAPI `detail` (string, validation-error array, or object) into a message.
@@ -21,32 +21,32 @@ export function formatApiError(detail) {
   return "";
 }
 
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+// The csrf_token cookie is readable (not httpOnly) so we can echo it in the X-CSRF-Token header
+// for double-submit CSRF protection on mutating requests.
+function getCsrfToken() {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 let refreshInFlight = null;
 
 async function requestNewAccessToken() {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    return null;
-  }
-
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refreshToken })
+      credentials: "include",
+      headers: { "X-CSRF-Token": getCsrfToken() }
     });
 
     if (!response.ok) {
       clearAuth();
-      return null;
+      return false;
     }
-
-    const data = await response.json();
-    saveAuth(data.access_token, data.user);
-    saveRefreshToken(data.refresh_token);
-    return data.access_token;
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
 
@@ -60,32 +60,31 @@ function refreshAccessToken() {
   return refreshInFlight;
 }
 
-function sendRequest(endpoint, headers, requestOptions) {
+function sendRequest(endpoint, options) {
+  const method = (options.method || "GET").toUpperCase();
+  const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+  if (!SAFE_METHODS.has(method)) {
+    headers["X-CSRF-Token"] = getCsrfToken();
+  }
+
   return fetch(`${API_BASE_URL}${endpoint}`, {
-    ...requestOptions,
-    headers: {
-      "Content-Type": "application/json",
-      ...headers
-    }
+    ...options,
+    credentials: "include",
+    headers
   });
 }
 
-// Shared JSON request helper for every api/* module. Sends/receives JSON, transparently
-// refreshes an expired access token once and retries, unwraps FastAPI error details,
-// returns null on 204, and attaches the HTTP status to thrown errors.
+// Shared JSON request helper for every api/* module. Auth rides on httpOnly cookies (sent via
+// credentials: "include"); mutating requests carry the CSRF header. On a 401 it transparently
+// refreshes the access-token cookie once and retries. Returns null on 204; attaches the HTTP
+// status to thrown errors.
 export async function request(endpoint, options = {}) {
-  const { headers = {}, ...requestOptions } = options;
-
-  let response = await sendRequest(endpoint, headers, requestOptions);
+  let response = await sendRequest(endpoint, options);
 
   if (response.status === 401 && !endpoint.startsWith("/auth/refresh")) {
-    const newAccessToken = await refreshAccessToken();
-    if (newAccessToken) {
-      const retryHeaders = { ...headers };
-      if (retryHeaders.Authorization) {
-        retryHeaders.Authorization = `Bearer ${newAccessToken}`;
-      }
-      response = await sendRequest(endpoint, retryHeaders, requestOptions);
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      response = await sendRequest(endpoint, options);
     }
   }
 

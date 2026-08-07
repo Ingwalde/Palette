@@ -1,6 +1,6 @@
 import { createElement } from "../utils/dom.js";
 import { copyToClipboard, getPaletteContrastStatus } from "../utils/color.js";
-import { getAccessToken } from "../utils/authStorage.js";
+import { getStoredUser } from "../utils/authStorage.js";
 import { addFavorite, isFavoritePalette, removeFavorite } from "../api/favoritesApi.js";
 import { showToast } from "../utils/toast.js";
 
@@ -119,7 +119,7 @@ function createFavoriteButton(favoriteKey, onFavoriteChange) {
   };
 
   const refreshFavoriteState = async () => {
-    if (!getAccessToken()) {
+    if (!getStoredUser()) {
       setButtonState(false);
       return;
     }
@@ -136,7 +136,7 @@ function createFavoriteButton(favoriteKey, onFavoriteChange) {
   refreshFavoriteState();
 
   button.addEventListener("click", async () => {
-    if (!getAccessToken()) {
+    if (!getStoredUser()) {
       showToast("Log in to save favorites");
       return;
     }

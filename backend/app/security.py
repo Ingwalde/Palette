@@ -6,8 +6,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerifyMismatchError
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, Depends, HTTPException, status
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +24,14 @@ _password_hasher = PasswordHasher()
 _LEGACY_HASH_NAME = "pbkdf2_sha256"
 _LEGACY_ITERATIONS = 210_000
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+# Auth cookie names.
+ACCESS_COOKIE = "access_token"
+REFRESH_COOKIE = "refresh_token"
+CSRF_COOKIE = "csrf_token"
+
+
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
 def hash_password(password: str) -> str:
@@ -181,17 +187,19 @@ async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> models.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
     )
 
+    if not access_token:
+        raise credentials_exception
+
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        payload = jwt.decode(access_token, settings.secret_key, algorithms=[ALGORITHM])
         # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
         if payload.get("purpose") is not None:
             raise credentials_exception

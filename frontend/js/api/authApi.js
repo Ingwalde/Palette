@@ -1,4 +1,3 @@
-import { getAccessToken } from "../utils/authStorage.js";
 import { request as apiRequest } from "./httpClient.js";
 
 export function registerUser(payload) {
@@ -15,11 +14,9 @@ export function loginUser(payload) {
   });
 }
 
-export function logoutUser(refreshToken) {
-  return apiRequest("/auth/logout", {
-    method: "POST",
-    body: JSON.stringify({ refresh_token: refreshToken })
-  });
+export function logoutUser() {
+  // The refresh token is read from the httpOnly cookie server-side; nothing to send.
+  return apiRequest("/auth/logout", { method: "POST" });
 }
 
 export function verifyEmail(token) {
@@ -50,47 +47,20 @@ export function resetPassword(payload) {
 }
 
 export function getCurrentUser() {
-  const token = getAccessToken();
-
-  if (!token) {
-    throw new Error("User is not logged in");
-  }
-
-  return apiRequest("/auth/me", {
-    headers: {
-      Authorization: `Bearer ${token}`
-    }
-  });
+  // Auth rides on the httpOnly cookie; a 401 means no valid session.
+  return apiRequest("/auth/me");
 }
 
 export function changePassword(payload) {
-  const token = getAccessToken();
-
-  if (!token) {
-    throw new Error("User is not logged in");
-  }
-
   return apiRequest("/auth/password", {
     method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
     body: JSON.stringify(payload)
   });
 }
 
 export function deleteAccount(password) {
-  const token = getAccessToken();
-
-  if (!token) {
-    throw new Error("User is not logged in");
-  }
-
   return apiRequest("/auth/me", {
     method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ password })
   });
 }

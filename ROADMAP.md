@@ -172,6 +172,23 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.5.0 — Security Hardening
+
+Status: completed.
+
+- Auth tokens moved from `localStorage` to httpOnly cookies with double-submit CSRF protection.
+- Content-Security-Policy and security headers (X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy) served with the frontend.
+- Rate limiting on every mutating endpoint (palettes, tags, favorites, password, account delete).
+- Encrypted secrets via SOPS + age (`.sops.yaml`, `docs/secrets.md`).
+- First accessibility pass: keyboard-focus ring, skip-to-content link, admin tab semantics.
+
+Deferred to a later release:
+
+- Full accessibility (WCAG AA) audit with the frontend rework.
+- Observability (health/readiness probes, Sentry, log aggregation) and DB backups.
+- CI/CD auto-deploy with a staging environment.
+
 ## v4.4.4 — Admin and Form UX Pass
 
 Status: completed.
