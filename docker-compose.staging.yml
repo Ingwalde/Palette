@@ -1,0 +1,24 @@
+# Staging override — a second, isolated stack on the same VM for backend/API smoke-testing.
+#
+#   docker compose -p palette-staging -f docker-compose.yml -f docker-compose.staging.yml up -d --build
+#
+# Isolation comes from the project name (-p palette-staging): separate containers, network and
+# volumes, so staging has its own database and never touches production data. Host ports differ
+# from production (8000/5500) so both run side by side.
+#
+# NOTE: this is for API smoke-testing (curl http://<vm-ip>:8001/...). A full *browser* staging
+# needs its own origin (e.g. staging.palettes-app.com behind Caddy) because the frontend's API
+# base, CSP and cookies all assume same-origin — see docs/deploy.md.
+services:
+  backend:
+    # !override replaces the ports list instead of appending, so staging binds 8001 only
+    # (a plain merge would keep production's 8000 and clash).
+    ports: !override
+      - "8001:8000"
+    environment:
+      # Staging is reached over plain http, so cookies must not be Secure-only.
+      COOKIE_SECURE: "false"
+
+  frontend:
+    ports: !override
+      - "5501:80"
