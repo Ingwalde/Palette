@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.7.0 — Continuous delivery
+
+### Added
+
+- **Auto-deploy workflow** (`.github/workflows/deploy.yml`) — after the CI workflow succeeds on
+  `main`, deploys production over SSH (pull, rebuild, restart frontend, wait for `/health/ready`).
+  Requires the `DEPLOY_HOST`/`DEPLOY_USER`/`DEPLOY_SSH_KEY` repository secrets.
+- **Staging** Compose override (`docker-compose.staging.yml`) — an isolated second stack on the
+  same VM (its own database, ports 8001/5501) for smoke-testing. `docs/deploy.md` documents the
+  deploy-key setup, staging usage and an optional subdomain-based browser staging.
+
 ## v4.6.0 — Operations & observability
 
 ### Added

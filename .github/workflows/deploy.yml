@@ -1,0 +1,49 @@
+name: Deploy
+
+# Auto-deploy production after CI passes on main. Runs only when the CI workflow completes
+# successfully for a main-branch commit, so a red build never reaches the server.
+#
+# Requires these repository secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST     - the VM host/IP (e.g. 82.70.50.145)
+#   DEPLOY_USER     - the SSH user (e.g. ubuntu)
+#   DEPLOY_SSH_KEY  - a private deploy key whose public half is in the VM's authorized_keys
+# See docs/deploy.md for the one-time setup.
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/Palette
+            git pull origin main
+            docker compose up -d --build
+            # nginx.conf is a bind mount — restart so config changes take effect.
+            docker compose restart frontend
+            # Fail the deploy if the backend never becomes ready.
+            for i in $(seq 1 15); do
+              if curl -fsS http://localhost:8000/health/ready >/dev/null; then
+                echo "Backend ready."; exit 0
+              fi
+              sleep 4
+            done
+            echo "Backend did not become ready in time." >&2
+            exit 1

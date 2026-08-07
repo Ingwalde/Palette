@@ -172,6 +172,19 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.7.0 — Continuous Delivery
+
+Status: completed.
+
+- Auto-deploy workflow: production ships automatically after CI passes on `main` (SSH pull +
+  rebuild + readiness gate), guarded by repository secrets.
+- Staging Compose override (`docker-compose.staging.yml`) for an isolated second stack on the
+  same VM; `docs/deploy.md` covers setup and an optional subdomain browser staging.
+
+Deferred to a later release:
+
+- Full accessibility (WCAG AA) audit with the frontend rework.
+
 ## v4.6.0 — Operations & Observability
 
 Status: completed.
