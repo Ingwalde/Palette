@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
@@ -40,6 +41,18 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
+# Error tracking. No-op unless SENTRY_DSN is configured; the FastAPI/ASGI integration is
+# auto-enabled by sentry-sdk[fastapi], so unhandled errors are reported with request context.
+if settings.sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.sentry_environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        send_default_pii=False,
+    )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,8 +68,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.5.0 with auth, favorites, PostgreSQL and Docker.",
-    version="4.5.0",
+    description="Backend API for Palette v4.6.0 with auth, favorites, PostgreSQL and Docker.",
+    version="4.6.0",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -138,7 +151,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.5.0",
+        "version": "4.6.0",
         "docs": "/api/docs",
         "health": "/health",
     }
@@ -146,4 +159,36 @@ def root():
 
 @app.get("/health")
 def health_check():
+    # Liveness: the process is up and serving.
     return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    # Readiness: dependencies (database, and Redis when configured) are reachable.
+    checks: dict[str, str] = {}
+    ready = True
+
+    try:
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+        ready = False
+
+    if settings.redis_url.startswith("redis"):
+        try:
+            import redis.asyncio as redis_asyncio
+
+            client = redis_asyncio.from_url(settings.redis_url)
+            await client.ping()
+            await client.aclose()
+            checks["redis"] = "ok"
+        except Exception:
+            checks["redis"] = "error"
+            ready = False
+
+    if not ready:
+        return JSONResponse(status_code=503, content={"status": "not ready", "checks": checks})
+    return {"status": "ready", "checks": checks}
