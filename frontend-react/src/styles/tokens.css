@@ -1,0 +1,20 @@
+/* Design tokens ported from the vanilla frontend (frontend/css/base.css) so the React app
+   shares Palette's visual identity. Keep these in sync until the vanilla build is retired. */
+:root {
+  --color-bg: #f7f2eb;
+  --color-surface: #fffaf2;
+  --color-surface-strong: #efe7dc;
+  --color-text: #2f2d2a;
+  --color-muted: #746c63;
+  --color-border: rgba(47, 45, 42, 0.14);
+  --color-primary: #302f2c;
+  --color-primary-soft: #e7d8c9;
+  --color-danger: #a64444;
+  --color-success: #4b7f52;
+  --shadow-soft: 0 18px 50px rgba(47, 45, 42, 0.08);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --container: 1180px;
+  --transition: 180ms ease;
+}

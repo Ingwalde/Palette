@@ -1,0 +1,36 @@
+.hero {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 48px 40px;
+  max-width: 720px;
+}
+.eyebrow {
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.title {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.text {
+  margin: 0 0 16px;
+  color: var(--color-muted);
+  max-width: 52ch;
+}
+.meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+.meta code {
+  background: var(--color-surface-strong);
+  padding: 0.15em 0.45em;
+  border-radius: var(--radius-sm);
+}

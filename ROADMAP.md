@@ -172,6 +172,21 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.8.0 — React + TypeScript Frontend (scaffold)
+
+Status: completed.
+
+- New `frontend-react/` app on Vite + React 19 + TypeScript (strict), added alongside the vanilla
+  frontend (which stays the deployed build until parity).
+- React Router shell + TanStack Query client; design tokens ported from the vanilla `base.css`.
+- Tooling: oxlint, Prettier, Vitest + Testing Library, Playwright — with a first unit and E2E test.
+
+Planned next (4.8.x):
+
+- **4.8.1** — typed API layer + TanStack Query client (CSRF + refresh-on-401), auth context.
+- **4.8.2+** — pages ported one per release (home → auth → favorites → export → profile → admin).
+- later 4.8.x — frontend Sentry + error boundary, full Playwright suite, cutover, WCAG AA audit.
+
 ## v4.7.1 — Presentation: Screenshots & Diagrams
 
 Status: completed.
@@ -180,11 +195,6 @@ Status: completed.
 - Mermaid diagrams (`docs/architecture.md`): ER data model, production request path, auth flow;
   ER and request-path also embedded in the README.
 - Completed the SOPS secret-encryption setup (encrypted `secrets.enc.env`, decrypt-on-deploy).
-
-Planned next:
-
-- Frontend rework to **React + TypeScript** (Vite), migrated incrementally, targeting a
-  senior-level fullstack portfolio; the WCAG AA audit lands with it.
 
 ## v4.7.0 — Continuous Delivery
 
