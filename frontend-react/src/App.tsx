@@ -12,6 +12,7 @@ export function App() {
         <Route path="export" element={<PlaceholderPage name="Export" />} />
         <Route path="admin" element={<PlaceholderPage name="Admin" />} />
         <Route path="login" element={<PlaceholderPage name="Login" />} />
+        <Route path="profile" element={<PlaceholderPage name="Profile" />} />
         <Route path="*" element={<PlaceholderPage name="Not found" />} />
       </Route>
     </Routes>

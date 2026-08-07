@@ -1,16 +1,28 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { describe, it, expect } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { describe, it, expect, vi } from "vitest";
 import { App } from "./App";
-import { queryClient } from "./lib/queryClient";
+import { AuthProvider } from "./auth/AuthContext";
+import { ApiError } from "./lib/http";
+
+// Logged-out by default: getCurrentUser rejects with 401.
+vi.mock("./api/auth", () => ({
+  getCurrentUser: vi.fn(() => Promise.reject(new ApiError("Not authenticated", 401))),
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+}));
 
 function renderAt(path: string) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[path]}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     </QueryClientProvider>,
   );
 }
@@ -28,6 +40,12 @@ describe("App shell", () => {
       "href",
       "/export",
     );
+  });
+
+  it("shows Login and hides Admin for a logged-out visitor", () => {
+    renderAt("/");
+    expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
   it("renders a placeholder for a route not yet ported", () => {

@@ -61,6 +61,12 @@
   transition:
     background var(--transition),
     color var(--transition);
+  /* reset so a <button> matches the anchor links */
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
 }
 .link:hover {
   color: var(--color-text);

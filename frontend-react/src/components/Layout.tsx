@@ -1,14 +1,19 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 import styles from "./Layout.module.css";
 
 const NAV = [
   { to: "/", label: "Home", end: true },
   { to: "/favorites", label: "Favorites" },
   { to: "/export", label: "Export" },
-  { to: "/admin", label: "Admin" },
 ];
 
 export function Layout() {
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    isActive ? `${styles.link} ${styles.linkActive}` : styles.link;
+
   return (
     <div className={styles.shell}>
       <a className={styles.skip} href="#main">
@@ -21,20 +26,29 @@ export function Layout() {
         </NavLink>
         <nav className={styles.nav} aria-label="Main navigation">
           {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                isActive ? `${styles.link} ${styles.linkActive}` : styles.link
-              }
-            >
+            <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
               {item.label}
             </NavLink>
           ))}
-          <NavLink to="/login" className={styles.link}>
-            Login
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={linkClass}>
+              Admin
+            </NavLink>
+          )}
+          {isAuthenticated ? (
+            <>
+              <NavLink to="/profile" className={linkClass}>
+                {user?.username}
+              </NavLink>
+              <button type="button" className={styles.link} onClick={() => void logout()}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <NavLink to="/login" className={linkClass}>
+              Login
+            </NavLink>
+          )}
         </nav>
       </header>
       <main id="main" className={styles.main} tabIndex={-1}>
