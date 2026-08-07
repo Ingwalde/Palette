@@ -1,11 +1,88 @@
-# Palette v4.7.0 — Full-Stack Color Palette App
+# Palette v4.7.1 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.7.0** adds continuous delivery: a GitHub Actions **deploy workflow** ships production automatically after CI passes on `main` (SSH pull + rebuild + readiness gate), and a **staging** Compose override (`docker-compose.staging.yml`) runs an isolated second stack on the same VM for smoke-testing. See `docs/deploy.md`. It builds on **4.6.0** (readiness probe, Sentry, DB backups), **4.5.0** (httpOnly-cookie auth with CSRF, CSP + security headers, rate-limited mutations, SOPS secrets), **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.7.1** is a presentation pass: a screenshot-rich README, a **live-demo** link, and **Mermaid** diagrams for the data model (ER), the production request path and the authentication flow — gathered in `docs/architecture.md`. It builds on **4.7.0** (continuous delivery: a GitHub Actions **deploy workflow** ships production automatically after CI passes on `main`, plus a **staging** Compose override — see `docs/deploy.md`), **4.6.0** (readiness probe, Sentry, DB backups), **4.5.0** (httpOnly-cookie auth with CSRF, CSP + security headers, rate-limited mutations, SOPS secrets), **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
+```
+
+**Live demo: [palettes-app.com](https://palettes-app.com)** — deployed on an Oracle Cloud VM
+behind Cloudflare + Caddy, auto-deployed on every green build to `main`.
+
+---
+
+## Screenshots
+
+> Images live in [`docs/assets/`](docs/assets/). Drop `home.png`, `admin.png`, `export.png`
+> and an optional `demo.gif` there — see [`docs/assets/README.md`](docs/assets/README.md).
+
+| Home — browse & filter | Admin — colour-row editor | Export — PNG preview |
+|---|---|---|
+| ![Home page: palette grid with tag filters and search](docs/assets/home.png) | ![Admin panel: dynamic HEX-row colour editor with tag chips](docs/assets/admin.png) | ![Export page: selected palette with PNG preview](docs/assets/export.png) |
+
+![Demo: search, open a palette, export](docs/assets/demo.gif)
+
+---
+
+## Architecture
+
+Full diagrams (ER, request path, auth flow) in [`docs/architecture.md`](docs/architecture.md).
+
+### Data model
+
+```mermaid
+erDiagram
+    USERS ||--o{ FAVORITES : "saves"
+    PALETTES ||--o{ FAVORITES : "saved in"
+    USERS ||--o{ REFRESH_TOKENS : "owns"
+    PALETTES }o..o{ TAGS : "referenced by name (JSONB)"
+
+    USERS {
+        int id PK
+        string username UK
+        string email UK
+        string password_hash "Argon2id"
+        bool is_admin
+        bool email_verified
+    }
+    PALETTES {
+        int id PK
+        string slug UK
+        string name
+        jsonb colors "list of HEX"
+        jsonb tags "GIN-indexed"
+    }
+    TAGS {
+        int id PK
+        string name UK
+        string kind "free | purpose"
+    }
+    FAVORITES {
+        int id PK
+        int user_id FK
+        int palette_id FK
+    }
+    REFRESH_TOKENS {
+        int id PK
+        int user_id FK
+        string token_hash UK
+        bool revoked
+    }
+```
+
+### Request path (production)
+
+```mermaid
+flowchart LR
+    U["Browser"] -->|HTTPS| CF["Cloudflare"]
+    CF --> CA["Caddy (TLS, reverse proxy)"]
+    CA -->|"/*"| FE["nginx — static frontend + CSP"]
+    CA -->|"/api/*"| BE["FastAPI backend (async)"]
+    BE --> DB[("PostgreSQL")]
+    BE --> RD[("Redis — rate limiting")]
+    BE -. "errors (if DSN)" .-> SN["Sentry"]
 ```
 
 ---
@@ -277,7 +354,7 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.7.0
+v4.7.1
 ```
 
 ---

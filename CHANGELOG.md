@@ -1,5 +1,24 @@
 # Changelog
 
+## v4.7.1 — Presentation: screenshots & diagrams
+
+### Added
+
+- **Screenshot-rich README** — a Screenshots section (`docs/assets/`) and a **live-demo** link to
+  [palettes-app.com](https://palettes-app.com) at the top, so the visual product is visible without
+  running the stack.
+- **Mermaid diagrams** — `docs/architecture.md` gathers an **ER** data model (five tables), the
+  production **request path** (Cloudflare → Caddy → nginx/FastAPI → PostgreSQL/Redis) and the
+  **auth flow** (httpOnly cookies + CSRF + refresh rotation). The ER and request-path diagrams are
+  also embedded in the README.
+- **SOPS secret encryption completed** (from 4.5.0 scaffold) — production secrets are committed
+  encrypted as `secrets.enc.env` and decrypted into `backend/.env` during deploy; the age private
+  key stays on the VM. See `docs/secrets.md`.
+
+### Notes
+
+- Docs/presentation only — no backend or frontend behaviour changes.
+
 ## v4.7.0 — Continuous delivery
 
 ### Added
