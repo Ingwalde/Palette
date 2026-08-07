@@ -100,6 +100,33 @@ main {
   border: 0;
 }
 
+/* Accessibility: a clear keyboard-focus ring on every interactive element that doesn't
+   already define its own (:focus-visible fires for keyboard focus, not mouse clicks).
+   Components with a bespoke focus style override this with their own rule. */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Skip-to-content link (see authNav.js) — visible only when focused. */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 1000;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  transition: top 160ms ease;
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
 .eyebrow {
   margin: 0 0 10px;
   color: var(--color-muted);
