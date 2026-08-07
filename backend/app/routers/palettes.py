@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
 from ..database import get_db
+from ..rate_limit import limiter
 from ..security import require_admin_user
 
 router = APIRouter(prefix="/palettes", tags=["palettes"])
+
+# Generous ceiling on admin write operations — enough for real editing, a brake on abuse.
+_WRITE_LIMIT = "60/minute"
 
 
 @router.get("", response_model=schemas.PaletteList)
@@ -45,7 +49,9 @@ async def read_palette(slug: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=schemas.PaletteRead, status_code=status.HTTP_201_CREATED)
+@limiter.limit(_WRITE_LIMIT)
 async def create_palette(
+    request: Request,
     palette_data: schemas.PaletteCreate,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
@@ -54,7 +60,9 @@ async def create_palette(
 
 
 @router.put("/{palette_id}", response_model=schemas.PaletteRead)
+@limiter.limit(_WRITE_LIMIT)
 async def update_palette(
+    request: Request,
     palette_id: int,
     palette_data: schemas.PaletteUpdate,
     db: AsyncSession = Depends(get_db),
@@ -69,7 +77,9 @@ async def update_palette(
 
 
 @router.delete("/{palette_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit(_WRITE_LIMIT)
 async def delete_palette(
+    request: Request,
     palette_id: int,
     db: AsyncSession = Depends(get_db),
     _=Depends(require_admin_user),
