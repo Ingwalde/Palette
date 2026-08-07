@@ -1,8 +1,8 @@
-# Palette v4.4.4 — Full-Stack Color Palette App
+# Palette v4.5.0 — Full-Stack Color Palette App
 
 Palette is a full-stack color palette web application for browsing, searching, saving and exporting color palettes.
 
-Version **4.4.4** is a UX pass over the admin panel and forms: password fields get a show/hide (eye) toggle; the Palettes/Tags switch is now an animated sliding tab; the palette form gains a styled tag-suggestions dropdown, a non-resizable description, and a nicer tag-catalog kind picker; the admin view shows only the selected mode; the export page's two-column layout is restored (regressed in 4.4.2) with its palette list flowing into the page (no nested scroll); the redundant admin logout button and the TXT export format are gone. It builds on **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
+Version **4.5.0** is a security-hardening release: auth tokens move out of `localStorage` into **httpOnly cookies** with **double-submit CSRF** protection (so XSS can no longer steal them), the frontend is served with a strict **Content-Security-Policy** and other security headers, **every mutating endpoint is rate-limited**, secrets can be managed encrypted in git via **SOPS + age**, and a first accessibility pass adds a keyboard-focus ring, a skip-to-content link and tab semantics. It builds on **4.4.4** (admin/form UX pass), **4.4.3** (password reset by email, admin confirmation modals, admin list search and pagination), **4.4.2** (tag catalog with an admin Palettes / Tags mode and chip-based tag editing), **4.4.1** (favorites session-expiry prompt, rounded colour swatch), **4.4** (3- and 5-colour palettes and a dynamic HEX-row colour editor with auto-flowing swatch grids), **4.3.1** (Argon2id, rotating refresh tokens, Redis-backed rate limiting, async SQLAlchemy), **4.3** (account email, delete-account, random home tags), **4.2** (email verification with verify-link auto-login), and the **4.0** PostgreSQL + **Docker Compose** stack — the only supported way to run the app (no SQLite, no non-Docker mode).
 
 ```text
 Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
@@ -69,9 +69,14 @@ Frontend → Fetch API → FastAPI Backend → PostgreSQL Database
 - User-based favorites API.
 - Password hashing with Argon2id (legacy PBKDF2 hashes upgraded on next login).
 - Timing-safe password comparison.
-- JWT/Bearer access tokens with PyJWT plus rotating refresh tokens (server-side revocation).
+- JWT access + rotating refresh tokens delivered as **httpOnly cookies** (server-side
+  revocation), with **double-submit CSRF** protection on mutating requests.
 - Login by username or email.
-- Login and registration rate limiting with slowapi (Redis-backed, shared across instances).
+- Rate limiting with slowapi (Redis-backed, shared across instances) on auth **and every
+  mutating endpoint** (palettes, tags, favorites, password change, account delete).
+- Strict Content-Security-Policy and security headers (X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy) served with the frontend.
+- Encrypted secrets in git via SOPS + age (see `docs/secrets.md`).
 - Mandatory `SECRET_KEY` — the app refuses to start without a real secret.
 - Explicit CORS origin allowlist (no wildcard).
 - Timezone-aware timestamps.
@@ -265,7 +270,7 @@ All of these are covered by `.gitignore`. The repository should include
 Current portfolio release:
 
 ```text
-v4.4.4
+v4.5.0
 ```
 
 ---
