@@ -1,7 +1,7 @@
 import { createPaletteCard } from "../components/paletteCard.js";
 import { createEmptyState } from "../components/emptyState.js";
 import { clearElement, qs } from "../utils/dom.js";
-import { getAccessToken } from "../utils/authStorage.js";
+import { getStoredUser } from "../utils/authStorage.js";
 import { clearFavoritePalettes, getFavoritePalettes } from "../api/favoritesApi.js";
 import { showToast } from "../utils/toast.js";
 
@@ -24,7 +24,7 @@ function initFavoritesPage() {
 async function renderFavorites() {
   clearElement(elements.grid);
 
-  if (!getAccessToken()) {
+  if (!getStoredUser()) {
     elements.favoriteCount.textContent = "Login required";
     elements.clearButton.disabled = true;
     elements.grid.append(createEmptyState(
@@ -81,7 +81,7 @@ async function renderFavorites() {
 }
 
 async function handleClearFavorites() {
-  if (!getAccessToken()) {
+  if (!getStoredUser()) {
     showToast("Log in to clear favorites", "error");
     return;
   }

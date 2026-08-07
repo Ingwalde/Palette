@@ -1,13 +1,4 @@
-import { getAccessToken } from "../utils/authStorage.js";
 import { request as apiRequest } from "./httpClient.js";
-
-function getAuthHeaders() {
-  const token = getAccessToken();
-
-  return token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
-}
 
 export function buildPaletteQuery(params = {}) {
   const query = new URLSearchParams();
@@ -42,7 +33,6 @@ export function getTags() {
 export function createPalette(payload) {
   return apiRequest("/palettes", {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 }
@@ -50,14 +40,12 @@ export function createPalette(payload) {
 export function updatePalette(id, payload) {
   return apiRequest(`/palettes/${id}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload)
   });
 }
 
 export function deletePalette(id) {
   return apiRequest(`/palettes/${id}`, {
-    method: "DELETE",
-    headers: getAuthHeaders()
+    method: "DELETE"
   });
 }

@@ -6,10 +6,13 @@ async def _register(client, username="alice", email="alice@test.com", password="
 
 
 async def _login(client, username="alice", password="strong-password"):
-    resp = await client.post(
+    return await client.post(
         "/api/v1/auth/login", json={"username": username, "password": password}
     )
-    return resp.json()
+
+
+def _csrf(client):
+    return {"X-CSRF-Token": client.cookies.get("csrf_token", "")}
 
 
 async def test_register_happy_path(client):
@@ -41,8 +44,11 @@ async def test_login_by_username(client):
         "/api/v1/auth/login", json={"username": "alice", "password": "strong-password"}
     )
     assert resp.status_code == 200
-    assert resp.json()["access_token"]
-    assert resp.json()["token_type"] == "bearer"
+    # Tokens are delivered as httpOnly cookies; the body carries the user.
+    assert resp.json()["username"] == "alice"
+    assert "access_token" in resp.cookies
+    assert "refresh_token" in resp.cookies
+    assert "csrf_token" in resp.cookies
 
 
 async def test_login_by_email(client):
@@ -65,16 +71,16 @@ async def test_me_requires_token(client):
     assert resp.status_code == 401
 
 
-async def test_me_with_token(client, user_token):
-    resp = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {user_token}"})
+async def test_me_via_cookie(user_client):
+    resp = await user_client.get("/api/v1/auth/me")
     assert resp.status_code == 200
     assert resp.json()["username"] == "normaluser"
 
 
-async def test_password_change_wrong_current(client, user_token):
-    resp = await client.put(
+async def test_password_change_wrong_current(user_client, user_csrf):
+    resp = await user_client.put(
         "/api/v1/auth/password",
-        headers={"Authorization": f"Bearer {user_token}"},
+        headers=user_csrf,
         json={
             "current_password": "wrong",
             "new_password": "new-strong-password",
@@ -84,10 +90,10 @@ async def test_password_change_wrong_current(client, user_token):
     assert resp.status_code == 400
 
 
-async def test_password_change_success(client, user_token):
-    resp = await client.put(
+async def test_password_change_success(user_client, user_csrf):
+    resp = await user_client.put(
         "/api/v1/auth/password",
-        headers={"Authorization": f"Bearer {user_token}"},
+        headers=user_csrf,
         json={
             "current_password": "strong-password",
             "new_password": "new-strong-password",
@@ -96,49 +102,62 @@ async def test_password_change_success(client, user_token):
     )
     assert resp.status_code == 200
 
-    old = await client.post(
+    old = await user_client.post(
         "/api/v1/auth/login", json={"username": "normaluser", "password": "strong-password"}
     )
     assert old.status_code == 401
-    new = await client.post(
+    new = await user_client.post(
         "/api/v1/auth/login",
         json={"username": "normaluser", "password": "new-strong-password"},
     )
     assert new.status_code == 200
 
 
-async def test_login_returns_refresh_token(client):
+async def test_login_sets_refresh_cookie(client):
     await _register(client)
-    assert (await _login(client))["refresh_token"]
+    resp = await _login(client)
+    assert "refresh_token" in resp.cookies
 
 
 async def test_refresh_rotates_and_revokes_old(client):
     await _register(client)
-    old_refresh = (await _login(client))["refresh_token"]
+    await _login(client)
+    csrf = _csrf(client)
+    old_refresh = client.cookies.get("refresh_token")
 
-    rotated = await client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    rotated = await client.post("/api/v1/auth/refresh", headers=csrf)
     assert rotated.status_code == 200
-    body = rotated.json()
-    assert body["access_token"]
-    assert body["refresh_token"] != old_refresh
+    assert client.cookies.get("refresh_token") != old_refresh
 
-    # single-use: the old refresh token no longer works
-    reused = await client.post("/api/v1/auth/refresh", json={"refresh_token": old_refresh})
+    # single-use: the old refresh token no longer works (send it explicitly with a valid csrf pair)
+    reused = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": old_refresh, "csrf_token": "t"},
+    )
     assert reused.status_code == 401
 
 
 async def test_refresh_invalid_token(client):
-    resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": "not-a-token"})
+    # No cookies at all -> no ambient credentials, refresh finds no token -> 401.
+    resp = await client.post("/api/v1/auth/refresh")
     assert resp.status_code == 401
 
 
 async def test_logout_revokes_refresh_token(client):
     await _register(client)
-    refresh = (await _login(client))["refresh_token"]
+    await _login(client)
+    csrf = _csrf(client)
+    refresh = client.cookies.get("refresh_token")
 
-    logout = await client.post("/api/v1/auth/logout", json={"refresh_token": refresh})
+    logout = await client.post("/api/v1/auth/logout", headers=csrf)
     assert logout.status_code == 204
-    reused = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh})
+
+    reused = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": refresh, "csrf_token": "t"},
+    )
     assert reused.status_code == 401
 
 
@@ -162,10 +181,10 @@ async def test_login_upgrades_legacy_hash(client, db_session):
     assert user.password_hash.startswith("$argon2")
 
 
-async def test_admin_gate_blocks_regular_user(client, user_token):
-    resp = await client.post(
+async def test_admin_gate_blocks_regular_user(user_client, user_csrf):
+    resp = await user_client.post(
         "/api/v1/palettes",
-        headers={"Authorization": f"Bearer {user_token}"},
+        headers=user_csrf,
         json={"name": "Blocked", "colors": ["#112233"], "tags": []},
     )
     assert resp.status_code == 403

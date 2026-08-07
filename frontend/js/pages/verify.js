@@ -1,5 +1,5 @@
 import { resendVerification, verifyEmail } from "../api/authApi.js";
-import { saveAuth, saveRefreshToken } from "../utils/authStorage.js";
+import { saveUser } from "../utils/authStorage.js";
 import { qs } from "../utils/dom.js";
 
 const title = qs("#verifyTitle");
@@ -24,11 +24,10 @@ async function initVerifyPage() {
   }
 
   try {
-    const result = await verifyEmail(token);
-    // Signed link — log the user straight in so they land on their account.
-    saveAuth(result.access_token, result.user);
-    saveRefreshToken(result.refresh_token);
-    showSuccess(result.user);
+    const user = await verifyEmail(token);
+    // Signed link — the server logs the user straight in via cookies; store the user for UI.
+    saveUser(user);
+    showSuccess(user);
   } catch (error) {
     showError(error.message || "We could not verify your email.");
   }

@@ -5,13 +5,7 @@ import {
   logoutUser,
   resendVerification
 } from "../api/authApi.js";
-import {
-  clearAuth,
-  getAccessToken,
-  getRefreshToken,
-  getStoredUser,
-  saveAuth
-} from "../utils/authStorage.js";
+import { clearAuth, getStoredUser, saveUser } from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { initPasswordToggles } from "../utils/passwordToggle.js";
 import { showToast } from "../utils/toast.js";
@@ -37,7 +31,7 @@ let currentEmail = "";
 initProfilePage();
 
 function initProfilePage() {
-  if (!getAccessToken()) {
+  if (!getStoredUser()) {
     window.location.href = "login.html";
     return;
   }
@@ -66,9 +60,8 @@ function renderStoredUser() {
 
 async function refreshUserFromBackend() {
   try {
-    const token = getAccessToken();
     const user = await getCurrentUser();
-    saveAuth(token, user);
+    saveUser(user);
     renderUser(user);
   } catch (error) {
     clearAuth();
@@ -148,7 +141,7 @@ async function handlePasswordChange(event) {
       confirm_password: confirmPassword
     });
 
-    saveAuth(getAccessToken(), user);
+    saveUser(user);
     hidePasswordForm();
     showToast("Password changed");
   } catch (error) {
@@ -159,13 +152,10 @@ async function handlePasswordChange(event) {
 }
 
 async function handleLogout() {
-  const refreshToken = getRefreshToken();
-  if (refreshToken) {
-    try {
-      await logoutUser(refreshToken);
-    } catch {
-      // Revoking failed — clear the local session anyway.
-    }
+  try {
+    await logoutUser();
+  } catch {
+    // Revoking failed — clear the local session anyway.
   }
 
   clearAuth();

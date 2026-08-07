@@ -68,24 +68,22 @@ async def test_create_requires_auth(client):
     assert resp.status_code == 401
 
 
-async def test_admin_create_update_delete(client, admin_token):
-    headers = {"Authorization": f"Bearer {admin_token}"}
-
-    created = await client.post(
+async def test_admin_create_update_delete(admin_client, admin_csrf):
+    created = await admin_client.post(
         "/api/v1/palettes",
-        headers=headers,
+        headers=admin_csrf,
         json={"name": "Admin Made", "colors": ["#123456", "#654321"], "tags": ["new"]},
     )
     assert created.status_code == 201
     palette_id = created.json()["id"]
 
-    updated = await client.put(
+    updated = await admin_client.put(
         f"/api/v1/palettes/{palette_id}",
-        headers=headers,
+        headers=admin_csrf,
         json={"name": "Admin Renamed"},
     )
     assert updated.status_code == 200
     assert updated.json()["slug"] == "admin-renamed"
 
-    deleted = await client.delete(f"/api/v1/palettes/{palette_id}", headers=headers)
+    deleted = await admin_client.delete(f"/api/v1/palettes/{palette_id}", headers=admin_csrf)
     assert deleted.status_code == 204

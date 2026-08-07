@@ -73,12 +73,11 @@ async def test_reset_invalid_token(client):
 
 
 async def test_reset_revokes_existing_refresh_tokens(client, user):
-    login = (
-        await client.post(
-            "/api/v1/auth/login", json={"username": "resetuser", "password": "oldpassword1"}
-        )
-    ).json()
-    refresh_token = login["refresh_token"]
+    login = await client.post(
+        "/api/v1/auth/login", json={"username": "resetuser", "password": "oldpassword1"}
+    )
+    assert login.status_code == 200
+    old_refresh = client.cookies.get("refresh_token")
 
     token = create_password_reset_token(user["id"])
     await client.post(
@@ -87,5 +86,9 @@ async def test_reset_revokes_existing_refresh_tokens(client, user):
     )
 
     # The refresh token issued before the reset must no longer work.
-    resp = await client.post("/api/v1/auth/refresh", json={"refresh_token": refresh_token})
+    resp = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": old_refresh, "csrf_token": "t"},
+    )
     assert resp.status_code == 401

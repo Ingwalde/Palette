@@ -1,25 +1,17 @@
-import { getAccessToken } from "../utils/authStorage.js";
+import { getStoredUser } from "../utils/authStorage.js";
 import { request } from "./httpClient.js";
 
 let favoriteKeysCache = null;
 
-// Favorites always require a logged-in user; inject the token and give a friendlier
-// message on auth failure. The rest is the shared JSON request helper.
+// Favorites always require a logged-in user (auth rides on the httpOnly cookie). Give a
+// friendlier message on auth failure; the rest is the shared JSON request helper.
 async function apiRequest(endpoint, options = {}) {
-  const token = getAccessToken();
-
-  if (!token) {
+  if (!getStoredUser()) {
     throw new Error("Log in to use favorites");
   }
 
   try {
-    return await request(endpoint, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {})
-      }
-    });
+    return await request(endpoint, options);
   } catch (error) {
     if (error.status === 401) {
       // Preserve the status so callers can distinguish an expired session from a

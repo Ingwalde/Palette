@@ -1,5 +1,5 @@
 import { getCurrentUser, loginUser, registerUser } from "../api/authApi.js";
-import { clearAuth, getAccessToken, saveAuth, saveRefreshToken } from "../utils/authStorage.js";
+import { clearAuth, getStoredUser, saveUser } from "../utils/authStorage.js";
 import { qs, resetButton, setButtonLoading } from "../utils/dom.js";
 import { initPasswordToggles } from "../utils/passwordToggle.js";
 import { showToast } from "../utils/toast.js";
@@ -45,8 +45,7 @@ async function handleLogin() {
       password: elements.loginPassword.value
     });
 
-    saveAuth(result.access_token, result.user);
-    saveRefreshToken(result.refresh_token);
+    saveUser(result);
     elements.loginPassword.value = "";
     showToast("Logged in");
 
@@ -85,15 +84,13 @@ async function handleRegister() {
 }
 
 async function refreshCurrentUser() {
-  const currentToken = getAccessToken();
-
-  if (!currentToken) {
+  if (!getStoredUser()) {
     return;
   }
 
   try {
     const user = await getCurrentUser();
-    saveAuth(currentToken, user);
+    saveUser(user);
     window.location.href = "profile.html";
   } catch {
     clearAuth();

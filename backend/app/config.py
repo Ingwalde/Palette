@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     password_reset_expire_hours: int = 1
     enable_api_docs: bool = False
     log_level: str = "INFO"
+
+    # Auth cookies. Tokens live in httpOnly cookies (not JS-readable) with a JS-readable
+    # csrf_token for double-submit CSRF protection. cookie_secure must be True in production
+    # (https); set it False for plain-http local development or the browser drops the cookies.
+    cookie_secure: bool = True
+    cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     # Rate-limit storage backend. Defaults to in-memory; set to redis://host:port in
     # production so limits are shared across processes/instances.
