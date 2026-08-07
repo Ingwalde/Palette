@@ -15,9 +15,10 @@
   encrypted as `secrets.enc.env` and decrypted into `backend/.env` during deploy; the age private
   key stays on the VM. See `docs/secrets.md`.
 
-### Notes
+### Fixed
 
-- Docs/presentation only — no backend or frontend behaviour changes.
+- Palette card footer now wraps on narrow cards, so the **Copy name** button is no longer
+  clipped by the card edge next to a long contrast badge.
 
 ## v4.7.0 — Continuous delivery
 
