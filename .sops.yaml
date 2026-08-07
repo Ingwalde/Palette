@@ -2,10 +2,11 @@
 # the age private key lives only on the machine that decrypts (your VM / your laptop) and is
 # NEVER committed.
 #
-# One-time setup:
+# The `age:` recipient below is the PUBLIC key; the matching private key lives only on the VM at
+# ~/.config/sops/age/keys.txt (and never in git). To re-key on a new machine:
 #   1. Install: sops + age (https://github.com/getsops/sops, https://github.com/FiloSottile/age)
 #   2. Generate a keypair:  age-keygen -o age.key      # prints the public key (age1...)
-#   3. Put the public key below (replace the placeholder).
+#   3. Add the new public key as an extra `age:` recipient, then: sops updatekeys secrets.enc.env
 #   4. Keep age.key private. On the VM place it at ~/.config/sops/age/keys.txt
 #
 # See docs/secrets.md for the full encrypt / decrypt / deploy flow.
@@ -13,4 +14,4 @@ creation_rules:
   - path_regex: secrets\.enc\.env$
     input_type: dotenv
     output_type: dotenv
-    age: "age1REPLACE_WITH_YOUR_PUBLIC_KEY"
+    age: "age12hyq0xjn3lyt83xp4csr06vgpvyrdztzu7kg7z09902p2qhvgssqtn7a3j"
