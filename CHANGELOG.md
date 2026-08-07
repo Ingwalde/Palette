@@ -1,5 +1,17 @@
 # Changelog
 
+## v4.6.0 — Operations & observability
+
+### Added
+
+- **Readiness probe** `GET /health/ready` — checks the database (and Redis when configured) and
+  returns 503 when a dependency is down. The Compose backend healthcheck uses it, so the backend
+  only reports healthy once it can serve traffic. `GET /health` stays as the liveness probe.
+- **Sentry error tracking** — wired in via `sentry-sdk[fastapi]`, off unless `SENTRY_DSN` is set;
+  when enabled, unhandled errors are reported with request context (no PII).
+- **Database backup script** `scripts/backup-db.sh` — gzipped `pg_dump` with retention and a
+  daily cron example (`docs/ops.md`); `backups/` is git-ignored.
+
 ## v4.5.0 — Security hardening
 
 ### Changed

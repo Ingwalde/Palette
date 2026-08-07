@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     # production so limits are shared across processes/instances.
     redis_url: str = "memory://"
 
+    # Error tracking (Sentry). Off unless SENTRY_DSN is set — then unhandled errors are
+    # reported with context. environment/sample rate are optional tuning.
+    sentry_dsn: str = ""
+    sentry_environment: str = "production"
+    sentry_traces_sample_rate: float = 0.0
+
     # Database — PostgreSQL only, mandatory (Compose supplies it).
     database_url: str = ""
 
