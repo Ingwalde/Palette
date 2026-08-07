@@ -14,6 +14,14 @@ vi.mock("./api/auth", () => ({
   logout: vi.fn(),
 }));
 
+// Keep the home page's data hooks off the network in the shell tests.
+vi.mock("./api/palettes", () => ({
+  listPalettes: vi.fn(() =>
+    Promise.resolve({ items: [], total: 0, limit: 100, offset: 0 }),
+  ),
+}));
+vi.mock("./api/tags", () => ({ listTags: vi.fn(() => Promise.resolve([])) }));
+
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
