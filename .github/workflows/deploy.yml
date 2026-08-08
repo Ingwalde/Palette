@@ -31,10 +31,19 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # Building the frontend image (npm ci + Vite) on the small VM can exceed the default
+          # 10-minute SSH command timeout, so allow more time.
+          command_timeout: "40m"
           script: |
             set -e
             cd ~/Palette
             git pull origin main
+            # The frontend image build (npm ci + Vite) needs more RAM than the ~1 GB VM has.
+            # Ensure a swap file so the build can't OOM-kill the box mid-deploy.
+            if ! sudo swapon --show | grep -q /swapfile; then
+              sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+              sudo mkswap /swapfile && sudo swapon /swapfile
+            fi
             # Decrypt secrets into backend/.env (SOPS age key lives only on this VM).
             # Guard: only overwrite .env if the decrypt produced a real SECRET_KEY.
             sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env.new
