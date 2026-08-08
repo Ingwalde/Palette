@@ -88,3 +88,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build the production Docker image
+        # Validates the multi-stage Dockerfile + nginx config that production actually serves,
+        # so a broken image is caught here rather than on deploy (the deploy gate only checks
+        # the backend's readiness).
+        run: docker build -t palette-frontend .
