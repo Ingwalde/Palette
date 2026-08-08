@@ -12,11 +12,19 @@ vi.mock("./api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(),
+  forgotPassword: vi.fn(),
+  resetPassword: vi.fn(),
+  verifyEmail: vi.fn(),
+  resendVerification: vi.fn(),
+  changePassword: vi.fn(),
+  deleteAccount: vi.fn(),
 }));
 
 // Keep the pages' data hooks off the network in the shell tests.
 vi.mock("./api/palettes", () => ({
-  listPalettes: vi.fn(() => Promise.resolve({ items: [], total: 0, limit: 100, offset: 0 })),
+  listPalettes: vi.fn(() =>
+    Promise.resolve({ items: [], total: 0, limit: 100, offset: 0 }),
+  ),
   getPalette: vi.fn(),
   createPalette: vi.fn(),
   updatePalette: vi.fn(),
@@ -63,9 +71,9 @@ describe("App shell", () => {
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
-  it("renders a placeholder for a route not yet ported", () => {
-    renderAt("/changelog");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Changelog");
+  it("renders the not-found placeholder for an unknown route", () => {
+    renderAt("/nope");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Not found");
     expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
   });
 });

@@ -1,0 +1,138 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { verifyEmail, resendVerification } from "../api/auth";
+import { queryKeys } from "../api/queryKeys";
+import { useBodyClass } from "../lib/useBodyClass";
+import { ApiError } from "../lib/http";
+import type { User } from "../types/api";
+
+const SUCCESS_LINES = [
+  "Boom — inbox conquered. You're in and ready to collect colors.",
+  "Email confirmed and you're already signed in. Let's go make something bright.",
+  "That's the one. You're verified, logged in, and the palettes are waiting.",
+  "Handshake complete. Your account is live — time to hoard some gradients.",
+];
+
+type State =
+  | { status: "pending" }
+  | { status: "success"; user: User; line: string }
+  | { status: "error"; message: string };
+
+export function VerifyPage() {
+  useBodyClass("auth-page");
+  const [params] = useSearchParams();
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<State>({ status: "pending" });
+  const [email, setEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resentMessage, setResentMessage] = useState("");
+  const ran = useRef(false);
+
+  useEffect(() => {
+    if (ran.current) return; // StrictMode double-invoke guard — verify token only once
+    ran.current = true;
+    const token = params.get("token");
+    if (!token) {
+      setState({
+        status: "error",
+        message: "This verification link is missing its token.",
+      });
+      return;
+    }
+    verifyEmail(token)
+      .then((user) => {
+        queryClient.setQueryData(queryKeys.auth, user);
+        setState({
+          status: "success",
+          user,
+          line: SUCCESS_LINES[Math.floor(Math.random() * SUCCESS_LINES.length)],
+        });
+      })
+      .catch((error) => {
+        const message =
+          error instanceof ApiError ? error.message : "We could not verify your email.";
+        setState({ status: "error", message });
+      });
+  }, [params, queryClient]);
+
+  const onResend = async () => {
+    const value = email.trim().toLowerCase();
+    if (!value) return;
+    setResending(true);
+    try {
+      const result = await resendVerification(value);
+      setResentMessage(result.message);
+    } catch (error) {
+      setResentMessage(
+        error instanceof ApiError
+          ? error.message
+          : "Could not send the link. Try again later.",
+      );
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <>
+      <header className="site-header site-header--bare">
+        <Link className="logo" to="/" aria-label="Palette home">
+          <span className="logo__mark">P</span>
+          <span className="logo__text">Palette</span>
+        </Link>
+      </header>
+
+      <main className="verify-shell">
+        <div className="auth-card auth-card--centered">
+          {state.status === "pending" && (
+            <>
+              <h1>Verifying your email…</h1>
+              <p className="muted">Please wait a moment.</p>
+            </>
+          )}
+
+          {state.status === "success" && (
+            <>
+              <h1>You're in, {state.user.username}! 🎉</h1>
+              <p className="muted">{state.line}</p>
+              <div className="form-actions form-actions--centered">
+                <Link className="button button--primary" to="/profile">
+                  Go to my account
+                </Link>
+              </div>
+            </>
+          )}
+
+          {state.status === "error" && (
+            <>
+              <h1>Verification failed</h1>
+              <p className="muted">
+                {resentMessage ||
+                  `${state.message} The link may be invalid or expired — request a new one below.`}
+              </p>
+              <div className="form-actions form-actions--centered">
+                <input
+                  className="input"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <button
+                  className="button button--primary"
+                  type="button"
+                  onClick={onResend}
+                  disabled={resending}
+                >
+                  {resending ? "Sending…" : "Resend link"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </main>
+    </>
+  );
+}

@@ -28,8 +28,9 @@ export function getCurrentUser(): Promise<User> {
   return request<User>("/auth/me");
 }
 
-export function verifyEmail(token: string): Promise<MessageResponse> {
-  return request<MessageResponse>(`/auth/verify?token=${encodeURIComponent(token)}`);
+export function verifyEmail(token: string): Promise<User> {
+  // Signed link — the server logs the user straight in via cookies and returns the user.
+  return request<User>(`/auth/verify?token=${encodeURIComponent(token)}`);
 }
 
 export function resendVerification(email: string): Promise<MessageResponse> {
