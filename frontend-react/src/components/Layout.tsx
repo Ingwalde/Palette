@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -6,6 +7,28 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const navRef = useRef<HTMLElement>(null);
+  const location = useLocation();
+
+  // Position the sliding indicator pill behind the active nav link (ported from the vanilla
+  // nav indicator). Re-measure on route change, auth change, resize and after fonts load.
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const move = () => {
+      const active = nav.querySelector<HTMLElement>(".site-nav__link--active");
+      if (!active) return;
+      nav.style.setProperty("--nav-indicator-x", `${active.offsetLeft}px`);
+      nav.style.setProperty("--nav-indicator-y", `${active.offsetTop}px`);
+      nav.style.setProperty("--nav-indicator-width", `${active.offsetWidth}px`);
+      nav.style.setProperty("--nav-indicator-height", `${active.offsetHeight}px`);
+      nav.classList.add("site-nav--ready");
+    };
+    move();
+    window.addEventListener("resize", move);
+    document.fonts?.ready.then(move).catch(() => {});
+    return () => window.removeEventListener("resize", move);
+  }, [location.pathname, isAuthenticated, isAdmin]);
 
   return (
     <>
@@ -19,7 +42,8 @@ export function Layout() {
           <span className="logo__text">Palette</span>
         </NavLink>
 
-        <nav className="site-nav" aria-label="Main navigation">
+        <nav className="site-nav" aria-label="Main navigation" ref={navRef}>
+          <span className="site-nav__indicator" aria-hidden="true" />
           <NavLink to="/" end className={linkClass}>
             Home
           </NavLink>
