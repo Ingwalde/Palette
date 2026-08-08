@@ -1,11 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { Palette } from "../types/api";
 import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
 import { useToast } from "./toast/ToastProvider";
 import { ApiError } from "../lib/http";
-import styles from "./PaletteCard.module.css";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const { isAuthenticated } = useAuth();
@@ -50,59 +49,53 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   };
 
   return (
-    <article className={styles.card}>
-      <div className={styles.header}>
+    <article className="palette-card" data-palette-id={palette.slug}>
+      <div className="palette-card__header">
         <div>
-          <h3 className={styles.title}>{palette.name}</h3>
-          <p className={styles.meta}>{palette.description}</p>
+          <h3 className="palette-card__title">{palette.name}</h3>
+          <p className="palette-card__meta">{palette.description}</p>
         </div>
         <button
           type="button"
-          className={`${styles.fav} ${saved ? styles.favSaved : ""}`}
-          onClick={onToggleFavorite}
-          disabled={toggleFavorite.isPending}
+          className={`button button--ghost${saved ? " button--saved" : ""}`}
+          aria-label="Toggle favorite"
           aria-pressed={saved}
+          disabled={toggleFavorite.isPending}
+          onClick={onToggleFavorite}
         >
           {saved ? "♥ Saved" : "♡ Save"}
         </button>
       </div>
 
-      <div className={styles.colors} aria-label={`${palette.name} colors`}>
+      <div className="palette-card__colors" aria-label={`${palette.name} colors`}>
         {palette.colors.map((color, i) => (
           <button
             key={`${color}-${i}`}
             type="button"
-            className={styles.swatch}
-            style={{ background: color }}
+            className={`color-swatch${revealed === color ? " color-swatch--revealed" : ""}`}
+            style={{ "--swatch-color": color } as CSSProperties}
+            data-color={color}
             aria-label={`Copy ${color}`}
             onClick={() => void copyColor(color)}
-          >
-            <span
-              className={`${styles.swatchHex} ${revealed === color ? styles.swatchHexShown : ""}`}
-            >
-              {color}
-            </span>
-          </button>
+          />
         ))}
       </div>
 
-      {palette.tags.length > 0 && (
-        <div className={styles.tags}>
-          {palette.tags.map((tag) => (
-            <span key={tag} className={styles.tag}>
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="palette-card__tags">
+        {palette.tags.map((tag) => (
+          <span key={tag} className="tag">
+            #{tag}
+          </span>
+        ))}
+      </div>
 
-      <div className={styles.footer}>
-        <span className={styles.badge}>
+      <div className="palette-card__footer">
+        <span className="contrast-badge">
           {contrast.label} · {contrast.ratio}:1
         </span>
         <button
           type="button"
-          className={styles.copyName}
+          className="button button--ghost"
           onClick={() => {
             void copyToClipboard(palette.name);
             showToast(`Palette name copied: ${palette.name}`);

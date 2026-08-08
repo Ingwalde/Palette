@@ -2,10 +2,16 @@ import { useMemo, useState } from "react";
 import { usePalettes, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { PaletteCard } from "../components/PaletteCard";
+import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
-import styles from "./HomePage.module.css";
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
+
+const SORT_OPTIONS = [
+  { value: "default", label: "Default order" },
+  { value: "az", label: "Name A-Z" },
+  { value: "za", label: "Name Z-A" },
+];
 
 // Pick up to `count` random items — a lighter, rotating home tag filter.
 function pickRandom<T>(list: T[], count: number): T[] {
@@ -41,51 +47,89 @@ export function HomePage() {
   });
   const palettes = data?.items ?? [];
 
-  return (
-    <div className={styles.page}>
-      <section className={styles.hero} aria-labelledby="hero-title">
-        <p className={styles.eyebrow}>Palette · React + TypeScript</p>
-        <h1 id="hero-title" className={styles.title}>
-          Find a color palette for your next design project.
-        </h1>
-        <p className={styles.text}>
-          Search, filter, save and export palettes — now served by the new React frontend.
-        </p>
-      </section>
+  const randomPalette = () => {
+    if (palettes.length === 0) return;
+    const pick = palettes[Math.floor(Math.random() * palettes.length)];
+    setSearchInput(pick.name);
+    setTag("all");
+    setSort("default");
+    document
+      .getElementById("palettes")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-      <section className={styles.toolbar} aria-label="Palette tools">
-        <div className={styles.controls}>
-          <label className={styles.search}>
-            <span className={styles.visuallyHidden}>Search palettes</span>
-            <input
-              type="search"
-              placeholder="Search by name, description or tag..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              autoComplete="off"
-            />
-          </label>
-          <label className={styles.visuallyHidden} htmlFor="sort">
-            Sort palettes
-          </label>
-          <select
-            id="sort"
-            className={styles.select}
-            value={sort}
-            onChange={(e) => setSort(e.target.value as Sort)}
-          >
-            <option value="default">Default order</option>
-            <option value="az">Name A-Z</option>
-            <option value="za">Name Z-A</option>
-          </select>
+  return (
+    <>
+      <section className="hero section" aria-labelledby="hero-title">
+        <div className="hero__content">
+          <p className="eyebrow">Palette v4.8.0 · Update!</p>
+          <h1 id="hero-title">Find a color palette for your next design project.</h1>
+          <p className="hero__text">
+            Search, filter, save and export palettes. v4.8.0 begins the new React +
+            TypeScript frontend — rebuilt on Vite and ported page by page.
+          </p>
+          <div className="hero__actions">
+            <a className="button button--primary" href="#palettes">
+              Browse palettes
+            </a>
+            <button
+              className="button button--secondary"
+              type="button"
+              onClick={randomPalette}
+            >
+              Random palette
+            </button>
+          </div>
         </div>
 
-        <div className={styles.chips} aria-label="Filter palettes by tag">
+        <div className="hero-preview" aria-hidden="true">
+          <div className="hero-preview__window">
+            <div className="hero-preview__top"></div>
+            <div className="hero-preview__grid">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section toolbar-section" aria-label="Palette tools">
+        <div className="toolbar">
+          <label className="search-field" htmlFor="searchInput">
+            <span className="visually-hidden">Search palettes</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Search by name, description or tag..."
+              autoComplete="off"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <button
+              type="button"
+              className="search-clear"
+              aria-label="Clear search"
+              onClick={() => setSearchInput("")}
+            ></button>
+          </label>
+
+          <CustomSelect
+            options={SORT_OPTIONS}
+            value={sort}
+            onChange={(v) => setSort(v as Sort)}
+            ariaLabel="Sort palettes"
+          />
+        </div>
+
+        <div className="tag-filters" aria-label="Filter palettes by tag">
           {["all", ...chips].map((name) => (
             <button
               key={name}
               type="button"
-              className={`${styles.chip} ${tag === name ? styles.chipActive : ""}`}
+              className={`tag-button${tag === name ? " tag-button--active" : ""}`}
+              data-tag={name}
               onClick={() => setTag(name)}
             >
               {name === "all" ? "All" : `#${name}`}
@@ -94,34 +138,42 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className={styles.results} aria-labelledby="results-title">
-        <div className={styles.resultsHead}>
-          <h2 id="results-title">Available palettes</h2>
-          <p className={styles.count} aria-live="polite">
+      <section className="section" id="palettes" aria-labelledby="palettes-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Backend data</p>
+            <h2 id="palettes-title">Available palettes</h2>
+          </div>
+          <p className="result-count" aria-live="polite">
             {isLoading
-              ? "Loading…"
+              ? "Loading..."
               : isError
                 ? "API error"
                 : `${palettes.length} palette${palettes.length === 1 ? "" : "s"}`}
           </p>
         </div>
 
-        {isError ? (
-          <p className={styles.state}>
-            Could not reach the backend API. Start the stack and try again.
-          </p>
-        ) : !isLoading && palettes.length === 0 ? (
-          <p className={styles.state}>
-            No palettes found. Try another name, tag or filter.
-          </p>
-        ) : (
-          <div className={styles.grid}>
-            {palettes.map((palette) => (
-              <PaletteCard key={palette.id} palette={palette} />
-            ))}
-          </div>
-        )}
+        <div className="palette-grid">
+          {isError ? (
+            <div className="empty-state">
+              <h3>Backend unavailable</h3>
+              <p>Could not reach the backend API. Start the stack and try again.</p>
+            </div>
+          ) : isLoading ? (
+            <div className="empty-state">
+              <h3>Loading palettes</h3>
+              <p>The frontend is requesting data from the backend API.</p>
+            </div>
+          ) : palettes.length === 0 ? (
+            <div className="empty-state">
+              <h3>No palettes found</h3>
+              <p>Try another name, tag or filter.</p>
+            </div>
+          ) : (
+            palettes.map((palette) => <PaletteCard key={palette.id} palette={palette} />)
+          )}
+        </div>
       </section>
-    </div>
+    </>
   );
 }

@@ -13,6 +13,7 @@ export function App() {
         <Route path="admin" element={<PlaceholderPage name="Admin" />} />
         <Route path="login" element={<PlaceholderPage name="Login" />} />
         <Route path="profile" element={<PlaceholderPage name="Profile" />} />
+        <Route path="changelog" element={<PlaceholderPage name="Changelog" />} />
         <Route path="*" element={<PlaceholderPage name="Not found" />} />
       </Route>
     </Routes>
