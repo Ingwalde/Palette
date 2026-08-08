@@ -56,3 +56,41 @@ jobs:
 
       - name: Run backend test suite (test profile)
         run: docker compose --profile test run --build --rm tests
+
+  frontend-react:
+    name: Frontend (React) — lint · types · test · build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (oxlint)
+        run: npm run lint
+
+      - name: Type-check (tsc)
+        run: npm run typecheck
+
+      - name: Unit tests (vitest)
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Build the production Docker image
+        # Validates the multi-stage Dockerfile + nginx config that production actually serves,
+        # so a broken image is caught here rather than on deploy (the deploy gate only checks
+        # the backend's readiness).
+        run: docker build -t palette-frontend .

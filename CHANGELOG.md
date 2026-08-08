@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.8.0 — React + TypeScript frontend (scaffold)
+
+First step of the frontend migration from vanilla ES modules to **React + TypeScript**. This
+release adds the new app **alongside** the existing frontend; the vanilla `frontend/` stays the
+deployed build until the React app reaches feature parity. Frontend work ships on the 4.8.x line.
+
+### Added
+
+- **`frontend-react/`** — a Vite + React 19 + TypeScript (strict) app: routing with React Router,
+  server state with TanStack Query, an app shell (header/nav + layout), a placeholder home page,
+  and the design tokens ported from the vanilla `base.css`.
+- **Frontend tooling** — oxlint (lint), Prettier (format), Vitest + Testing Library (unit/component
+  tests), and Playwright (E2E), all wired with npm scripts; a first unit test and E2E smoke test.
+
+### Notes
+
+- Backend untouched — API contracts unchanged. The vanilla frontend remains the live build.
+
 ## v4.7.1 — Presentation: screenshots & diagrams
 
 ### Added

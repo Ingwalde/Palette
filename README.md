@@ -1,4 +1,4 @@
-# Palette v4.7.1 — Full-Stack Color Palette App
+# Palette v4.8.0 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -308,7 +308,7 @@ is paginated (`{ items, total, limit, offset }` + `X-Total-Count`). Errors are r
 ## Version
 
 ```text
-v4.7.1
+v4.8.0
 ```
 
 ## License
