@@ -49,10 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: authApi.login,
     onSuccess: (user) => setUser(user),
   });
-  const registerMutation = useMutation({
-    mutationFn: authApi.register,
-    onSuccess: (user) => setUser(user),
-  });
+  // Registration creates the account but does not start a session (email verification comes
+  // first), so it must not set the current user — the vanilla flow logs in separately.
+  const registerMutation = useMutation({ mutationFn: authApi.register });
   const logoutMutation = useMutation({
     mutationFn: authApi.logout,
     onSettled: () => {

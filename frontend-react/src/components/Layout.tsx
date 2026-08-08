@@ -72,7 +72,12 @@ export function Layout() {
               </button>
             </>
           ) : (
-            <NavLink to="/login" className="site-nav__link site-nav__button">
+            <NavLink
+              to="/login"
+              className={({ isActive }) =>
+                `site-nav__link site-nav__button${isActive ? " site-nav__link--active" : ""}`
+              }
+            >
               Login
             </NavLink>
           )}
