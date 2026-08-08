@@ -6,12 +6,16 @@ import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/toast/ToastProvider";
 import { ModalProvider } from "./components/modal/ModalProvider";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { initObservability } from "./lib/observability";
 import { App } from "./App";
 // Reuse the vanilla stylesheets verbatim so the React app is visually 1:1 with the
 // original frontend. These are retired once the migration is complete.
 import "./styles/vanilla/base.css";
 import "./styles/vanilla/components.css";
 import "./styles/vanilla/pages.css";
+
+initObservability();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -20,7 +24,9 @@ createRoot(document.getElementById("root")!).render(
         <ToastProvider>
           <ModalProvider>
             <BrowserRouter>
-              <App />
+              <ErrorBoundary>
+                <App />
+              </ErrorBoundary>
             </BrowserRouter>
           </ModalProvider>
         </ToastProvider>

@@ -8,8 +8,8 @@ test("home renders hero and navigation", async ({ page }) => {
   await expect(page.getByRole("navigation", { name: /main navigation/i })).toBeVisible();
 });
 
-test("navigating to a not-yet-ported route shows a placeholder", async ({ page }) => {
-  await page.goto("/export");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Export");
+test("an unknown route shows the not-found placeholder", async ({ page }) => {
+  await page.goto("/nope");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Not found");
   await expect(page.getByText(/coming soon/i)).toBeVisible();
 });
