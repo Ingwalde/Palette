@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/toast/ToastProvider";
+import { ModalProvider } from "./components/modal/ModalProvider";
 import { App } from "./App";
 // Reuse the vanilla stylesheets verbatim so the React app is visually 1:1 with the
 // original frontend. These are retired once the migration is complete.
@@ -17,9 +18,11 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <ModalProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>

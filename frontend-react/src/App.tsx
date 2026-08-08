@@ -5,6 +5,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
 import { ExportPage } from "./pages/ExportPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { AdminPage } from "./pages/AdminPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export function App() {
@@ -15,7 +16,7 @@ export function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="export" element={<ExportPage />} />
-        <Route path="admin" element={<PlaceholderPage name="Admin" />} />
+        <Route path="admin" element={<AdminPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route
           path="forgot-password"
