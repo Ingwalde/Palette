@@ -12,3 +12,7 @@ export function addFavorite(slug: string): Promise<void> {
 export function removeFavorite(slug: string): Promise<void> {
   return request<void>(`/favorites/${encodeURIComponent(slug)}`, { method: "DELETE" });
 }
+
+export function clearFavorites(): Promise<void> {
+  return request<void>("/favorites", { method: "DELETE" });
+}

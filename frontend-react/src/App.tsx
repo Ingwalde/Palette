@@ -2,6 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
+import { FavoritesPage } from "./pages/FavoritesPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export function App() {
@@ -10,7 +11,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
-        <Route path="favorites" element={<PlaceholderPage name="Favorites" />} />
+        <Route path="favorites" element={<FavoritesPage />} />
         <Route path="export" element={<PlaceholderPage name="Export" />} />
         <Route path="admin" element={<PlaceholderPage name="Admin" />} />
         <Route path="profile" element={<PlaceholderPage name="Profile" />} />
