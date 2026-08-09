@@ -1,5 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { request, ApiError } from "./http";
+import { request, ApiError, formatApiError, toQuery } from "./http";
+
+describe("formatApiError", () => {
+  it("passes a string detail through", () => {
+    expect(formatApiError("Bad thing")).toBe("Bad thing");
+  });
+  it("joins a validation-error array by msg", () => {
+    expect(formatApiError([{ msg: "too short" }, { msg: "required" }])).toBe(
+      "too short; required",
+    );
+  });
+  it("reads message from an object detail", () => {
+    expect(formatApiError({ message: "nope" })).toBe("nope");
+  });
+  it("returns empty for undefined", () => {
+    expect(formatApiError(undefined)).toBe("");
+  });
+});
+
+describe("toQuery", () => {
+  it("drops undefined/empty and builds a query string", () => {
+    expect(toQuery({ search: "sea", tag: undefined, limit: 10, sort: "" })).toBe(
+      "?search=sea&limit=10",
+    );
+    expect(toQuery({})).toBe("");
+  });
+});
 
 // Minimal fake Response for the mocked fetch.
 function res(
