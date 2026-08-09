@@ -49,7 +49,11 @@ jobs:
             sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env.new
             grep -q '^SECRET_KEY=' backend/.env.new
             mv backend/.env.new backend/.env
-            docker compose up -d --build
+            # Pull the CI-built frontend image from GHCR (the VM must not build it — that OOMs the
+            # box). Requires the GHCR package to be public. Build only the backend on the VM.
+            docker compose pull frontend
+            docker compose build backend
+            docker compose up -d
             # Fail the deploy if the backend never becomes ready.
             for i in $(seq 1 15); do
               if curl -fsS http://localhost:8000/health/ready >/dev/null; then
