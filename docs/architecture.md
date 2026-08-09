@@ -64,7 +64,8 @@ erDiagram
 ## Request path (production)
 
 Cloudflare terminates the edge; Caddy on the VM serves TLS and splits static frontend from the
-API. Redis backs cross-process rate limiting; Sentry receives backend errors when a DSN is set.
+API. Redis backs cross-process rate limiting; Sentry receives errors from both the backend and
+the browser frontend when a DSN is set.
 
 ```mermaid
 flowchart LR
@@ -75,6 +76,7 @@ flowchart LR
     BE --> DB[("PostgreSQL")]
     BE --> RD[("Redis — rate limiting")]
     BE -. "errors (if DSN set)" .-> SN["Sentry"]
+    U -. "errors + Web Vitals (if DSN set)" .-> SN
 ```
 
 ## Authentication flow (httpOnly cookies + CSRF)
