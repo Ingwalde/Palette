@@ -20,6 +20,18 @@ optional. `send_default_pii` is off, so no user PII is attached.
 To enable: create a project at <https://sentry.io> (free tier), copy its DSN, set
 `SENTRY_DSN=...` in `backend/.env`, and redeploy.
 
+### Frontend (browser)
+
+The React app reports client errors and Web Vitals (LCP/CLS/INP) to Sentry when
+`VITE_SENTRY_DSN` is set. Unlike the backend DSN, this is a **build-time** value: Vite inlines
+it into the bundle, so it is passed as a Docker build arg (`--build-arg VITE_SENTRY_DSN=...`),
+wired in CI from the `VITE_SENTRY_DSN` repository variable. With no DSN the Sentry SDK is
+tree-shaken out entirely (no bundle cost). The DSN is public/client-safe, so it is a repo
+variable, not a secret. Source maps are emitted so minified stack traces symbolicate.
+
+To enable: create a React project in Sentry, copy its DSN, set the `VITE_SENTRY_DSN` repository
+variable (GitHub → Settings → Variables), and let the next `main` build ship it.
+
 ## Database backups
 
 `scripts/backup-db.sh` dumps the `db` service to a gzipped file under `backups/` and prunes

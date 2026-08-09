@@ -89,6 +89,7 @@ flowchart LR
     BE --> DB[("PostgreSQL")]
     BE --> RD[("Redis — rate limiting")]
     BE -. "errors (if DSN)" .-> SN["Sentry"]
+    U -. "errors + Web Vitals (if DSN)" .-> SN
 ```
 
 ---
@@ -107,8 +108,9 @@ flowchart LR
   decrypted only on the deploy host.
 - **Continuous delivery** — a green CI run on `main` auto-deploys to the live VM (SSH pull + rebuild
   + readiness gate), with an isolated staging stack via a Compose override.
-- **Operable in production** — liveness/readiness probes, optional Sentry error tracking, and a
-  scripted database backup with retention.
+- **Operable in production** — liveness/readiness probes, optional Sentry error tracking on both
+  the backend and the browser frontend (client errors + Web Vitals), and a scripted database
+  backup with retention.
 - **Tested and linted** — an async pytest suite with ruff, mypy and an 80% coverage gate, all
   enforced in CI.
 
@@ -156,7 +158,8 @@ flowchart LR
   healthcheck uses readiness.
 - Continuous delivery: production auto-deploys after CI passes on `main`; isolated staging stack via
   a Compose override (see [`docs/deploy.md`](docs/deploy.md)).
-- Optional Sentry error tracking (off unless `SENTRY_DSN` is set); scripted database backups with
+- Optional Sentry error tracking — backend (off unless `SENTRY_DSN` is set) and frontend (client
+  errors + Web Vitals, off unless `VITE_SENTRY_DSN` is set); scripted database backups with
   retention (see [`docs/ops.md`](docs/ops.md)).
 - Structured logging (`LOG_LEVEL`); automated tests with ruff, mypy and an 80% coverage gate in CI.
 
