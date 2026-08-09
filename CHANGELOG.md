@@ -1,5 +1,25 @@
 # Changelog
 
+## v4.8.1 — Accessibility & deploy hardening
+
+Follow-up polish after the v4.8 React cutover.
+
+### Added
+
+- **WCAG 2 AA pass** — an axe-core E2E suite asserting zero WCAG2A/2AA violations across every
+  page; fixed the failures it found (muted-text contrast, an unlabelled admin colour picker).
+
+### Fixed
+
+- **Deploy resilience** — the frontend image build (`npm ci` + Vite) was OOM-killing the ~1 GB
+  production VM and blowing past the SSH command timeout, taking the site down. The deploy now
+  ensures a 2 GB swap file and uses a 40-minute command timeout so the build survives the small VM.
+
+### Changed
+
+- Cut the vanilla frontend over to the React build: `frontend-react/` is served in production by
+  nginx from a multi-stage image; the old `frontend/` directory was removed.
+
 ## v4.8.0 — React + TypeScript frontend (scaffold)
 
 First step of the frontend migration from vanilla ES modules to **React + TypeScript**. This

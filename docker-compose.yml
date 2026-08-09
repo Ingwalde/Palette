@@ -45,7 +45,10 @@ services:
       start_period: 20s
 
   frontend:
-    # React + TypeScript app (frontend-react/), built and served by nginx (multi-stage image).
+    # React + TypeScript app (frontend-react/), served by nginx from a multi-stage image.
+    # In production the image is built in CI and pulled from GHCR (the ~1 GB VM must not build it);
+    # `build:` is the local-dev fallback (`docker compose build`/`up --build` builds it locally).
+    image: ghcr.io/ingwalde/palette-frontend:latest
     build:
       context: ./frontend-react
       dockerfile: Dockerfile
