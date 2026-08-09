@@ -21,21 +21,13 @@ export default defineConfig({
         "src/main.tsx",
         "src/vite-env.d.ts",
         "src/types/**",
-        // DOM/canvas-heavy pages are covered by the Playwright E2E + axe suites, not unit tests
-        // (jsdom can't meaningfully exercise the canvas export or the admin CRUD UI).
-        "src/pages/AdminPage.tsx",
-        "src/pages/ExportPage.tsx",
-        "src/pages/ProfilePage.tsx",
-        "src/pages/VerifyPage.tsx",
-        "src/pages/ForgotPasswordPage.tsx",
-        "src/pages/ResetPasswordPage.tsx",
-        "src/pages/ChangelogPage.tsx",
-        "src/pages/PlaceholderPage.tsx",
+        // Canvas PNG rendering is verified by the Playwright/axe E2E — jsdom has no 2D context,
+        // so unit-"covering" it would just execute draw calls against a fake ctx (vanity coverage).
         "src/lib/exportGenerators.ts",
       ],
-      // Floor for the unit-tested core (utils, hooks, api, auth, key components + pages).
-      // The DOM/canvas-heavy pages excluded above are covered by the Playwright/axe E2E suites.
-      thresholds: { lines: 60, functions: 52, statements: 58, branches: 42 },
+      // Floor for everything except the canvas renderer (E2E-covered). Kept just under the
+      // achieved numbers so it ratchets against regressions.
+      thresholds: { lines: 78, functions: 70, statements: 75, branches: 68 },
     },
   },
 });

@@ -41,4 +41,31 @@ describe("CustomSelect", () => {
     await user.keyboard("{ArrowDown}");
     expect(screen.getByRole("listbox")).toBeVisible();
   });
+
+  it("closes on Escape from the trigger", async () => {
+    const user = userEvent.setup();
+    render(
+      <CustomSelect options={OPTIONS} value="a" onChange={() => {}} ariaLabel="Pick" />,
+    );
+    const button = screen.getByRole("button", { name: "Pick" });
+    await user.click(button);
+    expect(screen.getByRole("listbox")).toBeVisible();
+    button.focus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
+
+  it("closes when clicking outside", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <CustomSelect options={OPTIONS} value="a" onChange={() => {}} ariaLabel="Pick" />
+        <button>outside</button>
+      </div>,
+    );
+    await user.click(screen.getByRole("button", { name: "Pick" }));
+    expect(screen.getByRole("listbox")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "outside" }));
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+  });
 });
