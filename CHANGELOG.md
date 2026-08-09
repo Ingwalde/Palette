@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.8.3 — Frontend observability
+
+Wires the existing client-error funnel to Sentry, opt-in via a build-time DSN.
+
+### Added
+
+- **Sentry error + Web Vitals reporting** — `reportError` (the single funnel behind the
+  `ErrorBoundary` and the global `error`/`unhandledrejection` handlers) now forwards exceptions
+  to `@sentry/react` when `VITE_SENTRY_DSN` is set. `browserTracingIntegration` also captures
+  Web Vitals (LCP/CLS/INP). Source maps are emitted so minified traces symbolicate.
+
+### Changed
+
+- The Sentry SDK is loaded lazily and only when a DSN is configured — builds without
+  `VITE_SENTRY_DSN` tree-shake it out entirely (no bundle cost, `reportError` just logs in dev).
+- The frontend image accepts a `VITE_SENTRY_DSN` build arg (fed from the `VITE_SENTRY_DSN` CI
+  variable) so the DSN is inlined at build time.
+
 ## v4.8.1 — Accessibility & deploy hardening
 
 Follow-up polish after the v4.8 React cutover.

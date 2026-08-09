@@ -6,6 +6,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.8.3",
+    title: "Frontend observability",
+    items: [
+      "Client errors and Web Vitals (LCP/CLS/INP) report to Sentry when a DSN is configured.",
+      "The Sentry SDK loads lazily and is tree-shaken out entirely when observability is off.",
+      "Source maps are emitted so minified stack traces symbolicate back to the TypeScript source.",
+    ],
+  },
+  {
     version: "v4.8.1",
     title: "Accessibility & deploy hardening",
     items: [

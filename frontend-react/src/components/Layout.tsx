@@ -91,7 +91,7 @@ export function Layout() {
       <footer className="site-footer section">
         <div className="site-footer__panel">
           <div className="site-footer__content">
-            <p className="site-footer__eyebrow">Palette v4.8.1</p>
+            <p className="site-footer__eyebrow">Palette v4.8.3</p>
             <p className="site-footer__text">
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.

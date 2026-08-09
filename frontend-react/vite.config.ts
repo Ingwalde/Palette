@@ -5,6 +5,8 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Emit source maps so Sentry can symbolicate minified stack traces back to the TS source.
+  build: { sourcemap: true },
   test: {
     environment: "jsdom",
     globals: true,
@@ -19,7 +21,7 @@ export default defineConfig({
         "src/**/*.test.{ts,tsx}",
         "src/test/**",
         "src/main.tsx",
-        "src/vite-env.d.ts",
+        "src/**/*.d.ts",
         "src/types/**",
         // Canvas PNG rendering is verified by the Playwright/axe E2E — jsdom has no 2D context,
         // so unit-"covering" it would just execute draw calls against a fake ctx (vanity coverage).

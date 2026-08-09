@@ -172,6 +172,14 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.8.3 — Frontend Observability
+
+Status: completed.
+
+- Client errors and Web Vitals (LCP/CLS/INP) report to Sentry when `VITE_SENTRY_DSN` is set;
+  the SDK loads lazily and is tree-shaken out entirely when observability is off.
+- Source maps emitted for symbolication; the frontend image + CI pass the DSN as a build arg.
+
 ## v4.8.1 — Accessibility & Deploy Hardening
 
 Status: completed.
