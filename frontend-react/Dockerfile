@@ -4,6 +4,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Optional observability: when VITE_SENTRY_DSN is passed as a build arg it is inlined into the
+# bundle (Vite only exposes VITE_-prefixed vars). Empty = Sentry stays off, SDK not bundled.
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 RUN npm run build
 
 FROM nginx:alpine

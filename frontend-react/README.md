@@ -25,6 +25,19 @@ npm run test:e2e     # playwright (builds + previews, then runs specs)
 npm run format       # prettier --write
 ```
 
+## Observability
+
+Client errors and Web Vitals are reported to Sentry when a DSN is configured — otherwise the
+SDK is never loaded and `reportError` just logs in dev.
+
+| Var | Purpose |
+| --- | --- |
+| `VITE_SENTRY_DSN` | Sentry DSN (public, client-safe). Unset = observability off. Inlined at **build** time — pass it as a Docker build arg / CI variable, not a runtime env. |
+
+`reportError` in `src/lib/observability.ts` is the single funnel: the `ErrorBoundary` and the
+global `error`/`unhandledrejection` handlers all route through it, so Sentry is wired in one
+place. Source maps are emitted (`build.sourcemap`) so minified stack traces symbolicate.
+
 ## Layout
 
 ```
