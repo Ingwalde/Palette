@@ -62,11 +62,11 @@ export function HomePage() {
     <>
       <section className="hero section" aria-labelledby="hero-title">
         <div className="hero__content">
-          <p className="eyebrow">Palette v4.8.0 · Update!</p>
+          <p className="eyebrow">Palette v4.8.1 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className="hero__text">
-            Search, filter, save and export palettes. v4.8.0 begins the new React +
-            TypeScript frontend — rebuilt on Vite and ported page by page.
+            Search, filter, save and export palettes. The React + TypeScript frontend now ships
+            with a WCAG&nbsp;AA accessibility pass and hardened, swap-safe deploys.
           </p>
           <div className="hero__actions">
             <a className="button button--primary" href="#palettes">

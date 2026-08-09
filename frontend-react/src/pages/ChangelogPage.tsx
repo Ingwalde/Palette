@@ -6,13 +6,21 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
-    version: "v4.8.0",
-    title: "React + TypeScript frontend — scaffold",
+    version: "v4.8.1",
+    title: "Accessibility & deploy hardening",
     items: [
-      "New frontend-react/ app on Vite + React 19 + TypeScript (strict).",
-      "React Router shell and a TanStack Query client, with ported design tokens.",
-      "Tooling wired up: oxlint, Prettier, Vitest + Testing Library, Playwright.",
-      "The vanilla frontend stays the deployed build until parity.",
+      "WCAG 2 AA pass with an axe-core test suite; fixed contrast and an unlabelled control.",
+      "Swap-safe, longer-timeout deploys so the frontend build doesn't OOM the small VM.",
+      "Docs updated after the cutover.",
+    ],
+  },
+  {
+    version: "v4.8.0",
+    title: "React + TypeScript frontend",
+    items: [
+      "Full rewrite of the frontend to Vite + React 19 + TypeScript, replacing the vanilla build.",
+      "All pages ported 1:1; typed API layer, TanStack Query, auth context, error boundary.",
+      "Served in production by nginx from a multi-stage Docker image; vanilla frontend removed.",
     ],
   },
   {

@@ -172,20 +172,30 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
-## v4.8.0 — React + TypeScript Frontend (scaffold)
+## v4.8.1 — Accessibility & Deploy Hardening
 
 Status: completed.
 
-- New `frontend-react/` app on Vite + React 19 + TypeScript (strict), added alongside the vanilla
-  frontend (which stays the deployed build until parity).
-- React Router shell + TanStack Query client; design tokens ported from the vanilla `base.css`.
-- Tooling: oxlint, Prettier, Vitest + Testing Library, Playwright — with a first unit and E2E test.
+- WCAG 2 AA pass with an axe-core E2E suite (zero violations); fixed contrast + an unlabelled
+  admin colour picker.
+- Deploy resilience: ensure a 2 GB swap file and a 40-minute SSH timeout so the frontend build
+  doesn't OOM the ~1 GB production VM.
+- Doc cleanup after the cutover (CLAUDE.md, the bump-version skill).
 
-Planned next (4.8.x):
+Planned next (optional):
 
-- **4.8.1** — typed API layer + TanStack Query client (CSRF + refresh-on-401), auth context.
-- **4.8.2+** — pages ported one per release (home → auth → favorites → export → profile → admin).
-- later 4.8.x — frontend Sentry + error boundary, full Playwright suite, cutover, WCAG AA audit.
+- Build the frontend image in CI + push to GHCR so the VM only pulls it (no build on the VM).
+
+## v4.8.0 — React + TypeScript Frontend
+
+Status: completed.
+
+- Full rewrite of the frontend to **React 19 + TypeScript (Vite)**, replacing the vanilla build.
+  All pages ported 1:1 (home, auth, favorites, export incl. PNG canvas, profile, admin, verify,
+  changelog); typed API layer + TanStack Query, AuthContext (httpOnly cookies + CSRF), custom
+  select / modal / toast / error boundary; Vitest + Playwright.
+- Cutover: served in production by nginx from a multi-stage Docker image; the vanilla `frontend/`
+  was removed.
 
 ## v4.7.1 — Presentation: Screenshots & Diagrams
 
