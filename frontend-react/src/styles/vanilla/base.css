@@ -21,7 +21,7 @@ main.spa-fade--out {
   --color-surface: #fffaf2;
   --color-surface-strong: #efe7dc;
   --color-text: #2f2d2a;
-  --color-muted: #746c63;
+  --color-muted: #625a51; /* darkened from #746c63 for WCAG AA contrast on surface backgrounds */
   --color-border: rgba(47, 45, 42, 0.14);
   --color-primary: #302f2c;
   --color-primary-soft: #e7d8c9;

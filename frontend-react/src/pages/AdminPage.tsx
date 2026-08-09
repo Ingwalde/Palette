@@ -296,6 +296,7 @@ function PalettesView() {
                 <input
                   className="color-row__picker"
                   type="color"
+                  aria-label={`Colour ${i + 1} picker`}
                   value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR}
                   onChange={(e) => setColorAt(i, e.target.value.toUpperCase())}
                 />
