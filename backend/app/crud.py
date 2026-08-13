@@ -18,21 +18,35 @@ def slugify(value: str) -> str:
 async def get_unique_slug(
     db: AsyncSession, base_slug: str, current_palette_id: int | None = None
 ) -> str:
+    """First free slug of the form `base`, `base-2`, `base-3`, …
+
+    One query for the whole family instead of a round-trip per candidate, selecting the slug
+    column rather than loading whole Palette entities. The unique constraint on palettes.slug
+    remains the real guarantee: this is check-then-insert, so a concurrent create can still
+    take the slug between the check and the insert.
+    """
     base_slug = slugify(base_slug)
-    slug = base_slug
+
+    stmt = select(models.Palette.slug).where(
+        or_(
+            models.Palette.slug == base_slug,
+            models.Palette.slug.like(f"{base_slug}-%"),
+        )
+    )
+    if current_palette_id is not None:
+        stmt = stmt.where(models.Palette.id != current_palette_id)
+
+    taken = set((await db.execute(stmt)).scalars().all())
+    return _first_free_slug(base_slug, taken)
+
+
+def _first_free_slug(base_slug: str, taken: set[str]) -> str:
+    if base_slug not in taken:
+        return base_slug
     counter = 2
-
-    while True:
-        stmt = select(models.Palette).where(models.Palette.slug == slug)
-        if current_palette_id is not None:
-            stmt = stmt.where(models.Palette.id != current_palette_id)
-
-        exists = (await db.execute(stmt)).scalars().first()
-        if not exists:
-            return slug
-
-        slug = f"{base_slug}-{counter}"
+    while f"{base_slug}-{counter}" in taken:
         counter += 1
+    return f"{base_slug}-{counter}"
 
 
 async def get_palette(db: AsyncSession, palette_id: int) -> models.Palette | None:
@@ -260,8 +274,11 @@ async def update_palette(
 ) -> models.Palette:
     data = palette_data.model_dump(exclude_unset=True)
 
-    if "name" in data and data["name"] is not None:
+    if "name" in data and data["name"] is not None and data["name"] != palette.name:
         palette.name = data["name"]
+        # Renaming re-derives the slug, which breaks any external link to the old one. Kept
+        # as-is (favorites reference the id, so no data breaks) and documented in docs/api.md.
+        # Skipped when the name is written back unchanged, which used to redo the whole lookup.
         palette.slug = await get_unique_slug(db, palette.name, current_palette_id=palette.id)
 
     if "description" in data and data["description"] is not None:
@@ -288,12 +305,30 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
     if existing_count and existing_count > 0:
         return 0
 
-    created_count = 0
+    # The table is empty, so slug collisions can only come from the batch itself — resolve
+    # them in memory. create_palette would commit and refresh once per row and run a slug
+    # query per row on top; this is one insert and one commit for the whole seed.
+    taken: set[str] = set()
+    rows: list[models.Palette] = []
     for palette_data in palettes:
-        await create_palette(db, palette_data)
-        created_count += 1
+        slug = _first_free_slug(slugify(palette_data.slug or palette_data.name), taken)
+        taken.add(slug)
+        rows.append(
+            models.Palette(
+                slug=slug,
+                name=palette_data.name,
+                description=palette_data.description,
+                colors=palette_data.colors,
+                tags=palette_data.tags,
+            )
+        )
 
-    return created_count
+    if not rows:
+        return 0
+
+    db.add_all(rows)
+    await db.commit()
+    return len(rows)
 
 
 async def get_user(db: AsyncSession, user_id: int) -> models.User | None:

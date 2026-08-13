@@ -92,6 +92,23 @@ Example:
 GET /api/v1/palettes/navy-orange
 ```
 
+**Slugs are not permanent identifiers.** A palette's slug is derived from its name, and
+renaming a palette re-derives it, so an external link to the old slug will 404. Nothing
+breaks internally — favorites and every other relation reference the numeric `id` — but if
+you are storing a reference, store `id`.
+
+Slugs are unique. A name that would collide gets a numeric suffix: `sea-breeze`,
+`sea-breeze-2`, `sea-breeze-3`.
+
+---
+
+### Searching
+
+`search` matches, case-insensitively, anywhere inside the name, description, slug **or** the
+tags. `%` and `_` are treated as literal characters, not wildcards.
+
+Use `tag` instead of `search` for an exact tag match — it is a separate, exact filter.
+
 ---
 
 ## Authentication endpoints

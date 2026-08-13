@@ -102,6 +102,38 @@ async def test_admin_create_update_delete(admin_client, admin_csrf):
     assert deleted.status_code == 204
 
 
+async def test_update_with_unchanged_name_keeps_slug(admin_client, admin_csrf):
+    created = await admin_client.post(
+        "/api/v1/palettes",
+        headers=admin_csrf,
+        json={"name": "Stable Name", "colors": ["#123456"], "tags": []},
+    )
+    palette_id, original_slug = created.json()["id"], created.json()["slug"]
+
+    updated = await admin_client.put(
+        f"/api/v1/palettes/{palette_id}",
+        headers=admin_csrf,
+        json={"name": "Stable Name", "description": "only the description moved"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["slug"] == original_slug
+
+
+async def test_seeding_gives_colliding_names_distinct_slugs(db_session):
+    created = await crud.create_many_if_empty(
+        db_session,
+        [
+            schemas.PaletteCreate(name="Same Name", colors=["#111111"], tags=[]),
+            schemas.PaletteCreate(name="Same Name", colors=["#222222"], tags=[]),
+            schemas.PaletteCreate(name="Same Name", colors=["#333333"], tags=[]),
+        ],
+    )
+    assert created == 3
+
+    slugs = [p.slug for p in await crud.get_palettes(db_session)]
+    assert sorted(slugs) == ["same-name", "same-name-2", "same-name-3"]
+
+
 async def _login(client, username, password="strong-password"):
     resp = await client.post(
         "/api/v1/auth/login", json={"username": username, "password": password}
