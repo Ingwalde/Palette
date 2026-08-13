@@ -86,6 +86,12 @@ services:
     environment:
       SECRET_KEY: test-secret-key-not-a-placeholder-0123456789
       DATABASE_URL: postgresql+asyncpg://palette:palette@test-db:5432/palette_test
+      # config.py loads env_file=".env" and the working directory is the ./backend bind-mount
+      # below, so pydantic picks up the developer's real backend/.env even though this service
+      # never declares it. Blank the outbound integrations explicitly: without this the suite
+      # posts real verification emails through Resend and ships events to production Sentry.
+      RESEND_API_KEY: ""
+      SENTRY_DSN: ""
       # The source is bind-mounted read-writable only by the host user; write coverage
       # data to /tmp so pytest-cov does not fail on a root-owned mount (e.g. in CI).
       COVERAGE_FILE: /tmp/.coverage
