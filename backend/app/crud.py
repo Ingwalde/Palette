@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, Text, cast, delete, func, or_, select
+from sqlalchemy import Select, Text, cast, delete, func, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
@@ -99,15 +99,24 @@ async def count_palettes(
     return await db.scalar(stmt) or 0
 
 
+def _tag_elements():
+    """Every tag of every palette as one row, so Postgres can aggregate instead of Python.
+
+    LATERAL because the set-returning function reads a column of the row it is joined to.
+    """
+    return func.jsonb_array_elements_text(models.Palette.tags).table_valued("value").lateral()
+
+
 async def get_tags(db: AsyncSession) -> list[str]:
-    all_tags: set[str] = set()
-
-    # tags is a JSONB array — SQLAlchemy returns a native list, no JSON parsing needed.
-    result = await db.execute(select(models.Palette.tags))
-    for (tags,) in result.all():
-        all_tags.update(tags or [])
-
-    return sorted(all_tags)
+    tags = _tag_elements()
+    stmt = (
+        select(tags.c.value)
+        .select_from(models.Palette)
+        .join(tags, true())
+        .distinct()
+        .order_by(tags.c.value)
+    )
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def get_tag_by_name(db: AsyncSession, name: str) -> models.Tag | None:
@@ -115,19 +124,36 @@ async def get_tag_by_name(db: AsyncSession, name: str) -> models.Tag | None:
     return (await db.execute(stmt)).scalars().first()
 
 
-async def _palette_tag_counts(db: AsyncSession) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    result = await db.execute(select(models.Palette.tags))
-    for (tags,) in result.all():
-        for tag in tags or []:
-            counts[tag] = counts.get(tag, 0) + 1
-    return counts
+async def palette_tag_counts(db: AsyncSession) -> dict[str, int]:
+    """How many palettes use each tag, counted in one GROUP BY rather than a full read."""
+    tags = _tag_elements()
+    stmt = (
+        select(tags.c.value, func.count())
+        .select_from(models.Palette)
+        .join(tags, true())
+        .group_by(tags.c.value)
+    )
+    return {tag: count for tag, count in (await db.execute(stmt)).all()}  # noqa: C416
+
+
+async def count_palettes_with_tag(db: AsyncSession, name: str) -> int:
+    """Usage count for a single tag. JSONB containment, so it uses the GIN index."""
+    stmt = (
+        select(func.count()).select_from(models.Palette).where(models.Palette.tags.contains([name]))
+    )
+    return await db.scalar(stmt) or 0
+
+
+async def tag_in_use(db: AsyncSession, name: str) -> bool:
+    """Whether any palette carries this tag — an indexed lookup, not an aggregate."""
+    stmt = select(models.Palette.id).where(models.Palette.tags.contains([name])).limit(1)
+    return (await db.execute(stmt)).scalars().first() is not None
 
 
 async def list_tag_catalog(db: AsyncSession) -> list[dict]:
     """Every tag known to the app: catalog rows plus any tag currently used by a palette
     but not yet in the catalog. Each entry carries its kind and palette usage count."""
-    counts = await _palette_tag_counts(db)
+    counts = await palette_tag_counts(db)
     catalog = (await db.execute(select(models.Tag))).scalars().all()
     catalog_by_name = {tag.name: tag for tag in catalog}
 

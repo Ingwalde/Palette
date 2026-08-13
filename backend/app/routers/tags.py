@@ -51,8 +51,7 @@ async def update_tag(
     # A tag may exist only inside palette JSONB arrays (not yet in the catalog); adopt it
     # into the catalog so it can be renamed / reclassified.
     if tag is None:
-        counts = await crud._palette_tag_counts(db)
-        if current_name not in counts:
+        if not await crud.tag_in_use(db, current_name):
             raise HTTPException(status_code=404, detail="Tag not found")
         tag = await crud.create_tag(db, schemas.TagCreate(name=current_name, kind="free"))
 
@@ -66,8 +65,8 @@ async def update_tag(
             )
 
     updated = await crud.update_tag(db, tag, tag_data)
-    counts = await crud._palette_tag_counts(db)
-    return {"name": updated.name, "kind": updated.kind, "count": counts.get(updated.name, 0)}
+    count = await crud.count_palettes_with_tag(db, updated.name)
+    return {"name": updated.name, "kind": updated.kind, "count": count}
 
 
 @router.delete("/{name}", status_code=status.HTTP_204_NO_CONTENT)
@@ -80,9 +79,8 @@ async def delete_tag(
 ):
     target = normalize_tag(unquote(name))
     tag = await crud.get_tag_by_name(db, target)
-    counts = await crud._palette_tag_counts(db)
 
-    if tag is None and target not in counts:
+    if tag is None and not await crud.tag_in_use(db, target):
         raise HTTPException(status_code=404, detail="Tag not found")
 
     await crud.delete_tag_everywhere(db, target)
