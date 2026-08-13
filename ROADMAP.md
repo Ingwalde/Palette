@@ -107,9 +107,11 @@ Status: completed.
 
 Status: completed.
 
-- Email verification flow: send a token link on registration, confirm before login.
-- `is_verified` + verification token on the user model.
-- SMTP configuration (dev via Mailtrap, prod via a mail provider).
+- Email verification flow: send a token link on registration; the link confirms the address
+  and signs the user in. Verification is deliberately **not** required to log in — see
+  `docs/auth.md`.
+- `email_verified` + `email_verified_at` on the user model, plus a resend endpoint.
+- Outbound email via Resend (logged to the console when no API key is configured).
 - Password reset by email.
 
 ## v4.3 — Account Management and Home Tags

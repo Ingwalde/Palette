@@ -1,168 +1,139 @@
-# Authentication Documentation
+# Authentication
 
-Palette uses username, email and password authentication.
-
----
-
-## User registration
-
-The registration form asks for:
-
-```text
-username
-email
-password
-```
-
-Endpoint:
-
-```http
-POST /api/v1/auth/register
-```
-
-The backend validates:
-
-- username format;
-- email format;
-- password length;
-- unique username;
-- unique email.
-
-New users are created with:
-
-```text
-is_admin = false
-```
+Palette authenticates with a username-or-email plus password, and keeps the session in
+httpOnly cookies. Tokens are never exposed to JavaScript.
 
 ---
 
-## Login
+## Endpoints
 
-Endpoint:
+| Method | Path | Auth | Rate limit |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | — | 10/hour |
+| `GET` | `/api/v1/auth/verify?token=` | — | — |
+| `POST` | `/api/v1/auth/resend-verification` | — | 3/hour |
+| `POST` | `/api/v1/auth/forgot-password` | — | 3/hour |
+| `POST` | `/api/v1/auth/reset-password` | — | 5/hour |
+| `POST` | `/api/v1/auth/login` | — | 5/minute |
+| `POST` | `/api/v1/auth/refresh` | refresh cookie | 30/minute |
+| `POST` | `/api/v1/auth/logout` | session | — |
+| `POST` | `/api/v1/auth/logout-all` | session | — |
+| `GET` | `/api/v1/auth/me` | session | — |
+| `PUT` | `/api/v1/auth/password` | session | 10/hour |
+| `DELETE` | `/api/v1/auth/me` | session | 5/hour |
 
-```http
-POST /api/v1/auth/login
-```
-
-The user logs in with:
-
-```text
-username
-password
-```
-
-If credentials are valid, the backend returns:
-
-```text
-access_token
-user data
-```
-
-The frontend stores the token and user data locally for development use.
+`/login` accepts **either** a username or an email in the `username` field. The strict
+username pattern must never be applied to it — doing so once broke login-by-email with a 422.
 
 ---
 
-## Bearer token
+## Session cookies
 
-Protected requests use:
+A successful login, verification or refresh sets three cookies:
 
-```http
-Authorization: Bearer your_access_token
-```
+| Cookie | httpOnly | Lifetime | Purpose |
+| --- | --- | --- | --- |
+| `access_token` | yes | `ACCESS_TOKEN_EXPIRE_MINUTES` (default 1440) | the request credential |
+| `refresh_token` | yes | `REFRESH_TOKEN_EXPIRE_DAYS` (default 30) | obtains a new access token |
+| `csrf_token` | **no** | same as refresh | echoed back in `X-CSRF-Token` |
 
-The backend reads the token, validates it and loads the current user.
+`csrf_token` is deliberately readable by JavaScript — it is the client's half of the
+double-submit pair, and carries no authority on its own. It uses the refresh lifetime so a
+`/refresh` call, itself CSRF-protected, always has a valid csrf cookie to present.
+
+Set `COOKIE_SECURE=false` for plain-http local development, or the browser drops all three.
+
+### CSRF
+
+Every mutating request from a cookie-authenticated client must send `X-CSRF-Token` matching
+the `csrf_token` cookie; the comparison is timing-safe. Enforced by middleware in `main.py`,
+not per-endpoint. The bootstrap endpoints (`login`, `register`, `resend-verification`,
+`forgot-password`, `reset-password`) are exempt because they run before any session exists.
+Requests carrying no auth cookie skip the check — they have no ambient credentials to abuse —
+and fall through to the endpoint's own authentication.
+
+---
+
+## Revocation
+
+Access tokens are stateless JWTs, so they cannot be looked up and deleted. Instead each user
+row carries `token_version`, the access token carries it as a `ver` claim, and
+`get_current_user` compares the two on every request. This costs nothing extra: that
+dependency already loads the user row.
+
+The version is bumped — ending every session at once, immediately — by:
+
+- `POST /auth/reset-password`
+- `PUT /auth/password`
+- `POST /auth/logout-all`
+
+`PUT /auth/password` re-issues the caller's cookies afterwards, so changing your password
+signs out your other devices but not the tab you are typing in.
+
+`POST /auth/logout` is narrower on purpose: it revokes the refresh token it was given and
+clears the cookies for that browser, leaving other devices alone. Use `logout-all` to end
+everything.
+
+Refresh tokens are opaque random strings; only their SHA-256 is stored. They are single-use
+and rotated on every `/refresh`, with server-side revocation.
 
 ---
 
 ## Password hashing
 
-Passwords are not stored in plain text.
-
-The backend hashes passwords with:
-
-```text
-PBKDF2-SHA256
-```
-
-The stored hash contains:
-
-```text
-algorithm name
-iteration count
-salt
-hash
-```
+New hashes use **Argon2id**. Legacy `pbkdf2_sha256` hashes are still verified and are
+transparently upgraded to Argon2 on the next successful login; they are never written for new
+passwords. The upgrade rewrites `password_hash` without the password having changed, so it
+deliberately does **not** bump `token_version` — it is not a credential change and must not
+log anyone out.
 
 ---
 
-## Personal account page
+## Email verification is not enforced
 
-The page:
+Registration emails a verification link, `GET /auth/verify` marks the account verified and
+logs the user straight in, and `POST /auth/resend-verification` re-sends it. But **nothing
+gates on `email_verified`** — not `authenticate_user`, not `login`, not `get_current_user`,
+not `require_admin_user`. An unverified account has full access.
 
-```text
-frontend/profile.html
-```
+This is deliberate, not an oversight. The field drives:
 
-allows the user to:
+- the "please verify your email" banner on the profile page;
+- the resend endpoint, which only sends for an existing *unverified* account.
 
-- view account information;
-- open favorites;
-- change password;
-- log out.
+If that ever changes, decide explicitly which endpoints stay open to unverified users —
+at minimum `login`, `verify`, `resend-verification` and read-only browsing — and update this
+section along with the change.
 
 ---
 
-## Password change
+## Password reset
 
-Endpoint:
+`POST /auth/forgot-password` emails a link to `/reset-password?token=…` on the frontend. The
+token is a JWT with a `reset_password` purpose claim, valid for
+`PASSWORD_RESET_EXPIRE_HOURS` (default 1).
 
-```http
-PUT /api/v1/auth/password
-```
+It is **single use**: the token carries the user's `token_version`, and completing a reset
+bumps it, so replaying the same link fails for the rest of its window. The purpose claim also
+means a verification token cannot be replayed as a reset token, or the reverse.
 
-Requires login.
-
-The form asks for:
-
-```text
-current password
-new password
-confirm new password
-```
-
-The backend checks:
-
-- current password is correct;
-- new password and confirmation match;
-- new password passes validation.
+Both `forgot-password` and `resend-verification` always return the same generic message
+whether or not the address is registered, so neither can be used to enumerate accounts.
 
 ---
 
 ## Admin role
 
-Admin access is controlled by:
+Authorisation is `user.is_admin`, enforced by the `require_admin_user` dependency. The
+frontend hides the Admin tab for non-admins, which is presentation only — the backend check
+is the real one.
 
-```text
-user.is_admin
-```
+`DELETE /auth/me` refuses to delete the last remaining admin, otherwise the admin panel
+becomes unreachable.
 
-Admin-only endpoints require:
+### First admin
 
-```text
-is_admin = true
-```
-
-The Admin tab is hidden on the frontend unless the logged-in user is an admin.
-
-Frontend hiding is only a UI improvement. The real protection is on the backend.
-
----
-
-## First admin user
-
-The first admin user is created automatically from `.env` if no admin exists.
-
-Environment variables:
+Seeded at startup from the environment when no admin exists:
 
 ```env
 DEFAULT_ADMIN_USERNAME=admin
@@ -170,7 +141,7 @@ DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-The admin user is seeded only when no admin exists yet. To reseed with new credentials,
-reset the database: `docker compose down -v && docker compose up --build`.
-
-Do this only for local testing, because it drops the database volume and its data.
+A placeholder password logs a warning at boot. Seeding happens only when there is no admin at
+all; to reseed you must drop the database volume
+(`docker compose down -v && docker compose up --build`), which destroys all data — local
+testing only.
