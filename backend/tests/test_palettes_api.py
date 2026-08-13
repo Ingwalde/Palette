@@ -90,7 +90,9 @@ async def test_admin_create_update_delete(admin_client, admin_csrf):
 
 
 async def _login(client, username, password="strong-password"):
-    resp = await client.post("/api/v1/auth/login", json={"username": username, "password": password})
+    resp = await client.post(
+        "/api/v1/auth/login", json={"username": username, "password": password}
+    )
     assert resp.status_code == 200
     return {"X-CSRF-Token": client.cookies.get("csrf_token", "")}
 

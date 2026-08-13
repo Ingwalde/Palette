@@ -87,8 +87,14 @@ class Favorite(Base):
     __table_args__ = (UniqueConstraint("user_id", "palette_id", name="uq_user_palette_favorite"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    palette_id: Mapped[int] = mapped_column(ForeignKey("palettes.id"), index=True, nullable=False)
+    # ON DELETE CASCADE: there is no relationship() anywhere in the app, so the database is
+    # the only thing that can clean up favorites when a user or palette goes away.
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    palette_id: Mapped[int] = mapped_column(
+        ForeignKey("palettes.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -98,7 +104,9 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     # SHA-256 hex of the opaque token; the plaintext is never stored.
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
