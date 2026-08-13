@@ -7,6 +7,48 @@ are stored **encrypted** in git as `secrets.enc.env` and decrypted at deploy tim
 
 This keeps secrets version-controlled and reviewable without exposing their values.
 
+## Production vs staging
+
+They must not share a file, and today they do — see the migration below. Two separate
+encrypted files, one per environment:
+
+| File | Decrypts to | Used by |
+| --- | --- | --- |
+| `secrets/prod.enc.env` | `backend/.env` | `.github/workflows/deploy.yml` |
+| `secrets/staging.enc.env` | `backend/.env.staging` | `docker-compose.staging.yml` |
+
+Staging gets its **own** `SECRET_KEY`, `POSTGRES_PASSWORD` and `DEFAULT_ADMIN_PASSWORD`, and
+has `RESEND_API_KEY` / `SENTRY_DSN` blanked so it cannot email real users or report into the
+production Sentry project.
+
+### Migration (one-time, on the VM)
+
+`secrets.enc.env` picked up a second copy of `POSTGRES_DB`, `DEFAULT_ADMIN_USERNAME`,
+`DEFAULT_ADMIN_EMAIL` and `DEFAULT_ADMIN_PASSWORD` — staging values appended to the production
+file. dotenv resolves duplicates **last-wins**, so production has been running on the second
+block all along, quietly, including for the admin password.
+
+Splitting the file needs the age private key, so it has to happen on the machine that holds
+it:
+
+```bash
+cd ~/Palette
+bash scripts/split-secrets.sh     # prints key names only, never values
+```
+
+The script keeps the last value for each key, so `secrets/prod.enc.env` reproduces exactly
+what production runs today — picking the first block instead would silently repoint
+`POSTGRES_DB`. It then seeds `secrets/staging.enc.env` with freshly generated credentials.
+Follow the next-steps it prints; `deploy.yml`, `docker-compose.staging.yml`, `.sops.yaml` and
+this document still reference the old single file until the split files are committed.
+
+### Key backup
+
+`.sops.yaml` currently lists a single age recipient, and its private half exists only on the
+VM. Losing that machine means losing every secret in the repo irrecoverably. Generate a second
+keypair, add its public key as an extra `age:` recipient, run `sops updatekeys` on each file,
+and store that private key somewhere off the VM.
+
 ## One-time setup
 
 Install [`sops`](https://github.com/getsops/sops) and [`age`](https://github.com/FiloSottile/age),
@@ -17,7 +59,8 @@ age-keygen -o age.key
 # prints: Public key: age1................................................
 ```
 
-- Put the **public** key into `.sops.yaml` (replace `age1REPLACE_WITH_YOUR_PUBLIC_KEY`).
+- Put the **public** key into `.sops.yaml` as an `age:` recipient (one is already configured;
+  add yours alongside it rather than replacing it, or existing files stop decrypting).
 - Keep `age.key` (the **private** key) safe. It is already covered by `.gitignore`.
 
 ## Encrypt / edit secrets

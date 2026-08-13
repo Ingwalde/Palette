@@ -10,7 +10,14 @@
 #   4. Keep age.key private. On the VM place it at ~/.config/sops/age/keys.txt
 #
 # See docs/secrets.md for the full encrypt / decrypt / deploy flow.
+# Production and staging are separate files so a staging value can never win a duplicate-key
+# race against a production one. The bare secrets.enc.env rule stays until scripts/split-secrets.sh
+# has run on the VM and the split files are committed; see docs/secrets.md.
 creation_rules:
+  - path_regex: secrets/(prod|staging)\.enc\.env$
+    input_type: dotenv
+    output_type: dotenv
+    age: "age12hyq0xjn3lyt83xp4csr06vgpvyrdztzu7kg7z09902p2qhvgssqtn7a3j"
   - path_regex: secrets\.enc\.env$
     input_type: dotenv
     output_type: dotenv
