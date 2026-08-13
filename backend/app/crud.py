@@ -425,6 +425,19 @@ async def update_user_password(
     return user
 
 
+async def bump_token_version(db: AsyncSession, user: models.User) -> models.User:
+    """Invalidate every access token already issued for this user.
+
+    Call alongside revoke_all_refresh_tokens wherever a session must end everywhere at once.
+    Deliberately not part of update_user_password: that is also used for the transparent
+    Argon2 rehash on login, which must not log anyone out.
+    """
+    user.token_version += 1
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def delete_user(db: AsyncSession, user: models.User) -> None:
     # No ON DELETE cascade, so remove dependent rows before deleting the user.
     await db.execute(delete(models.Favorite).where(models.Favorite.user_id == user.id))

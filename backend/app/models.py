@@ -67,6 +67,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Bumped whenever every session for this user must die at once (password change, password
+    # reset, logout-everywhere). Access tokens carry it as a claim, so they stop validating
+    # immediately instead of staying good until they expire. Not touched by the transparent
+    # password-hash upgrade in authenticate_user, which is not a credential change.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

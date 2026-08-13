@@ -105,7 +105,14 @@ def _encode_token(claims: dict, expires_delta: timedelta) -> str:
 
 def create_access_token(user: models.User) -> str:
     return _encode_token(
-        {"sub": str(user.id), "username": user.username, "is_admin": user.is_admin},
+        {
+            "sub": str(user.id),
+            "username": user.username,
+            "is_admin": user.is_admin,
+            # Checked against users.token_version on every request so a password change or
+            # logout-everywhere kills this token immediately rather than at expiry.
+            "ver": user.token_version,
+        },
         timedelta(minutes=settings.access_token_expire_minutes),
     )
 
@@ -128,23 +135,35 @@ def decode_email_verification_token(token: str) -> int | None:
         return None
 
 
-def create_password_reset_token(user_id: int) -> str:
+def create_password_reset_token(user: models.User) -> str:
+    """A single-use reset token.
+
+    Single use comes from the token_version claim: a successful reset bumps the row's
+    version, so the same link stops validating instead of staying good for the rest of its
+    hour. Binding to the password hash instead would misfire, because authenticate_user
+    rewrites the hash on a transparent Argon2 upgrade without the password changing.
+    """
     return _encode_token(
-        {"sub": str(user_id), "purpose": PASSWORD_RESET_PURPOSE},
+        {
+            "sub": str(user.id),
+            "purpose": PASSWORD_RESET_PURPOSE,
+            "ver": user.token_version,
+        },
         timedelta(hours=settings.password_reset_expire_hours),
     )
 
 
-def decode_password_reset_token(token: str) -> int | None:
-    """Return the user id from a valid, unexpired password reset token, else None.
+def decode_password_reset_token(token: str) -> tuple[int, int] | None:
+    """Return (user id, token version) from a valid, unexpired password reset token, else None.
 
-    The distinct purpose claim means an email-verification token cannot be replayed as a
+    The caller must still check the version against the user row — see reset_password. The
+    distinct purpose claim means an email-verification token cannot be replayed as a
     password-reset token (or vice versa)."""
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
         if payload.get("purpose") != PASSWORD_RESET_PURPOSE:
             return None
-        return int(payload["sub"])
+        return int(payload["sub"]), int(payload["ver"])
     except (InvalidTokenError, TypeError, ValueError, KeyError):
         return None
 
@@ -207,11 +226,18 @@ async def get_current_user(
         if sub is None:
             raise credentials_exception
         user_id = int(sub)
+        token_version = payload.get("ver")
     except (InvalidTokenError, TypeError, ValueError):
         raise credentials_exception from None
 
     user = await crud.get_user(db, user_id)
     if user is None:
+        raise credentials_exception
+
+    # Stale version = the session was ended server-side (password change, reset,
+    # logout-everywhere). A missing claim means a token minted before this check existed, so it
+    # is stale too — that logs everyone out once, on the release that introduces this.
+    if token_version is None or token_version != user.token_version:
         raise credentials_exception
 
     return user

@@ -175,7 +175,7 @@ async def forgot_password(
     # Only send for an existing account, but always return the same generic message so the
     # endpoint cannot be used to probe which emails are registered.
     if user is not None:
-        token = create_password_reset_token(user.id)
+        token = create_password_reset_token(user)
         background_tasks.add_task(send_password_reset_email, user.email, user.username, token)
 
     return schemas.MessageResponse(message=_RESET_GENERIC_MESSAGE)
@@ -188,18 +188,26 @@ async def reset_password(
     payload: schemas.ResetPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    user_id = decode_password_reset_token(payload.token)
+    decoded = decode_password_reset_token(payload.token)
 
-    if user_id is None:
+    if decoded is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
 
+    user_id, token_version = decoded
     user = await crud.get_user(db, user_id)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
 
+    # Single use: the bump below moves the row past this token's version, so replaying the same
+    # link within its remaining lifetime lands here. Same generic message either way.
+    if token_version != user.token_version:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
+
     await crud.update_user_password(db, user, hash_password(payload.new_password))
-    # Log out any existing sessions once the password changes.
+    # Log out any existing sessions once the password changes: refresh tokens server-side,
+    # already-issued access tokens via the version bump.
     await crud.revoke_all_refresh_tokens(db, user.id)
+    await crud.bump_token_version(db, user)
 
     return schemas.MessageResponse(message="Your password has been reset. You can now log in.")
 
@@ -289,6 +297,7 @@ async def delete_account(
 @limiter.limit("10/hour")
 async def change_password(
     request: Request,
+    response: Response,
     password_data: schemas.PasswordChange,
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -304,5 +313,22 @@ async def change_password(
         user=current_user,
         password_hash=hash_password(password_data.new_password),
     )
+    # Changing a password ends every other session, same as resetting one — this endpoint used
+    # to leave them all running. The caller keeps working: re-issue their session against the
+    # new version so they are not signed out of the tab they just used.
+    await crud.revoke_all_refresh_tokens(db, current_user.id)
+    await crud.bump_token_version(db, current_user)
 
-    return current_user
+    return await _issue_session(db, current_user, response)
+
+
+@router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_everywhere(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """Sign out of every device, including sessions this request knows nothing about."""
+    await crud.revoke_all_refresh_tokens(db, current_user.id)
+    await crud.bump_token_version(db, current_user)
+    _clear_auth_cookies(response)
