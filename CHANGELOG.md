@@ -31,30 +31,33 @@ Follow-up polish after the v4.8 React cutover.
 
 - **Deploy resilience** — the frontend image build (`npm ci` + Vite) was OOM-killing the ~1 GB
   production VM and blowing past the SSH command timeout, taking the site down. The deploy now
-  ensures a 2 GB swap file and uses a 40-minute command timeout so the build survives the small VM.
+  ensures a 2 GB swap file and uses a 40-minute command timeout; and the frontend image is built
+  in CI and pushed to GHCR so the VM only *pulls* it — no heavy build on the small box.
 
-### Changed
+## v4.8.0 — React + TypeScript frontend
 
-- Cut the vanilla frontend over to the React build: `frontend-react/` is served in production by
-  nginx from a multi-stage image; the old `frontend/` directory was removed.
-
-## v4.8.0 — React + TypeScript frontend (scaffold)
-
-First step of the frontend migration from vanilla ES modules to **React + TypeScript**. This
-release adds the new app **alongside** the existing frontend; the vanilla `frontend/` stays the
-deployed build until the React app reaches feature parity. Frontend work ships on the 4.8.x line.
+Full rewrite of the frontend from vanilla ES modules to **React 19 + TypeScript (Vite)**, ported
+1:1 to the original design and cut over to production.
 
 ### Added
 
-- **`frontend-react/`** — a Vite + React 19 + TypeScript (strict) app: routing with React Router,
-  server state with TanStack Query, an app shell (header/nav + layout), a placeholder home page,
-  and the design tokens ported from the vanilla `base.css`.
-- **Frontend tooling** — oxlint (lint), Prettier (format), Vitest + Testing Library (unit/component
-  tests), and Playwright (E2E), all wired with npm scripts; a first unit test and E2E smoke test.
+- **`frontend-react/`** — a Vite + React 19 + TypeScript (strict) app: React Router, TanStack
+  Query for server state, a typed API layer over `lib/http` (httpOnly-cookie auth, double-submit
+  CSRF, single-flight refresh-on-401), and an `AuthContext`. **All pages ported 1:1** — home
+  (grid, search, tag filters, sort, favorites), auth, favorites, export (incl. the PNG canvas),
+  profile, admin, verify, changelog. Component kit: custom select, modal, toast, error boundary,
+  password field. The vanilla CSS is reused verbatim so the app is pixel-identical.
+- **Frontend tooling** — oxlint (lint), Prettier (format), Vitest + Testing Library
+  (unit/component), and Playwright (E2E), all gated in CI (lint, type-check, tests, build).
+
+### Changed
+
+- **Cutover** — served in production by nginx from a multi-stage Docker image; the old vanilla
+  `frontend/` directory was removed.
 
 ### Notes
 
-- Backend untouched — API contracts unchanged. The vanilla frontend remains the live build.
+- Backend untouched — API contracts unchanged.
 
 ## v4.7.1 — Presentation: screenshots & diagrams
 
