@@ -44,17 +44,29 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
     return (await db.execute(stmt)).scalars().first()
 
 
+def _like_pattern(search: str) -> str:
+    """A contains-pattern with the user's own wildcards escaped.
+
+    Unescaped, a search for "%" matched every palette and "_" matched any single character —
+    not an injection, but not what anyone typing into a search box means either.
+    """
+    escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
     stmt = select(models.Palette)
 
     if search:
-        like = f"%{search.strip()}%"
+        like = _like_pattern(search)
         stmt = stmt.where(
             or_(
-                models.Palette.name.ilike(like),
-                models.Palette.description.ilike(like),
-                models.Palette.slug.ilike(like),
-                cast(models.Palette.tags, Text).ilike(like),
+                models.Palette.name.ilike(like, escape="\\"),
+                models.Palette.description.ilike(like, escape="\\"),
+                models.Palette.slug.ilike(like, escape="\\"),
+                # Matches against the JSONB rendered as text, so a search finds palettes by
+                # tag too. Backed by a trgm expression index on (tags::text) — see 0008.
+                cast(models.Palette.tags, Text).ilike(like, escape="\\"),
             )
         )
 

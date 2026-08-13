@@ -32,6 +32,19 @@ async def test_search(client, seeded):
     assert [p["name"] for p in resp.json()["items"]] == ["Beta Cold"]
 
 
+async def test_search_matches_tags(client, seeded):
+    # Tags are searchable through the JSONB-as-text branch, not just the ?tag= filter.
+    resp = await client.get("/api/v1/palettes", params={"search": "bol"})
+    assert [p["name"] for p in resp.json()["items"]] == ["Alpha Warm"]
+
+
+async def test_search_treats_wildcards_literally(client, seeded):
+    # "%" used to be passed straight into LIKE and matched every palette.
+    for pattern in ("%", "_", "%%"):
+        resp = await client.get("/api/v1/palettes", params={"search": pattern})
+        assert resp.json()["total"] == 0, f"{pattern!r} behaved as a wildcard"
+
+
 async def test_tag_filter(client, seeded):
     resp = await client.get("/api/v1/palettes", params={"tag": "warm"})
     names = {p["name"] for p in resp.json()["items"]}
