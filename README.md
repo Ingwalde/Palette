@@ -237,10 +237,10 @@ Palette/
 │   ├── tests/                # async pytest suite
 │   └── requirements*.txt
 ├── docs/                     # architecture, deploy, ops, secrets, api, auth, database, setup…
-├── scripts/                  # backup-db.sh
+├── scripts/                  # backup-db.sh, split-secrets.sh
 ├── .github/workflows/        # ci.yml, deploy.yml
-├── docker-compose.yml        # + docker-compose.staging.yml
-├── secrets.enc.env           # SOPS-encrypted secrets (safe to commit)
+├── docker-compose.yml        # + docker-compose.prod.yml, docker-compose.staging.yml
+├── secrets/                  # SOPS-encrypted prod + staging env (safe to commit)
 ├── CHANGELOG.md · ROADMAP.md
 ```
 
@@ -277,8 +277,8 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
 `CORS_ORIGINS` is a comma-separated allowlist of browser origins (never `*`). Do not commit
-`backend/.env` — it is git-ignored; production secrets live encrypted in `secrets.enc.env`
-(see [`docs/secrets.md`](docs/secrets.md)).
+`backend/.env` — it is git-ignored; production and staging secrets live encrypted under
+`secrets/` (see [`docs/secrets.md`](docs/secrets.md)).
 
 ---
 

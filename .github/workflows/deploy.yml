@@ -56,7 +56,7 @@ jobs:
             fi
             # Decrypt secrets into backend/.env (SOPS age key lives only on this VM).
             # Guard: only overwrite .env if the decrypt produced a real SECRET_KEY.
-            sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env.new
+            sops --decrypt --input-type dotenv --output-type dotenv secrets/prod.enc.env > backend/.env.new
             grep -q '^SECRET_KEY=' backend/.env.new
             mv backend/.env.new backend/.env
             # Pull the CI-built frontend image from GHCR (the VM must not build it — that OOMs the

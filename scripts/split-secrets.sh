@@ -27,6 +27,17 @@ for tool in sops openssl awk; do
 done
 [ -f "$SRC" ] || { echo "Not found: $SRC (run from the repo root)" >&2; exit 1; }
 
+# sops matches creation_rules against the path of the file being encrypted, which here is a
+# plaintext temp file that matches nothing — and it errors out rather than falling back, even
+# when --age is given. So encrypt with an empty config (--config /dev/null) and name the
+# recipient explicitly. The recipient is the public half, so reading it out of .sops.yaml is
+# safe. This script is documented as VM-only, hence /dev/null is fine.
+AGE_RECIPIENT="${AGE_RECIPIENT:-$(awk -F'"' '/^[[:space:]]*age:/ { print $2; exit }' .sops.yaml 2>/dev/null)}"
+[ -n "$AGE_RECIPIENT" ] || {
+  echo "Could not read the age recipient from .sops.yaml; pass AGE_RECIPIENT=age1... " >&2
+  exit 1
+}
+
 # Plaintext only ever exists inside this 0700 temp dir, and only for the length of the run.
 umask 077
 work="$(mktemp -d)"
@@ -78,8 +89,10 @@ set_key "$work/staging.env" PUBLIC_BASE_URL "http://localhost:5501"
 set_key "$work/staging.env" CORS_ORIGINS "http://localhost:5501"
 
 mkdir -p "$OUT_DIR"
-sops --encrypt --input-type dotenv --output-type dotenv "$work/prod.env" > "$OUT_DIR/prod.enc.env"
-sops --encrypt --input-type dotenv --output-type dotenv "$work/staging.env" > "$OUT_DIR/staging.enc.env"
+sops --encrypt --config /dev/null --age "$AGE_RECIPIENT" --input-type dotenv --output-type dotenv \
+  "$work/prod.env" > "$OUT_DIR/prod.enc.env"
+sops --encrypt --config /dev/null --age "$AGE_RECIPIENT" --input-type dotenv --output-type dotenv \
+  "$work/staging.env" > "$OUT_DIR/staging.enc.env"
 
 echo
 echo "Wrote $OUT_DIR/prod.enc.env and $OUT_DIR/staging.enc.env."
