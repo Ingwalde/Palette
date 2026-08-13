@@ -52,6 +52,11 @@ services:
     build:
       context: ./frontend-react
       dockerfile: Dockerfile
+    environment:
+      # Widens the CSP connect-src for local development only. Over plain http the app calls
+      # http://<hostname>:8000 (src/lib/apiBase.ts); in production it is same-origin behind the
+      # reverse proxy, so docker-compose.prod.yml blanks this out.
+      CONNECT_SRC_EXTRA: "http://localhost:8000 http://127.0.0.1:8000"
     ports:
       - "5500:80"
     depends_on:

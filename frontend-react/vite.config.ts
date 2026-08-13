@@ -5,8 +5,10 @@ import react from "@vitejs/plugin-react";
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Emit source maps so Sentry can symbolicate minified stack traces back to the TS source.
-  build: { sourcemap: true },
+  // "hidden": emit source maps for Sentry to symbolicate with, but omit the sourceMappingURL
+  // comment so browsers never request them. The Dockerfile deletes them before they reach
+  // nginx — a plain `true` published the entire TypeScript source at /assets/*.map.
+  build: { sourcemap: "hidden" },
   test: {
     environment: "jsdom",
     globals: true,

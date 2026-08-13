@@ -1,0 +1,12 @@
+# Production override — applied by .github/workflows/deploy.yml:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# The base file is tuned for local development, which needs a wider CSP than production
+# should ever ship. Everything else (images, ports, healthchecks) is inherited.
+services:
+  frontend:
+    environment:
+      # Production serves the API same-origin behind Caddy, so the browser never needs to
+      # reach a cross-origin API host. Empty = connect-src stays at 'self' plus Sentry.
+      CONNECT_SRC_EXTRA: ""
