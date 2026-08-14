@@ -75,7 +75,8 @@ export const card = style({
   boxShadow: vars.shadow.soft,
 });
 
-export const cardCentered = style({
+// Not exported: only verifyCard below composes it.
+const cardCentered = style({
   margin: "0 auto",
   maxWidth: "460px",
   textAlign: "center",
