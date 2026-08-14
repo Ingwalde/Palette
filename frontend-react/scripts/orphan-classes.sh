@@ -32,7 +32,9 @@ while IFS= read -r sheet; do
 done < <(find src -name '*.css' -not -name '*.module.css' 2>/dev/null)
 
 # Classes vanilla-extract still declares by name, in either quoting style:
-# globalStyle(".x", …) and globalStyle(`${scoped} .x`, …).
+# globalStyle(".x", …) and globalStyle(`${scoped} .x`, …). The backtick below is part of the
+# pattern, not a command substitution.
+# shellcheck disable=SC2016
 grep -rhoE '"\.[a-zA-Z][a-zA-Z0-9_-]*|`[^`]*\.[a-zA-Z][a-zA-Z0-9_-]*' src --include=*.css.ts \
   | grep -oE '\.[a-zA-Z][a-zA-Z0-9_-]*' | sed 's/^\.//' >> "$defined"
 
@@ -45,5 +47,5 @@ if [ -z "$orphans" ]; then
 fi
 
 echo "Class names used in markup with no rule anywhere:"
-echo "$orphans" | sed 's/^/  /'
+echo "$orphans" | awk '{ print "  " $0 }'
 exit 1
