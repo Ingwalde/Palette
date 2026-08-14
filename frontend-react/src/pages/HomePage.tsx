@@ -66,12 +66,12 @@ export function HomePage() {
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Palette v4.8.3 · Update!</p>
+          <p className={ui.eyebrow}>Palette v4.8.4 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. The React + TypeScript frontend now
-            ships with Sentry error &amp; Web&nbsp;Vitals reporting, on top of a
-            WCAG&nbsp;AA pass.
+            Search, filter, save and export palettes. This release makes every session
+            revocable, moves search onto PostgreSQL indexes, and rebuilds the styling on
+            type-checked, per-component CSS.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">

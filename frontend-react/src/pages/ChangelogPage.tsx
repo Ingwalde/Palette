@@ -9,6 +9,16 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.8.4",
+    title: "Code review remediation",
+    items: [
+      "Verification and password-reset emails link to pages that exist again; the links pointed at the vanilla frontend removed in v4.8.0.",
+      "Sessions can be ended everywhere at once, and a used reset link cannot be replayed.",
+      "Tag counts and search run as indexed PostgreSQL queries instead of scans in Python.",
+      "The stylesheet is gone: every rule is now a type-checked, per-component vanilla-extract style, verified pixel-identical by screenshot tests.",
+    ],
+  },
+  {
     version: "v4.8.3",
     title: "Frontend observability",
     items: [
