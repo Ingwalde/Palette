@@ -9,13 +9,9 @@ import { ModalProvider } from "./components/modal/ModalProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { initObservability } from "./lib/observability";
 import { App } from "./App";
-// Document-level layer: reset, tokens, typography. Already on vanilla-extract.
+// Document-level layer: reset, design tokens, typography. Everything else is scoped to the
+// component or page that owns it.
 import "./styles/global.css";
-// Component and page rules still carried over verbatim from the original frontend, which is
-// why the port came out pixel-identical. Migrating out from under these is in progress —
-// see styles/vanilla/ in the README.
-import "./styles/vanilla/components.css";
-import "./styles/vanilla/pages.css";
 
 initObservability();
 

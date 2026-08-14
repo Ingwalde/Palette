@@ -6,6 +6,7 @@ import { PaletteCard } from "../components/PaletteCard";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 function isAuthError(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 401 || error.status === 403);
@@ -62,7 +63,7 @@ export function FavoritesPage() {
             <p className="muted">{count}</p>
           </div>
           <button
-            className="button button--danger"
+            className={buttonClass("danger")}
             type="button"
             onClick={onClear}
             disabled={clearDisabled}

@@ -5,6 +5,7 @@ import { useToast } from "../components/toast/ToastProvider";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function ForgotPasswordPage() {
   const { showToast } = useToast();
@@ -53,7 +54,7 @@ export function ForgotPasswordPage() {
             <div className={auth.cardResult}>
               <h2>Check your inbox</h2>
               <p className="muted">{result}</p>
-              <Link className="button button--primary" to="/login">
+              <Link className={buttonClass("primary")} to="/login">
                 Back to login
               </Link>
             </div>
@@ -68,7 +69,7 @@ export function ForgotPasswordPage() {
               </p>
             </div>
 
-            <label className="field">
+            <label className={ui.field}>
               <span>Email</span>
               <input
                 className={ui.input}
@@ -78,13 +79,13 @@ export function ForgotPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <small className="hint" role="alert">
+              <small className={ui.hint} role="alert">
                 {error}
               </small>
             </label>
 
             <div className={ui.formActions}>
-              <button className="button button--primary" type="submit" disabled={sending}>
+              <button className={buttonClass("primary")} type="submit" disabled={sending}>
                 {sending ? "Sending…" : "Send reset link"}
               </button>
             </div>

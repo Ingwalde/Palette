@@ -6,6 +6,7 @@ import { PasswordField } from "../components/PasswordField";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
@@ -88,7 +89,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Username/Email</span>
             <input
               className={ui.input}
@@ -109,7 +110,7 @@ export function LoginPage() {
           />
 
           <div className={ui.formActions}>
-            <button className="button button--primary" type="submit" disabled={loggingIn}>
+            <button className={buttonClass("primary")} type="submit" disabled={loggingIn}>
               {loggingIn ? "Logging in..." : "Login"}
             </button>
           </div>
@@ -129,7 +130,7 @@ export function LoginPage() {
             </p>
           </div>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Username</span>
             <input
               className={ui.input}
@@ -139,12 +140,12 @@ export function LoginPage() {
               value={regUsername}
               onChange={(e) => setRegUsername(e.target.value)}
             />
-            <small className="hint">
+            <small className={ui.hint}>
               Use 3–40 characters: letters, numbers, underscore or hyphen.
             </small>
           </label>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Email</span>
             <input
               className={ui.input}
@@ -154,7 +155,7 @@ export function LoginPage() {
               value={regEmail}
               onChange={(e) => setRegEmail(e.target.value)}
             />
-            <small className="hint">Use a valid email address.</small>
+            <small className={ui.hint}>Use a valid email address.</small>
           </label>
 
           <PasswordField
@@ -168,7 +169,7 @@ export function LoginPage() {
 
           <div className={ui.formActions}>
             <button
-              className="button button--primary"
+              className={buttonClass("primary")}
               type="submit"
               disabled={registering}
             >

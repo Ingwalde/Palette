@@ -1,5 +1,6 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
+import { button } from "../styles/ui.css";
 
 const NARROW = "(max-width: 920px)";
 const PHONE = "(max-width: 680px)";
@@ -307,7 +308,7 @@ export const tagAddRow = style({
   },
 });
 
-globalStyle(`${tagAddRow} .button`, {
+globalStyle(`${tagAddRow} ${button}`, {
   justifySelf: "start",
 });
 

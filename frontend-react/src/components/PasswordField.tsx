@@ -58,7 +58,7 @@ export function PasswordField({
   const id = useId();
 
   return (
-    <label className="field" htmlFor={id}>
+    <label className={ui.field} htmlFor={id}>
       <span>{label}</span>
       <span className={styles.wrapper}>
         <input
@@ -80,7 +80,7 @@ export function PasswordField({
           {show ? eye : eyeOff}
         </button>
       </span>
-      {hint && <small className="hint">{hint}</small>}
+      {hint && <small className={ui.hint}>{hint}</small>}
     </label>
   );
 }

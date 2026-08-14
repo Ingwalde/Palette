@@ -8,6 +8,7 @@ import { ApiError } from "../lib/http";
 import type { User } from "../types/api";
 import * as layout from "../components/Layout.css";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 const SUCCESS_LINES = [
   "Boom — inbox conquered. You're in and ready to collect colors.",
@@ -98,7 +99,7 @@ export function VerifyPage() {
               <h1>You're in, {state.user.username}! 🎉</h1>
               <p className="muted">{state.line}</p>
               <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
-                <Link className="button button--primary" to="/profile">
+                <Link className={buttonClass("primary")} to="/profile">
                   Go to my account
                 </Link>
               </div>
@@ -122,7 +123,7 @@ export function VerifyPage() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <button
-                  className="button button--primary"
+                  className={buttonClass("primary")}
                   type="button"
                   onClick={onResend}
                   disabled={resending}

@@ -61,15 +61,32 @@ src/
 ├── components/           # shared UI (Layout, EmptyState, PasswordField, modal/, toast/, …)
 ├── pages/                # one component per route
 ├── lib/                  # apiBase, http, queryClient, colour + export helpers, observability
-├── styles/vanilla/       # base.css, components.css, pages.css — global, carried over
+├── styles/               # theme tokens, global layer, shared primitives (*.css.ts)
 └── test/setup.ts         # jest-dom matchers for Vitest
 e2e/                      # Playwright specs (a11y, flows, home, email links)
 ```
 
-`styles/vanilla/` is the one piece of the old frontend still in place: ~2300 lines of global
-CSS reused verbatim so the React app stayed pixel-identical through the port. It has not been
-scoped to components yet, which is why `lib/useBodyClass.ts` exists — some rules key off a
-class on `<body>`.
+## Styling
+
+**vanilla-extract**, compiled at build time to plain CSS with zero runtime. Each component and
+page owns a `*.css.ts` beside it; `styles/` holds the design tokens, the document-level layer
+(reset, typography, focus ring) and the primitives shared across the app — button, form
+controls, page furniture.
+
+Tokens are declared with `createGlobalThemeContract` against the original custom-property
+names (`--color-bg`, `--radius-md`, …). That is what let the migration proceed a component at
+a time: the not-yet-migrated global CSS kept resolving those variables untouched.
+
+Two checks keep the styling honest and neither is optional:
+
+```bash
+npm run css:orphans        # class names in markup that no stylesheet defines
+./scripts/visual.sh        # screenshot baselines, compared at zero tolerance
+```
+
+Screenshots run inside the pinned Playwright image, because rendering is host-specific — see
+`playwright.visual.config.ts`. They caught several regressions that no functional test could
+see, including layouts shifting by tens of pixels and components losing their styles outright.
 
 ## API base URL
 

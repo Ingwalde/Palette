@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportError } from "../lib/observability";
 import * as auth from "../styles/auth.css";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 interface Props {
   children: ReactNode;
@@ -33,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </p>
           <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
             <button
-              className="button button--primary"
+              className={buttonClass("primary")}
               type="button"
               onClick={() => window.location.reload()}
             >

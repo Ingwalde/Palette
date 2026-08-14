@@ -7,6 +7,7 @@ import { useToast } from "./toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import * as styles from "./PaletteCard.css";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const { isAuthenticated } = useAuth();
@@ -59,7 +60,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         </div>
         <button
           type="button"
-          className={`button button--ghost${saved ? " button--saved" : ""}`}
+          className={`${buttonClass("ghost")}${saved ? ` ${ui.buttonVariant.saved}` : ""}`}
           aria-label="Toggle favorite"
           aria-pressed={saved}
           disabled={toggleFavorite.isPending}
@@ -97,7 +98,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         </span>
         <button
           type="button"
-          className="button button--ghost"
+          className={buttonClass("ghost")}
           onClick={() => {
             void copyToClipboard(palette.name);
             showToast(`Palette name copied: ${palette.name}`);

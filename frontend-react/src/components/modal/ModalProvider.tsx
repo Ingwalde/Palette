@@ -9,6 +9,7 @@ import {
 } from "react";
 import * as styles from "./Modal.css";
 import * as ui from "../../styles/ui.css";
+import { buttonClass } from "../../styles/ui";
 
 interface BaseOptions {
   title: string;
@@ -112,12 +113,12 @@ export function ModalProvider({ children }: { children: ReactNode }) {
               />
             )}
             <div className={styles.actions}>
-              <button type="button" className="button button--ghost" onClick={cancel}>
+              <button type="button" className={buttonClass("ghost")} onClick={cancel}>
                 {state.cancelLabel ?? "Cancel"}
               </button>
               <button
                 type="button"
-                className={`button ${state.danger ? "button--danger" : "button--primary"}`}
+                className={buttonClass(state.danger ? "danger" : "primary")}
                 onClick={accept}
               >
                 {state.confirmLabel ?? "Confirm"}

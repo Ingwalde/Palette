@@ -118,8 +118,8 @@ export const logout = style({
   },
 });
 
-// The buttons beside logout stretch on a phone too. Anchored to the row rather than to the
-// still-global `.button`, so it does not reach across the whole document.
+// The buttons beside logout stretch on a phone too, anchored to the row rather than reaching
+// across the document.
 globalStyle(`${actionsMain} ${button}`, {
   "@media": {
     [PHONE]: { width: "100%", minWidth: 0 },

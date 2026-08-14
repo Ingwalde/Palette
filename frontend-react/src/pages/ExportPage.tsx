@@ -144,7 +144,7 @@ export function ExportPage() {
 
       <section className={`section ${styles.layout}`}>
         <aside className={styles.panel} aria-label="Export settings">
-          <label className="field">
+          <label className={ui.field}>
             <span>Palette source</span>
             <CustomSelect
               options={SOURCE_OPTIONS}
@@ -162,7 +162,7 @@ export function ExportPage() {
 
           {singleMode && (
             <div className={styles.picker}>
-              <label className="field">
+              <label className={ui.field}>
                 <span>Search palette</span>
                 <span className={ui.searchInputWrap}>
                   <input
@@ -219,7 +219,7 @@ export function ExportPage() {
             </div>
           )}
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Format</span>
             <CustomSelect
               options={FORMAT_OPTIONS}

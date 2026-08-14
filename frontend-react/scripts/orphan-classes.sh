@@ -3,12 +3,14 @@
 #
 #   npm run css:orphans
 #
-# During the vanilla-extract migration this is the cheapest guard there is. Removing a rule
-# from styles/vanilla is safe only if nothing still names that class in a string, and a
-# component that quietly loses its styling does not fail a single test: the unit suite asserts
-# on text, and a screenshot only covers the branches it happens to render. This check found
-# three such regressions in one run — a 404 page missing its top padding, an admin result
-# count, and the home page's empty states.
+# This was the cheapest guard during the vanilla-extract migration and it stays useful after
+# it. A component that quietly loses its styling does not fail a single test: the unit suite
+# asserts on text, and a screenshot only covers the branches it happens to render. This check
+# found four such regressions — a 404 page missing its top padding, an admin result count, the
+# home page's empty states, and the form-actions row across seven files.
+#
+# It only means anything once the rules are actually gone, so run it after deleting, not
+# before.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,19 +20,25 @@ used=$(mktemp)
 defined=$(mktemp)
 trap 'rm -f "$used" "$defined"' EXIT
 
-# Literal className="..." values only. Anything built from a template is out of scope here.
+# Literal className="..." values only. Anything built from a template is out of scope.
 grep -rhoE 'className="[^"{]+"' src --include=*.tsx \
   | sed 's/className="//; s/"$//' | tr ' ' '\n' | sort -u | grep -v '^$' > "$used"
 
-# Classes the legacy sheets still carry, plus the few that vanilla-extract declares by name.
-grep -rhoE '\.[a-zA-Z][a-zA-Z0-9_-]*' src/styles/vanilla/*.css 2>/dev/null \
-  | sed 's/^\.//' | sort -u > "$defined"
-grep -rhoE 'globalStyle\("\.[a-zA-Z0-9_-]+' \
-  src/styles/*.css.ts src/components/*.css.ts src/components/*/*.css.ts src/pages/*.css.ts 2>/dev/null \
-  | sed 's/globalStyle("\.//' >> "$defined"
+: > "$defined"
+
+# Any plain stylesheet that still exists.
+while IFS= read -r sheet; do
+  grep -rhoE '\.[a-zA-Z][a-zA-Z0-9_-]*' "$sheet" | sed 's/^\.//' >> "$defined"
+done < <(find src -name '*.css' -not -name '*.module.css' 2>/dev/null)
+
+# Classes vanilla-extract still declares by name, in either quoting style:
+# globalStyle(".x", …) and globalStyle(`${scoped} .x`, …).
+grep -rhoE '"\.[a-zA-Z][a-zA-Z0-9_-]*|`[^`]*\.[a-zA-Z][a-zA-Z0-9_-]*' src --include=*.css.ts \
+  | grep -oE '\.[a-zA-Z][a-zA-Z0-9_-]*' | sed 's/^\.//' >> "$defined"
+
 sort -u "$defined" -o "$defined"
 
-orphans=$(comm -23 "$used" "$defined")
+orphans=$(comm -23 "$used" "$defined" || true)
 if [ -z "$orphans" ]; then
   echo "No orphaned class names."
   exit 0

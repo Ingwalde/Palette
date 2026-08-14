@@ -6,6 +6,7 @@ import { PasswordField } from "../components/PasswordField";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function ResetPasswordPage() {
   const { showToast } = useToast();
@@ -63,7 +64,7 @@ export function ResetPasswordPage() {
       <div className={auth.cardResult}>
         <h2>{title}</h2>
         <p className="muted">{text}</p>
-        <Link className="button button--primary" to={to}>
+        <Link className={buttonClass("primary")} to={to}>
           {label}
         </Link>
       </div>
@@ -117,13 +118,13 @@ export function ResetPasswordPage() {
               required
             />
             {error && (
-              <small className="hint" role="alert">
+              <small className={ui.hint} role="alert">
                 {error}
               </small>
             )}
 
             <div className={ui.formActions}>
-              <button className="button button--primary" type="submit" disabled={sending}>
+              <button className={buttonClass("primary")} type="submit" disabled={sending}>
                 {sending ? "Resetting…" : "Reset password"}
               </button>
             </div>

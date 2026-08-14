@@ -21,6 +21,7 @@ import * as colorEditor from "./ColorEditor.css";
 import * as styles from "./AdminPage.css";
 import * as ui from "../styles/ui.css";
 import * as home from "./HomePage.css";
+import { buttonClass } from "../styles/ui";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -53,11 +54,11 @@ export function AdminPage() {
             <h2>{title}</h2>
             <p className="muted">{message}</p>
             <div className={ui.formActions}>
-              <Link className="button button--primary" to="/login">
+              <Link className={buttonClass("primary")} to="/login">
                 Go to login
               </Link>
               <button
-                className="button button--ghost"
+                className={buttonClass("ghost")}
                 type="button"
                 onClick={refreshAccess}
               >
@@ -268,7 +269,7 @@ function PalettesView() {
           </div>
         </div>
 
-        <label className="field">
+        <label className={ui.field}>
           <span>Name</span>
           <input
             className={ui.input}
@@ -280,7 +281,7 @@ function PalettesView() {
           />
         </label>
 
-        <label className="field">
+        <label className={ui.field}>
           <span>Description</span>
           <textarea
             className={ui.textarea}
@@ -292,7 +293,7 @@ function PalettesView() {
           />
         </label>
 
-        <div className="field">
+        <div className={ui.field}>
           <span>Colors</span>
           <div className={colorEditor.editor}>
             {colors.map((color, i) => (
@@ -313,7 +314,7 @@ function PalettesView() {
                   onChange={(e) => setColorAt(i, e.target.value)}
                 />
                 <button
-                  className={`button button--ghost ${colorEditor.remove}`}
+                  className={`${buttonClass("ghost")} ${colorEditor.remove}`}
                   type="button"
                   aria-label="Remove color"
                   onClick={() => removeColor(i)}
@@ -325,18 +326,18 @@ function PalettesView() {
           </div>
           <div className={colorEditor.footer}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               onClick={addColor}
               disabled={colors.length >= MAX_COLORS}
             >
               + Add color
             </button>
-            <small className="hint">1–8 HEX colors.</small>
+            <small className={ui.hint}>1–8 HEX colors.</small>
           </div>
         </div>
 
-        <div className="field">
+        <div className={ui.field}>
           <span>Tags</span>
           <div className={styles.tagEditor}>
             {paletteTags.map((tag) => (
@@ -405,18 +406,18 @@ function PalettesView() {
               ))}
             </div>
           </div>
-          <small className="hint">
+          <small className={ui.hint}>
             Press Enter or comma to add, or pick from the list. Up to 12 tags.
           </small>
         </div>
 
         <div className={ui.formActions}>
-          <button className="button button--primary" type="submit">
+          <button className={buttonClass("primary")} type="submit">
             {editingId !== null ? "Update palette" : "Create palette"}
           </button>
           {editingId !== null && (
             <button
-              className="button button--secondary"
+              className={buttonClass("secondary")}
               type="button"
               onClick={resetForm}
             >
@@ -488,14 +489,14 @@ function PalettesView() {
                   </div>
                   <div className={styles.itemActions}>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => onEdit(palette)}
                     >
                       Edit
                     </button>
                     <button
-                      className="button button--danger"
+                      className={buttonClass("danger")}
                       type="button"
                       onClick={() => void onDelete(palette)}
                     >
@@ -520,7 +521,7 @@ function PalettesView() {
         {total > PAGE_SIZE && (
           <div className={styles.pagination}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset === 0}
               onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
@@ -531,7 +532,7 @@ function PalettesView() {
               Page {currentPage} of {totalPages}
             </span>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset((o) => o + PAGE_SIZE)}
@@ -668,11 +669,11 @@ function TagsView() {
             onChange={(v) => setNewKind(v as TagKind)}
             ariaLabel="Tag kind"
           />
-          <button className="button button--primary" type="submit">
+          <button className={buttonClass("primary")} type="submit">
             Add tag
           </button>
         </div>
-        <small className="hint">
+        <small className={ui.hint}>
           Categories are the standard "what is this palette for" tags (shown first).
         </small>
       </form>
@@ -725,21 +726,21 @@ function TagsView() {
                   </div>
                   <div className={styles.itemActions}>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => void onToggleKind(tag)}
                     >
                       {tag.kind === "purpose" ? "Make tag" : "Make category"}
                     </button>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => void onRename(tag)}
                     >
                       Rename
                     </button>
                     <button
-                      className="button button--danger"
+                      className={buttonClass("danger")}
                       type="button"
                       onClick={() => void onDelete(tag)}
                     >
@@ -755,7 +756,7 @@ function TagsView() {
         {total > PAGE_SIZE && (
           <div className={styles.pagination}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset === 0}
               onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
@@ -766,7 +767,7 @@ function TagsView() {
               Page {currentPage} of {totalPages}
             </span>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset((o) => o + PAGE_SIZE)}
