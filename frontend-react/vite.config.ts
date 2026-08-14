@@ -14,6 +14,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Has to exceed the 5s asyncUtilTimeout set in the setup file, or a slow `findBy` would
+    // fail the test on the runner's budget before its own wait expired.
+    testTimeout: 15000,
     // Playwright specs live under e2e/ and run with their own runner, not Vitest.
     exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
     coverage: {
