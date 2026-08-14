@@ -25,7 +25,6 @@ vi.mock("./api/palettes", () => ({
   listPalettes: vi.fn(() =>
     Promise.resolve({ items: [], total: 0, limit: 100, offset: 0 }),
   ),
-  getPalette: vi.fn(),
   createPalette: vi.fn(),
   updatePalette: vi.fn(),
   deletePalette: vi.fn(),
