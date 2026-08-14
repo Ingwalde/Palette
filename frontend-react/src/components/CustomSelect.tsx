@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import * as styles from "./CustomSelect.css";
 
 export interface SelectOption {
   value: string;
@@ -12,8 +13,7 @@ interface CustomSelectProps {
   ariaLabel?: string;
 }
 
-// React port of the vanilla customSelect.js — same markup/classes (styled by the shared
-// components.css) so it is visually 1:1, with keyboard support and outside-click close.
+// Accessible listbox: keyboard support, outside-click close, and a chevron drawn in CSS.
 export function CustomSelect({ options, value, onChange, ariaLabel }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -57,12 +57,12 @@ export function CustomSelect({ options, value, onChange, ariaLabel }: CustomSele
 
   return (
     <div
-      className={`custom-select${open ? " custom-select--open" : ""}`}
+      className={`${styles.root}${open ? ` ${styles.rootOpen}` : ""}`}
       ref={wrapperRef}
     >
       <button
         type="button"
-        className="custom-select__button"
+        className={styles.button}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
@@ -76,14 +76,14 @@ export function CustomSelect({ options, value, onChange, ariaLabel }: CustomSele
           }
         }}
       >
-        <span className="custom-select__label" id={labelId}>
+        <span className={styles.label} id={labelId}>
           {selected?.label}
         </span>
-        <span className="custom-select__chevron" aria-hidden="true" />
+        <span className={styles.chevron} aria-hidden="true" />
       </button>
 
       <div
-        className="custom-select__menu"
+        className={styles.menu}
         role="listbox"
         aria-labelledby={labelId}
         hidden={!open}
@@ -97,7 +97,7 @@ export function CustomSelect({ options, value, onChange, ariaLabel }: CustomSele
               ref={(el) => {
                 optionRefs.current[i] = el;
               }}
-              className={`custom-select__option${isSelected ? " custom-select__option--selected" : ""}`}
+              className={`${styles.option}${isSelected ? ` ${styles.optionSelected}` : ""}`}
               role="option"
               aria-selected={isSelected}
               data-value={option.value}
