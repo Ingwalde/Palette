@@ -6,6 +6,8 @@ import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
 import { EmptyState } from "../components/EmptyState";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./HomePage.css";
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
 
@@ -62,21 +64,21 @@ export function HomePage() {
 
   return (
     <>
-      <section className="hero section" aria-labelledby="hero-title">
-        <div className="hero__content">
+      <section className={`section ${styles.hero}`} aria-labelledby="hero-title">
+        <div>
           <p className="eyebrow">Palette v4.8.3 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
-          <p className="hero__text">
+          <p className={ui.heroText}>
             Search, filter, save and export palettes. The React + TypeScript frontend now
             ships with Sentry error &amp; Web&nbsp;Vitals reporting, on top of a
             WCAG&nbsp;AA pass.
           </p>
-          <div className="hero__actions">
-            <a className="button button--primary" href="#palettes">
+          <div className={styles.heroActions}>
+            <a className={buttonClass("primary")} href="#palettes">
               Browse palettes
             </a>
             <button
-              className="button button--secondary"
+              className={buttonClass("secondary")}
               type="button"
               onClick={randomPalette}
             >
@@ -85,10 +87,10 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="hero-preview" aria-hidden="true">
-          <div className="hero-preview__window">
-            <div className="hero-preview__top"></div>
-            <div className="hero-preview__grid">
+        <div className={styles.heroPreview} aria-hidden="true">
+          <div className={styles.heroPreviewWindow}>
+            <div className={styles.heroPreviewTop}></div>
+            <div className={styles.heroPreviewGrid}>
               <span></span>
               <span></span>
               <span></span>
@@ -98,8 +100,8 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section toolbar-section" aria-label="Palette tools">
-        <div className="toolbar">
+      <section className={`section ${styles.toolbarSection}`} aria-label="Palette tools">
+        <div className={ui.toolbar}>
           <label className={ui.searchField} htmlFor="searchInput">
             <span className="visually-hidden">Search palettes</span>
             <input
@@ -126,12 +128,12 @@ export function HomePage() {
           />
         </div>
 
-        <div className="tag-filters" aria-label="Filter palettes by tag">
+        <div className={styles.tagFilters} aria-label="Filter palettes by tag">
           {["all", ...chips].map((name) => (
             <button
               key={name}
               type="button"
-              className={`tag-button${tag === name ? " tag-button--active" : ""}`}
+              className={`${styles.tagButton}${tag === name ? ` ${styles.tagButtonActive}` : ""}`}
               data-tag={name}
               onClick={() => setTag(name)}
             >
@@ -141,13 +143,17 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section" id="palettes" aria-labelledby="palettes-title">
-        <div className="section-heading">
+      <section
+        className={`section ${styles.palettesAnchor}`}
+        id="palettes"
+        aria-labelledby="palettes-title"
+      >
+        <div className={ui.sectionHeading}>
           <div>
             <p className="eyebrow">Backend data</p>
             <h2 id="palettes-title">Available palettes</h2>
           </div>
-          <p className="result-count" aria-live="polite">
+          <p className={styles.resultCount} aria-live="polite">
             {isLoading
               ? "Loading..."
               : isError
@@ -156,7 +162,7 @@ export function HomePage() {
           </p>
         </div>
 
-        <div className="palette-grid">
+        <div className={ui.paletteGrid}>
           {isError ? (
             <EmptyState
               title="Backend unavailable"

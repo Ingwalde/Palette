@@ -7,6 +7,7 @@ import { PasswordField } from "../components/PasswordField";
 import { queryKeys } from "../api/queryKeys";
 import { changePassword, resendVerification, deleteAccount } from "../api/auth";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
 
 export function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -101,7 +102,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <section className="page-hero page-hero--account section">
+      <section className={`section ${ui.pageHero} page-hero--account`}>
         <p className="eyebrow">Authentication</p>
         <h1>Personal account</h1>
         <p>

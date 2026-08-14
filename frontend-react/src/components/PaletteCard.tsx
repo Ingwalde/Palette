@@ -6,6 +6,7 @@ import { useFavorites, useToggleFavorite } from "../api/hooks";
 import { useToast } from "./toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import * as styles from "./PaletteCard.css";
+import * as ui from "../styles/ui.css";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const { isAuthenticated } = useAuth();
@@ -84,7 +85,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
 
       <div className={styles.tags}>
         {palette.tags.map((tag) => (
-          <span key={tag} className="tag">
+          <span key={tag} className={ui.tag}>
             #{tag}
           </span>
         ))}

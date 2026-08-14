@@ -225,3 +225,76 @@ globalStyle('input[type="search"]::-webkit-search-cancel-button', {
   appearance: "none",
   display: "none",
 });
+
+// --- Page furniture ----------------------------------------------------------------------
+// Shared by several pages, so it belongs beside the other primitives rather than in any one
+// page's stylesheet.
+
+export const pageHero = style({
+  padding: "78px 0 36px",
+});
+
+globalStyle(`${pageHero} h1`, { marginBottom: "12px" });
+
+export const heroText = style({
+  maxWidth: "620px",
+  color: vars.color.muted,
+  fontSize: "1.05rem",
+  lineHeight: 1.8,
+});
+
+globalStyle(`${pageHero} p`, {
+  maxWidth: "620px",
+  color: vars.color.muted,
+  fontSize: "1.05rem",
+  lineHeight: 1.8,
+});
+
+export const sectionHeading = style({
+  display: "flex",
+  alignItems: "flex-end",
+  justifyContent: "space-between",
+  gap: "20px",
+  marginBottom: "22px",
+  "@media": {
+    "(max-width: 680px)": { alignItems: "flex-start", flexDirection: "column" },
+  },
+});
+
+export const sectionHeadingCompact = style({
+  alignItems: "flex-start",
+});
+
+export const paletteGrid = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: "20px",
+  paddingBottom: "60px",
+  "@media": {
+    "(max-width: 920px)": { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+    "(max-width: 680px)": { gridTemplateColumns: "1fr" },
+  },
+});
+
+export const toolbar = style({
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) 210px",
+  gap: "14px",
+  marginBottom: "16px",
+  "@media": {
+    "(max-width: 680px)": { gridTemplateColumns: "1fr" },
+  },
+});
+
+/** Read-only tag pill on a palette card. `tagButton` below is the interactive filter. */
+export const tag = style({
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: "34px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  fontSize: "0.85rem",
+  fontWeight: 600,
+  color: vars.color.muted,
+  background: vars.color.surfaceStrong,
+});

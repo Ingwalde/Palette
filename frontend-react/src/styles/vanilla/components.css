@@ -50,13 +50,6 @@
   background: var(--color-primary-soft);
 }
 
-.toolbar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
 .select {
   width: 100%;
   font: inherit;
@@ -93,47 +86,6 @@
 .select:focus {
   border-color: rgba(47, 45, 42, 0.35);
   box-shadow: 0 0 0 4px rgba(48, 47, 44, 0.08);
-}
-
-.tag-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.tag-button,
-.tag {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.tag-button {
-  border: 1px solid var(--color-border);
-  color: var(--color-muted);
-  background: var(--color-surface);
-}
-
-.tag-button:hover,
-.tag-button--active {
-  color: #fff;
-  background: var(--color-primary);
-}
-
-.tag {
-  color: var(--color-muted);
-  background: var(--color-surface-strong);
-}
-
-.palette-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-  padding-bottom: 60px;
 }
 
 .field {

@@ -1,3 +1,5 @@
+import * as ui from "../styles/ui.css";
+
 interface Entry {
   version: string;
   title: string;
@@ -217,7 +219,7 @@ const CHANGELOG: Entry[] = [
 export function ChangelogPage() {
   return (
     <>
-      <section className="page-hero section">
+      <section className={`section ${ui.pageHero}`}>
         <p className="eyebrow">Project history</p>
         <h1>Changelog</h1>
         <p>

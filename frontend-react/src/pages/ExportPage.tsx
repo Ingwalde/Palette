@@ -131,7 +131,7 @@ export function ExportPage() {
 
   return (
     <>
-      <section className="page-hero section">
+      <section className={`section ${ui.pageHero}`}>
         <p className="eyebrow">Developer tools</p>
         <h1>Export palettes</h1>
         <p>
@@ -242,7 +242,7 @@ export function ExportPage() {
         </aside>
 
         <section className="export-result" aria-labelledby="export-title">
-          <div className="section-heading section-heading--compact">
+          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
             <div>
               <p className="eyebrow">Preview</p>
               <h2 id="export-title">Generated output</h2>

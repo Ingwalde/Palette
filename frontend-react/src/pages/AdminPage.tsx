@@ -20,6 +20,7 @@ import type { Palette, Tag, TagKind } from "../types/api";
 import * as colorEditor from "./ColorEditor.css";
 import * as styles from "./AdminPage.css";
 import * as ui from "../styles/ui.css";
+import * as home from "./HomePage.css";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -74,7 +75,7 @@ export function AdminPage() {
 
 function AdminHero() {
   return (
-    <section className="page-hero section">
+    <section className={`section ${ui.pageHero}`}>
       <p className="eyebrow">Admin</p>
       <h1>Manage palettes</h1>
       <p>
@@ -260,7 +261,7 @@ function PalettesView() {
   return (
     <div className={styles.view}>
       <form className={styles.form} onSubmit={onSave}>
-        <div className="section-heading section-heading--compact">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
             <p className="eyebrow">Palette</p>
             <h2>{editingId !== null ? "Edit palette" : "Add palette"}</h2>
@@ -426,12 +427,12 @@ function PalettesView() {
       </form>
 
       <section className={styles.list} aria-label="Palettes in the database">
-        <div className="section-heading section-heading--compact">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
             <p className="eyebrow">Database</p>
             <h2>Palettes in the database</h2>
           </div>
-          <p className="result-count">
+          <p className={home.resultCount}>
             {isLoading
               ? "Loading..."
               : isError
@@ -646,7 +647,7 @@ function TagsView() {
   return (
     <div className={styles.view}>
       <form className={styles.form} onSubmit={onAdd}>
-        <div className="section-heading section-heading--compact">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
             <p className="eyebrow">Tag catalog</p>
             <h2>Add a tag</h2>
@@ -677,12 +678,12 @@ function TagsView() {
       </form>
 
       <section className={styles.list} aria-label="All tags">
-        <div className="section-heading section-heading--compact">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
             <p className="eyebrow">Database</p>
             <h2>All tags</h2>
           </div>
-          <p className="result-count">
+          <p className={home.resultCount}>
             {isLoading
               ? "Loading..."
               : isError

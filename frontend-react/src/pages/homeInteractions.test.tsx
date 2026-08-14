@@ -8,6 +8,7 @@ import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import * as palettesApi from "../api/palettes";
+import * as homeStyles from "./HomePage.css";
 
 const list = {
   items: [
@@ -65,7 +66,8 @@ describe("HomePage interactions", () => {
     renderHome();
     const chip = await screen.findByRole("button", { name: "#cold" });
     await user.click(chip);
-    expect(chip.className).toMatch(/tag-button--active/);
+    // Compared against the imported style, not a literal: the class is a generated hash.
+    expect(chip.className).toContain(homeStyles.tagButtonActive);
   });
 
   it("selects a palette name into the search when clicking Random palette", async () => {

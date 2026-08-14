@@ -5,6 +5,7 @@ import { useToast } from "../components/toast/ToastProvider";
 import { PaletteCard } from "../components/PaletteCard";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
 
 function isAuthError(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 401 || error.status === 403);
@@ -48,14 +49,14 @@ export function FavoritesPage() {
 
   return (
     <>
-      <section className="page-hero section">
+      <section className={`section ${ui.pageHero}`}>
         <p className="eyebrow">Saved palettes</p>
         <h1>Your favorite palettes</h1>
         <p>Favorites are connected to your account and stored in the backend database.</p>
       </section>
 
       <section className="section">
-        <div className="section-heading">
+        <div className={ui.sectionHeading}>
           <div>
             <h2>Favorites</h2>
             <p className="muted">{count}</p>
@@ -70,7 +71,7 @@ export function FavoritesPage() {
           </button>
         </div>
 
-        <div className="palette-grid">
+        <div className={ui.paletteGrid}>
           {!isAuthenticated ? (
             <EmptyState
               title="Log in to view favorites"
