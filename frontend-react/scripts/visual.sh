@@ -25,9 +25,22 @@ fi
 # MSYS/Git Bash rewrites container-side paths that look like absolute POSIX paths.
 export MSYS_NO_PATHCONV=1
 
+# Reinstall whenever package-lock.json changes. Keying off the presence of node_modules alone
+# silently runs the suite against stale dependencies, which surfaces as an unexplained
+# webServer crash rather than anything that names the real cause.
 docker run --rm --ipc=host \
   -v "${HERE}:/work" \
   -v "${VOLUME}:/work/node_modules" \
   -w /work \
   "$IMAGE" \
-  sh -c "[ -x node_modules/.bin/playwright ] || npm ci --no-audit --no-fund; npm run ${script}"
+  sh -c '
+    set -e
+    want=$(md5sum package-lock.json | cut -d" " -f1)
+    have=$(cat node_modules/.lock-hash 2>/dev/null || echo none)
+    if [ "$want" != "$have" ]; then
+      echo "Dependencies changed ($have -> $want); installing."
+      npm ci --no-audit --no-fund
+      echo "$want" > node_modules/.lock-hash
+    fi
+    npm run '"${script}"'
+  '
