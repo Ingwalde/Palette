@@ -11,10 +11,10 @@ This keeps secrets version-controlled and reviewable without exposing their valu
 
 Two separate encrypted files, one per environment:
 
-| File | Decrypts to | Used by |
-| --- | --- | --- |
-| `secrets/prod.enc.env` | `backend/.env` | `.github/workflows/deploy.yml` |
-| `secrets/staging.enc.env` | `backend/.env.staging` | `docker-compose.staging.yml` |
+| File                      | Decrypts to            | Used by                        |
+| ------------------------- | ---------------------- | ------------------------------ |
+| `secrets/prod.enc.env`    | `backend/.env`         | `.github/workflows/deploy.yml` |
+| `secrets/staging.enc.env` | `backend/.env.staging` | `docker-compose.staging.yml`   |
 
 Staging gets its **own** `SECRET_KEY`, `POSTGRES_PASSWORD` and `DEFAULT_ADMIN_PASSWORD`, and
 has `RESEND_API_KEY` / `SENTRY_DSN` blanked so it cannot email real users or report into the

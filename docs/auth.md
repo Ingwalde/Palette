@@ -7,20 +7,20 @@ httpOnly cookies. Tokens are never exposed to JavaScript.
 
 ## Endpoints
 
-| Method | Path | Auth | Rate limit |
-| --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | — | 10/hour |
-| `GET` | `/api/v1/auth/verify?token=` | — | — |
-| `POST` | `/api/v1/auth/resend-verification` | — | 3/hour |
-| `POST` | `/api/v1/auth/forgot-password` | — | 3/hour |
-| `POST` | `/api/v1/auth/reset-password` | — | 5/hour |
-| `POST` | `/api/v1/auth/login` | — | 5/minute |
-| `POST` | `/api/v1/auth/refresh` | refresh cookie | 30/minute |
-| `POST` | `/api/v1/auth/logout` | session | — |
-| `POST` | `/api/v1/auth/logout-all` | session | — |
-| `GET` | `/api/v1/auth/me` | session | — |
-| `PUT` | `/api/v1/auth/password` | session | 10/hour |
-| `DELETE` | `/api/v1/auth/me` | session | 5/hour |
+| Method   | Path                               | Auth           | Rate limit |
+| -------- | ---------------------------------- | -------------- | ---------- |
+| `POST`   | `/api/v1/auth/register`            | —              | 10/hour    |
+| `GET`    | `/api/v1/auth/verify?token=`       | —              | —          |
+| `POST`   | `/api/v1/auth/resend-verification` | —              | 3/hour     |
+| `POST`   | `/api/v1/auth/forgot-password`     | —              | 3/hour     |
+| `POST`   | `/api/v1/auth/reset-password`      | —              | 5/hour     |
+| `POST`   | `/api/v1/auth/login`               | —              | 5/minute   |
+| `POST`   | `/api/v1/auth/refresh`             | refresh cookie | 30/minute  |
+| `POST`   | `/api/v1/auth/logout`              | session        | —          |
+| `POST`   | `/api/v1/auth/logout-all`          | session        | —          |
+| `GET`    | `/api/v1/auth/me`                  | session        | —          |
+| `PUT`    | `/api/v1/auth/password`            | session        | 10/hour    |
+| `DELETE` | `/api/v1/auth/me`                  | session        | 5/hour     |
 
 `/login` accepts **either** a username or an email in the `username` field. The strict
 username pattern must never be applied to it — doing so once broke login-by-email with a 422.
@@ -31,11 +31,11 @@ username pattern must never be applied to it — doing so once broke login-by-em
 
 A successful login, verification or refresh sets three cookies:
 
-| Cookie | httpOnly | Lifetime | Purpose |
-| --- | --- | --- | --- |
-| `access_token` | yes | `ACCESS_TOKEN_EXPIRE_MINUTES` (default 1440) | the request credential |
-| `refresh_token` | yes | `REFRESH_TOKEN_EXPIRE_DAYS` (default 30) | obtains a new access token |
-| `csrf_token` | **no** | same as refresh | echoed back in `X-CSRF-Token` |
+| Cookie          | httpOnly | Lifetime                                     | Purpose                       |
+| --------------- | -------- | -------------------------------------------- | ----------------------------- |
+| `access_token`  | yes      | `ACCESS_TOKEN_EXPIRE_MINUTES` (default 1440) | the request credential        |
+| `refresh_token` | yes      | `REFRESH_TOKEN_EXPIRE_DAYS` (default 30)     | obtains a new access token    |
+| `csrf_token`    | **no**   | same as refresh                              | echoed back in `X-CSRF-Token` |
 
 `csrf_token` is deliberately readable by JavaScript — it is the client's half of the
 double-submit pair, and carries no authority on its own. It uses the refresh lifetime so a
@@ -99,7 +99,7 @@ not `require_admin_user`. An unverified account has full access.
 This is deliberate, not an oversight. The field drives:
 
 - the "please verify your email" banner on the profile page;
-- the resend endpoint, which only sends for an existing *unverified* account.
+- the resend endpoint, which only sends for an existing _unverified_ account.
 
 If that ever changes, decide explicitly which endpoints stay open to unverified users —
 at minimum `login`, `verify`, `resend-verification` and read-only browsing — and update this

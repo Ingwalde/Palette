@@ -17,7 +17,6 @@
     "test:e2e": "playwright test",
     "test:visual": "playwright test -c playwright.visual.config.ts",
     "test:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
-    "css:report": "node scripts/css-coverage.mjs",
     "css:orphans": "bash scripts/orphan-classes.sh",
     "test:visual:docker": "bash scripts/visual.sh",
     "test:visual:docker:update": "bash scripts/visual.sh --update"

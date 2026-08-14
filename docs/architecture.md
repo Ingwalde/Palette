@@ -24,6 +24,7 @@ erDiagram
         string email UK
         string password_hash "Argon2id"
         bool is_admin
+        int token_version "bumped to revoke every issued access token"
         bool email_verified
         datetime email_verified_at
         datetime created_at
@@ -85,6 +86,10 @@ Tokens live in httpOnly cookies so XSS cannot read them. Mutations carry the rea
 `csrf_token` back in an `X-CSRF-Token` header (double-submit). Access expiry triggers a silent
 refresh that rotates the single-use refresh token.
 
+Access tokens are stateless JWTs, so they cannot be looked up and deleted. Instead they carry
+the user's `token_version` as a claim, compared against the row on every request — bumping it
+retires every token already issued, immediately. See [`auth.md`](auth.md).
+
 ```mermaid
 sequenceDiagram
     participant C as Browser
@@ -101,4 +106,9 @@ sequenceDiagram
     C->>A: POST /auth/refresh (refresh cookie)
     A->>A: rotate refresh token (old one revoked, single-use)
     A-->>C: fresh cookies, retry succeeds
+    Note over C,A: password changed / reset / logout-all
+    A->>A: users.token_version += 1
+    C->>A: request with the old access cookie
+    A->>A: claim ver != users.token_version
+    A-->>C: 401 immediately, not at expiry
 ```

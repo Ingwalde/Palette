@@ -23,19 +23,21 @@ http://localhost:8000/api/docs
 
 ## Authentication
 
-Protected endpoints use a Bearer token.
+Protected endpoints authenticate with **httpOnly cookies**, not a Bearer header — the token is
+never exposed to JavaScript. `POST /api/v1/auth/login` sets them, and the browser sends them
+automatically; from `fetch`, that means `credentials: "include"`.
 
-Header:
-
-```http
-Authorization: Bearer your_access_token
-```
-
-The token is returned by:
+Every mutating request must also echo the readable `csrf_token` cookie back in a header:
 
 ```http
-POST /api/v1/auth/login
+X-CSRF-Token: <value of the csrf_token cookie>
 ```
+
+Missing or mismatched, the request is rejected with `403` before it reaches the endpoint. The
+bootstrap endpoints (login, register, resend-verification, forgot-password, reset-password) are
+exempt, since they run before a session exists.
+
+The full endpoint list, cookie lifetimes and the revocation model are in [`auth.md`](auth.md).
 
 ---
 
@@ -148,20 +150,25 @@ Body:
 }
 ```
 
-Example response:
+Accepts a **username or an email** in the `username` field.
+
+The response body is the user. No token appears in it — the tokens are set as cookies:
 
 ```json
 {
-  "access_token": "jwt-token-here",
-  "token_type": "bearer",
-  "user": {
-    "id": 2,
-    "username": "user",
-    "email": "user@gmail.com",
-    "is_admin": false,
-    "created_at": "2026-05-08T12:00:00"
-  }
+  "id": 2,
+  "username": "user",
+  "email": "user@gmail.com",
+  "is_admin": false,
+  "email_verified": false,
+  "created_at": "2026-05-08T12:00:00Z"
 }
+```
+
+```http
+Set-Cookie: access_token=…; HttpOnly; Max-Age=86400; Path=/; SameSite=lax
+Set-Cookie: refresh_token=…; HttpOnly; Max-Age=2592000; Path=/; SameSite=lax
+Set-Cookie: csrf_token=…; Max-Age=2592000; Path=/; SameSite=lax
 ```
 
 ---
@@ -172,11 +179,7 @@ Example response:
 GET /api/v1/auth/me
 ```
 
-Headers:
-
-```http
-Authorization: Bearer your_access_token
-```
+Reads the session cookie. Returns `401` when there is none.
 
 ---
 
@@ -189,7 +192,7 @@ PUT /api/v1/auth/password
 Headers:
 
 ```http
-Authorization: Bearer your_access_token
+X-CSRF-Token: <csrf_token cookie>
 Content-Type: application/json
 ```
 
@@ -205,6 +208,27 @@ Body:
 
 ---
 
+### Session and account endpoints
+
+Documented in full — with rate limits, cookie lifetimes and the revocation model — in
+[`auth.md`](auth.md).
+
+| Method   | Path                               | Purpose                                           |
+| -------- | ---------------------------------- | ------------------------------------------------- |
+| `GET`    | `/api/v1/auth/verify?token=`       | Confirm an emailed address, then sign the user in |
+| `POST`   | `/api/v1/auth/resend-verification` | Re-send the confirmation email                    |
+| `POST`   | `/api/v1/auth/forgot-password`     | Email a reset link                                |
+| `POST`   | `/api/v1/auth/reset-password`      | Set a new password from that link (single use)    |
+| `POST`   | `/api/v1/auth/refresh`             | Rotate the refresh token and re-issue the session |
+| `POST`   | `/api/v1/auth/logout`              | End this browser's session                        |
+| `POST`   | `/api/v1/auth/logout-all`          | End every session, on every device, immediately   |
+| `DELETE` | `/api/v1/auth/me`                  | Delete the account (re-authenticates first)       |
+
+Changing or resetting a password, and `logout-all`, retire every access token already issued —
+not at expiry, but on the next request.
+
+---
+
 ## Favorites endpoints
 
 All favorites endpoints require a logged-in user.
@@ -213,12 +237,6 @@ All favorites endpoints require a logged-in user.
 
 ```http
 GET /api/v1/favorites
-```
-
-Headers:
-
-```http
-Authorization: Bearer your_access_token
 ```
 
 ---
@@ -249,11 +267,7 @@ Example:
 POST /api/v1/favorites/navy-orange
 ```
 
-Headers:
-
-```http
-Authorization: Bearer your_access_token
-```
+Mutating, so it needs the `X-CSRF-Token` header.
 
 ---
 
@@ -295,10 +309,10 @@ The following endpoints require a logged-in user with:
 is_admin = true
 ```
 
-They use the standard Bearer token header:
+They authenticate with the session cookies and, being mutations, require the CSRF header:
 
 ```http
-Authorization: Bearer admin_access_token
+X-CSRF-Token: <csrf_token cookie>
 ```
 
 ### Create palette
@@ -355,14 +369,14 @@ Returns:
 
 ## Common status codes
 
-| Code | Meaning |
-|---|---|
-| `200` | Successful request |
-| `201` | Created |
-| `204` | Deleted successfully, no content returned |
-| `400` | Invalid request or incorrect current password |
-| `401` | Missing, invalid or expired token |
-| `403` | Logged in but not admin |
-| `404` | Palette not found |
-| `409` | Username or email already registered |
-| `422` | Validation error |
+| Code  | Meaning                                                                       |
+| ----- | ----------------------------------------------------------------------------- |
+| `200` | Successful request                                                            |
+| `201` | Created                                                                       |
+| `204` | Deleted successfully, no content returned                                     |
+| `400` | Invalid request or incorrect current password                                 |
+| `401` | No session cookie, or a token that expired or was revoked                     |
+| `403` | Logged in but not admin, or a missing/mismatched `X-CSRF-Token` on a mutation |
+| `404` | Palette not found                                                             |
+| `409` | Username or email already registered                                          |
+| `422` | Validation error                                                              |

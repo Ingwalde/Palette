@@ -37,6 +37,12 @@ variable (GitHub → Settings → Variables), and let the next `main` build ship
 `scripts/backup-db.sh` dumps the `db` service to a gzipped file under `backups/` and prunes
 files older than `RETENTION_DAYS` (default 14). The `backups/` directory is git-ignored.
 
+It runs in two places: on a cron schedule, and from `deploy.yml` immediately before `up -d` —
+migrations apply automatically when the backend starts, so that is the last moment a rollback
+is cheap. The script writes to a `.part` file and renames only on success, so a failed
+`pg_dump` leaves nothing behind that looks like a usable backup; the deploy gates on its exit
+code.
+
 ```bash
 ./scripts/backup-db.sh
 ```
