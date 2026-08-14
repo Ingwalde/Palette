@@ -171,6 +171,24 @@ test("state: error toast", async ({ page }) => {
   await expect(page).toHaveScreenshot("state-error-toast.png");
 });
 
+test("admin tags view", async ({ page }) => {
+  // The tag editor, chips, suggestions and badges live only behind this tab, and nothing
+  // else in the suite renders them. Recorded before their rules move.
+  await open(page, "/admin", true);
+  await page.getByRole("tab", { name: "Tags" }).click();
+  await expect(page.getByRole("heading", { name: /tags/i }).first()).toBeVisible();
+  await settle(page);
+  await expect(page).toHaveScreenshot("admin-tags.png", { fullPage: true });
+});
+
+test("state: palette editor with colours", async ({ page }) => {
+  // The colour-row editor: pickers, hex inputs, remove buttons and the tag chips beside them.
+  await open(page, "/admin", true);
+  await page.getByRole("button", { name: "Edit" }).first().click();
+  await settle(page);
+  await expect(page).toHaveScreenshot("state-palette-editor.png", { fullPage: true });
+});
+
 test("state: confirm modal", async ({ page }) => {
   // The other route where a whole overlay appears. Reached only from the admin list, so no
   // page-level screenshot covers it.
