@@ -17,6 +17,7 @@ import { queryKeys } from "../api/queryKeys";
 import { ApiError } from "../lib/http";
 import { useDebounce } from "../lib/useDebounce";
 import type { Palette, Tag, TagKind } from "../types/api";
+import * as colorEditor from "./ColorEditor.css";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -290,18 +291,18 @@ function PalettesView() {
 
         <div className="field">
           <span>Colors</span>
-          <div className="color-editor">
+          <div className={colorEditor.editor}>
             {colors.map((color, i) => (
-              <div className="color-row" key={i}>
+              <div className={colorEditor.row} key={i}>
                 <input
-                  className="color-row__picker"
+                  className={colorEditor.picker}
                   type="color"
                   aria-label={`Colour ${i + 1} picker`}
                   value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR}
                   onChange={(e) => setColorAt(i, e.target.value.toUpperCase())}
                 />
                 <input
-                  className="input color-row__hex"
+                  className={`input ${colorEditor.hex}`}
                   type="text"
                   maxLength={7}
                   aria-label="HEX color"
@@ -309,7 +310,7 @@ function PalettesView() {
                   onChange={(e) => setColorAt(i, e.target.value)}
                 />
                 <button
-                  className="button button--ghost color-row__remove"
+                  className={`button button--ghost ${colorEditor.remove}`}
                   type="button"
                   aria-label="Remove color"
                   onClick={() => removeColor(i)}
@@ -319,7 +320,7 @@ function PalettesView() {
               </div>
             ))}
           </div>
-          <div className="color-editor__footer">
+          <div className={colorEditor.footer}>
             <button
               className="button button--ghost"
               type="button"
