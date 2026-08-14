@@ -10,12 +10,13 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { ChangelogPage } from "./pages/ChangelogPage";
 import { VerifyPage } from "./pages/VerifyPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 export function App() {
   return (
     <Routes>
-      {/* Verify uses its own bare shell (no nav/footer), like the vanilla verify page. */}
+      {/* Verify has its own bare shell — no nav or footer — so the email link lands on a
+          single-purpose page rather than the full site chrome. */}
       <Route path="verify" element={<VerifyPage />} />
 
       <Route element={<Layout />}>
@@ -28,7 +29,7 @@ export function App() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="changelog" element={<ChangelogPage />} />
-        <Route path="*" element={<PlaceholderPage name="Not found" />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
