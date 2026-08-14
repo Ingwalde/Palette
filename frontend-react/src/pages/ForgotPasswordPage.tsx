@@ -2,11 +2,10 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/auth";
 import { useToast } from "../components/toast/ToastProvider";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 
 export function ForgotPasswordPage() {
-  useBodyClass("auth-page");
   const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -39,7 +38,7 @@ export function ForgotPasswordPage() {
 
   return (
     <>
-      <section className="page-hero page-hero--auth section">
+      <section className={`section ${auth.pageHero}`}>
         <p className="eyebrow">Authentication</p>
         <h1>Forgot your password?</h1>
         <p>
@@ -47,10 +46,10 @@ export function ForgotPasswordPage() {
         </p>
       </section>
 
-      <section className="section auth-layout auth-layout--single">
+      <section className={`section ${auth.layout} ${auth.layoutSingle}`}>
         {result !== null ? (
-          <div className="auth-card">
-            <div className="auth-card__result">
+          <div className={auth.card}>
+            <div className={auth.cardResult}>
               <h2>Check your inbox</h2>
               <p className="muted">{result}</p>
               <Link className="button button--primary" to="/login">
@@ -59,7 +58,7 @@ export function ForgotPasswordPage() {
             </div>
           </div>
         ) : (
-          <form className="auth-card" onSubmit={onSubmit}>
+          <form className={auth.card} onSubmit={onSubmit}>
             <div>
               <p className="eyebrow">Reset password</p>
               <h2>Send reset link</h2>
@@ -89,7 +88,7 @@ export function ForgotPasswordPage() {
               </button>
             </div>
 
-            <p className="auth-card__aside">
+            <p className={auth.cardAside}>
               <Link to="/login">Back to login</Link>
             </p>
           </form>

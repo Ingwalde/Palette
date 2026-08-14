@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportError } from "../lib/observability";
+import * as auth from "../styles/auth.css";
 
 interface Props {
   children: ReactNode;
@@ -23,8 +24,8 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (!this.state.hasError) return this.props.children;
     return (
-      <main className="verify-shell">
-        <div className="auth-card auth-card--centered">
+      <main className={auth.verifyShell}>
+        <div className={`${auth.card} ${auth.verifyCard}`}>
           <h1>Something went wrong</h1>
           <p className="muted">
             An unexpected error occurred. Reloading the page usually fixes it.

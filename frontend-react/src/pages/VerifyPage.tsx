@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { verifyEmail, resendVerification } from "../api/auth";
 import { queryKeys } from "../api/queryKeys";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import type { User } from "../types/api";
 
@@ -20,7 +20,6 @@ type State =
   | { status: "error"; message: string };
 
 export function VerifyPage() {
-  useBodyClass("auth-page");
   const [params] = useSearchParams();
   const queryClient = useQueryClient();
   const [state, setState] = useState<State>({ status: "pending" });
@@ -83,8 +82,8 @@ export function VerifyPage() {
         </Link>
       </header>
 
-      <main className="verify-shell">
-        <div className="auth-card auth-card--centered">
+      <main className={auth.verifyShell}>
+        <div className={`${auth.card} ${auth.verifyCard}`}>
           {state.status === "pending" && (
             <>
               <h1>Verifying your email…</h1>

@@ -1189,12 +1189,6 @@ input[type="search"]::-webkit-search-cancel-button {
   justify-content: center;
 }
 
-.auth-card--centered {
-  margin: 0 auto;
-  max-width: 460px;
-  text-align: center;
-}
-
 .form-actions--centered {
   justify-content: center;
 }
@@ -1266,17 +1260,4 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: center;
   gap: 12px;
   margin-top: 8px;
-}
-
-/* Verify page: center the card in the viewport with breathing room below the header. */
-.verify-shell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 160px);
-  padding: clamp(32px, 8vh, 96px) 16px 48px;
-}
-
-.verify-shell .auth-card--centered {
-  width: min(460px, 100%);
 }

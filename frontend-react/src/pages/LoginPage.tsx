@@ -3,14 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 
 export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  useBodyClass("auth-page");
 
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -69,7 +68,7 @@ export function LoginPage() {
 
   return (
     <>
-      <section className="page-hero page-hero--auth section">
+      <section className={`section ${auth.pageHero}`}>
         <p className="eyebrow">Authentication</p>
         <h1>Login to Palette</h1>
         <p>
@@ -78,8 +77,8 @@ export function LoginPage() {
         </p>
       </section>
 
-      <section className="section auth-layout">
-        <form className="auth-card" onSubmit={onLogin}>
+      <section className={`section ${auth.layout}`}>
+        <form className={auth.card} onSubmit={onLogin}>
           <div>
             <p className="eyebrow">Existing account</p>
             <h2>Login</h2>
@@ -114,12 +113,12 @@ export function LoginPage() {
             </button>
           </div>
 
-          <p className="auth-card__aside">
+          <p className={auth.cardAside}>
             <Link to="/forgot-password">Forgot password?</Link>
           </p>
         </form>
 
-        <form className="auth-card" onSubmit={onRegister}>
+        <form className={auth.card} onSubmit={onRegister}>
           <div>
             <p className="eyebrow">New account</p>
             <h2>Create account</h2>
