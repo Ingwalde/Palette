@@ -99,6 +99,37 @@ jobs:
           path: frontend-react/playwright-report/
           retention-days: 7
 
+  visual:
+    name: Visual baselines (Playwright screenshots)
+    runs-on: ubuntu-latest
+    # Screenshot diffs are only meaningful when rendering is identical to the machine that
+    # recorded the baselines, so this job runs in the same pinned image the local
+    # scripts/visual.sh uses. Keep the tag in step with @playwright/test in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compare against the committed baselines
+        run: npm run test:visual
+
+      - name: Upload the diff on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            frontend-react/playwright-report/
+            frontend-react/test-results/
+          retention-days: 7
+
   frontend-react:
     name: Frontend (React) — lint · types · test · build
     runs-on: ubuntu-latest

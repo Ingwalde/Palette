@@ -1,0 +1,12 @@
+/* Injected only while a baseline is captured — never shipped.
+ *
+ * A full-page screenshot is stitched while Playwright scrolls the document, so anything
+ * sticky travels with the viewport and lands in a different place in each pass. Playwright
+ * then keeps re-shooting, waiting for two identical frames, and times out. Pinning these for
+ * the duration of the capture makes the result deterministic; their normal positioning is
+ * still exercised by the functional specs. */
+.site-header,
+.export-panel,
+.admin-form {
+  position: static !important;
+}
