@@ -25,8 +25,8 @@ services:
     build: ./backend
     env_file: backend/.env
     environment:
-      # Container-only DB URL (host `db` resolves on the compose network). Overrides
-      # the SQLite default so local non-Docker runs stay on SQLite.
+      # Container-only DB URL (host `db` resolves on the compose network). PostgreSQL is
+      # mandatory — there has been no SQLite fallback since v4.0 (see docs/database.md).
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-palette}:${POSTGRES_PASSWORD:-palette}@db:5432/${POSTGRES_DB:-palette}
       # Shared rate-limit storage so limits hold across worker processes / instances.
       REDIS_URL: redis://redis:6379
@@ -78,7 +78,11 @@ services:
       retries: 10
 
   tests:
-    build: ./backend
+    build:
+      context: ./backend
+      # pytest, ruff and mypy live in requirements-dev.txt and are only installed here.
+      args:
+        INSTALL_DEV: "true"
     profiles: ["test"]
     depends_on:
       test-db:

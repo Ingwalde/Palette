@@ -1,6 +1,12 @@
 # Development / CI tooling. Install with: pip install -r backend/requirements-dev.txt
+#
+# Also installed into the image when it is built with --build-arg INSTALL_DEV=true, which is
+# what the `tests` service in docker-compose.yml does. The production image never gets these.
 -r requirements.txt
 
 ruff==0.16.1
 mypy==2.3.0
+pytest==9.1.1
 pytest-cov==7.1.0
+pytest-asyncio==1.4.0
+pip-audit==2.9.0

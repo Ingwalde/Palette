@@ -7,9 +7,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install deps first for layer caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install deps first for layer caching.
+#
+# INSTALL_DEV=true additionally installs the test/lint toolchain. The `tests` service in
+# docker-compose.yml builds with it; production does not, so pytest and friends stay out of
+# the deployed image.
+ARG INSTALL_DEV=false
+COPY requirements.txt requirements-dev.txt ./
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+        pip install --no-cache-dir -r requirements-dev.txt; \
+    else \
+        pip install --no-cache-dir -r requirements.txt; \
+    fi
 
 # App code + database migrations
 COPY app ./app
