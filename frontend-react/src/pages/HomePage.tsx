@@ -4,6 +4,7 @@ import { useDebounce } from "../lib/useDebounce";
 import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
+import { EmptyState } from "../components/EmptyState";
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
 
@@ -156,20 +157,20 @@ export function HomePage() {
 
         <div className="palette-grid">
           {isError ? (
-            <div className="empty-state">
-              <h3>Backend unavailable</h3>
-              <p>Could not reach the backend API. Start the stack and try again.</p>
-            </div>
+            <EmptyState
+              title="Backend unavailable"
+              text="Could not reach the backend API. Start the stack and try again."
+            />
           ) : isLoading ? (
-            <div className="empty-state">
-              <h3>Loading palettes</h3>
-              <p>The frontend is requesting data from the backend API.</p>
-            </div>
+            <EmptyState
+              title="Loading palettes"
+              text="The frontend is requesting data from the backend API."
+            />
           ) : palettes.length === 0 ? (
-            <div className="empty-state">
-              <h3>No palettes found</h3>
-              <p>Try another name, tag or filter.</p>
-            </div>
+            <EmptyState
+              title="No palettes found"
+              text="Try another name, tag or filter."
+            />
           ) : (
             palettes.map((palette) => <PaletteCard key={palette.id} palette={palette} />)
           )}

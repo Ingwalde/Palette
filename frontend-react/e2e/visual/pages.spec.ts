@@ -145,6 +145,19 @@ test("state: password revealed", async ({ page }) => {
   await expect(page).toHaveScreenshot("state-password-revealed.png");
 });
 
+test("state: home with no results", async ({ page }) => {
+  // The home grid has its own empty branches. They went unstyled for several commits because
+  // no baseline stubs an empty palette list — the page shot always has results.
+  await stub(page, { loggedIn: false });
+  await page.route("**/api/v1/palettes*", (r) =>
+    r.fulfill({ json: { items: [], total: 0, limit: 100, offset: 0 } }),
+  );
+  await page.goto("/", { waitUntil: "networkidle" });
+  await settle(page);
+  await expect(page.getByRole("heading", { name: "No palettes found" })).toBeVisible();
+  await expect(page).toHaveScreenshot("state-home-empty.png", { fullPage: true });
+});
+
 test("state: error toast", async ({ page }) => {
   // Nothing else in the suite renders a toast, so without this the toast styles migrate
   // with no visual cover at all.
