@@ -47,10 +47,23 @@ every key matched. The script is kept for reference and is not part of any routi
 
 ### Key backup
 
-`.sops.yaml` currently lists a single age recipient, and its private half exists only on the
-VM. Losing that machine means losing every secret in the repo irrecoverably. Generate a second
-keypair, add its public key as an extra `age:` recipient, run `sops updatekeys` on each file,
-and store that private key somewhere off the VM.
+`.sops.yaml` lists **two** age recipients, and either private half alone decrypts every file:
+one on the VM, one on the workstation, both at `~/.config/sops/age/keys.txt`. Losing one
+machine is now an inconvenience rather than the permanent loss of every secret in the repo.
+
+Keep it that way. When a machine is retired, add its replacement as a recipient and run
+`sops updatekeys` **before** wiping the old key — re-keying has to decrypt before it can
+re-encrypt, so the last surviving key is also the only thing that can grant a new one.
+
+Re-keying happens from a machine that already holds one of the private keys:
+
+```bash
+sops updatekeys secrets/prod.enc.env
+sops updatekeys secrets/staging.enc.env
+```
+
+Do it in a scratch copy rather than the VM's deploy checkout — the deploy refuses to overwrite
+local modifications, so editing files in place there aborts the next release.
 
 ## One-time setup
 
@@ -62,9 +75,15 @@ age-keygen -o age.key
 # prints: Public key: age1................................................
 ```
 
-- Put the **public** key into `.sops.yaml` as an `age:` recipient (one is already configured;
-  add yours alongside it rather than replacing it, or existing files stop decrypting).
+- Put the **public** key into `.sops.yaml` as an `age:` recipient — the list is comma-separated
+  with no spaces, since sops splits on the comma and does not trim. Add yours alongside the two
+  already configured rather than replacing them, or the existing files stop decrypting.
 - Keep `age.key` (the **private** key) safe. It is already covered by `.gitignore`.
+
+On Windows, note that sops matches `path_regex` against the path your shell hands it, so
+`secrets\prod.enc.env` needs the rule to accept a backslash. The committed rule already does; a
+forward-slash-only rule fails with the unhelpful `no matching creation rules found` even though
+the file is right there.
 
 ## Encrypt / edit secrets
 
