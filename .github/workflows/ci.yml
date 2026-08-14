@@ -221,7 +221,7 @@ jobs:
         run: |
           CHROME_PATH=$(find /ms-playwright -type f -name chrome -perm -u+x | head -1)
           export CHROME_PATH
-          npx lhci autorun --config=lighthouserc.json \
+          npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.json \
             --collect.settings.chromeFlags="--no-sandbox --disable-dev-shm-usage"
 
       - name: Upload the reports

@@ -9,6 +9,12 @@
 # like a failure and is not one.
 #
 # The image ships Chromium; Lighthouse finds it through CHROME_PATH.
+#
+# @lhci/cli is fetched at run time at a pinned version rather than being a devDependency. Its
+# tree reaches extract-zip through puppeteer, which carries a high-severity advisory with no
+# fixed version at all, so committing it would mean either a permanently red `npm audit` or
+# narrowing that audit for every dev dependency to hide one. Fetching it here keeps the audit
+# strict and costs one download per run.
 set -euo pipefail
 
 IMAGE="mcr.microsoft.com/playwright:v1.62.1-noble"
@@ -41,6 +47,6 @@ docker run --rm --ipc=host \
     # there; --disable-dev-shm-usage because the default /dev/shm in a container is 64 MB and
     # Chrome crashes part-way through an audit when it fills. Both belong to running in a
     # container, not to the project, so they live here rather than in lighthouserc.json.
-    npx lhci autorun --config=lighthouserc.json \
+    npx --yes @lhci/cli@0.15.1 autorun --config=lighthouserc.json \
       --collect.settings.chromeFlags="--no-sandbox --disable-dev-shm-usage" "$@"
   ' sh "$@"
