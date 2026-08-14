@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
+import { buttonClass } from "../styles/ui";
 
 // The catch-all route. Kept as a real 404 page rather than a migration placeholder: nginx
 // serves index.html for every unknown path, so this is what a visitor actually sees when a
 // URL is wrong or stale.
+//
+// First consumer of the vanilla-extract button, chosen because it is small and already has a
+// screenshot baseline — so the baseline is what proves the new primitive matches the old CSS.
 export function NotFoundPage() {
   return (
     <section className="section page-hero">
@@ -13,10 +17,10 @@ export function NotFoundPage() {
         a typo in it.
       </p>
       <div className="hero__actions">
-        <Link className="button button--primary" to="/">
+        <Link className={buttonClass("primary")} to="/">
           Back to palettes
         </Link>
-        <Link className="button" to="/export">
+        <Link className={buttonClass()} to="/export">
           Export tools
         </Link>
       </div>
