@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import * as styles from "./PasswordField.css";
 
 const eyeOff = (
   <svg
@@ -43,7 +44,7 @@ interface PasswordFieldProps {
   required?: boolean;
 }
 
-// Text field with the vanilla eye show/hide toggle (same .password-field / .password-toggle markup).
+// Text input with an eye toggle that reveals the value in place.
 export function PasswordField({
   label,
   value,
@@ -58,7 +59,7 @@ export function PasswordField({
   return (
     <label className="field" htmlFor={id}>
       <span>{label}</span>
-      <span className="password-field">
+      <span className={styles.wrapper}>
         <input
           id={id}
           className="input"
@@ -70,7 +71,7 @@ export function PasswordField({
         />
         <button
           type="button"
-          className="password-toggle"
+          className={styles.toggle}
           aria-label={show ? "Hide password" : "Show password"}
           aria-pressed={show}
           onClick={() => setShow((s) => !s)}
