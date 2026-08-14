@@ -171,6 +171,16 @@ test("state: error toast", async ({ page }) => {
   await expect(page).toHaveScreenshot("state-error-toast.png");
 });
 
+test("state: confirm modal", async ({ page }) => {
+  // The other route where a whole overlay appears. Reached only from the admin list, so no
+  // page-level screenshot covers it.
+  await open(page, "/admin", true);
+  await page.getByRole("button", { name: "Delete" }).first().click();
+  await expect(page.getByRole("dialog", { name: "Delete palette" })).toBeVisible();
+  await settle(page);
+  await expect(page).toHaveScreenshot("state-confirm-modal.png");
+});
+
 test("state: empty list", async ({ page }) => {
   // EmptyState is rendered by Favorites and Admin, not the home grid.
   await stub(page, { loggedIn: true });
