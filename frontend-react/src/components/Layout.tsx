@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef } from "react";
+import { Suspense, useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { RouteAnnouncer } from "./RouteAnnouncer";
+import { RouteFallback } from "./RouteFallback";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
 
@@ -90,7 +91,11 @@ export function Layout() {
       {/* tabIndex -1 so the skip link and the route change can both put focus here; it is not
           in the tab order itself. */}
       <main id="main-content" tabIndex={-1}>
-        <Outlet />
+        {/* The boundary sits inside <main>, not around the whole shell, so a route chunk
+            arriving never blanks the header, nav and footer the user is already looking at. */}
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <RouteAnnouncer mainId="main-content" />

@@ -1,5 +1,34 @@
-import { globalStyle } from "@vanilla-extract/css";
+import { globalFontFace, globalStyle } from "@vanilla-extract/css";
 import { vars } from "./theme.css";
+
+/**
+ * Poppins, served from this origin instead of fonts.googleapis.com.
+ *
+ * The stylesheet link Google gives you is render-blocking and lives on a third-party host, so
+ * first paint waited on a DNS lookup, a TLS handshake and a CSS round trip before it could
+ * even discover which font file to request. Serving the four weights ourselves — 31 kB of
+ * woff2 for the latin subset — removes that chain, and lets the CSP drop both
+ * fonts.googleapis.com and fonts.gstatic.com. Nothing about the page reaches Google now.
+ *
+ * These are the latin subsets of the same v24 files Google was serving, so the glyphs are
+ * identical; the screenshot baselines are what confirms it.
+ *
+ * Weights 400/500/600/700 only, matching what the old link requested. Two rules ask for 800,
+ * which was never loaded then either — the browser has always synthesised or rounded it.
+ */
+const WEIGHTS = [400, 500, 600, 700] as const;
+for (const weight of WEIGHTS) {
+  globalFontFace("Poppins", {
+    src: `url("/fonts/poppins-${weight}.woff2") format("woff2")`,
+    fontWeight: weight,
+    fontStyle: "normal",
+    // Show the fallback immediately and swap when Poppins lands, rather than holding text
+    // invisible: the same behaviour Google's `&display=swap` was asking for.
+    fontDisplay: "swap",
+    unicodeRange:
+      "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+  });
+}
 
 /**
  * The document-level layer: reset, typography, focus ring, and the handful of utility classes

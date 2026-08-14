@@ -70,9 +70,13 @@ describe("App shell", () => {
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
-  it("renders a real 404 for an unknown route", () => {
+  it("renders a real 404 for an unknown route", async () => {
     renderAt("/nope");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Not found");
+    // Awaited, not synchronous: every route below the landing page is code-split now, so the
+    // page arrives a microtask later through its Suspense boundary.
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      "Not found",
+    );
     expect(screen.getByText("404")).toBeInTheDocument();
     // A dead end needs a way out; the old placeholder offered none.
     expect(screen.getByRole("link", { name: /back to palettes/i })).toHaveAttribute(

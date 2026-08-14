@@ -191,3 +191,43 @@ jobs:
           # Public frontend DSN, safe to inline in the client bundle. Unset repo variable = off.
           build-args: |
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
+
+  lighthouse:
+    name: Performance budget (Lighthouse)
+    runs-on: ubuntu-latest
+    # Same pinned image as the screenshots, for the same reason and one more: it ships the
+    # Chromium that Lighthouse drives, so the browser version is fixed rather than whatever the
+    # runner image happens to carry this month.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      # Asset sizes are asserted as errors and fail this job; the timing metrics are warnings.
+      # Lab timings on a shared runner move between runs on identical code, so treating them as
+      # a gate would mean red builds that a re-run turns green — which teaches everyone to
+      # re-run instead of to look. Sizes are deterministic, so those are the real gate.
+      - name: Collect and assert
+        run: |
+          CHROME_PATH=$(find /ms-playwright -type f -name chrome -perm -u+x | head -1)
+          export CHROME_PATH
+          npx lhci autorun --config=lighthouserc.json \
+            --collect.settings.chromeFlags="--no-sandbox --disable-dev-shm-usage"
+
+      - name: Upload the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend-react/.lighthouseci/
+          retention-days: 7

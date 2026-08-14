@@ -58,7 +58,10 @@ test("navigating moves focus to the main landmark", async ({ page }) => {
 
   await page.getByRole("link", { name: "Export", exact: true }).click();
   await expect(page).toHaveURL(/\/export$/);
-  expect(await activeId(page)).toBe("main-content");
+  // toBeFocused retries; a one-shot read of document.activeElement does not. The URL changes
+  // as soon as the router navigates, but the focus move happens when React commits the new
+  // page — and with the route code-split, that can be a chunk request later.
+  await expect(page.locator("#main-content")).toBeFocused();
 });
 
 test("the new page is announced", async ({ page }) => {
@@ -85,7 +88,7 @@ test("the skip link is the first thing the keyboard reaches, and it works", asyn
   await expect(skip).toBeFocused();
 
   await page.keyboard.press("Enter");
-  expect(await activeId(page)).toBe("main-content");
+  await expect(page.locator("#main-content")).toBeFocused();
 });
 
 test("an open dialog keeps the keyboard inside it and gives focus back", async ({
@@ -114,4 +117,42 @@ test("an open dialog keeps the keyboard inside it and gives focus back", async (
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(remove).toBeFocused();
+});
+
+// Holds a route's code-split chunk back, so the tests below see the slow-network behaviour
+// rather than the local one where it arrives within a frame.
+async function delayChunk(page: Page, pattern: string, ms: number) {
+  await page.route(pattern, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    await route.continue();
+  });
+}
+
+test("a slow route chunk is still announced by name, not by document title", async ({
+  page,
+}) => {
+  await stub(page, { loggedIn: false });
+  await delayChunk(page, "**/assets/FavoritesPage-*.js", 600);
+
+  await page.goto("/");
+  await page.getByRole("link", { name: "Favorites", exact: true }).click();
+
+  // React holds the previous page until the chunk resolves, so the announcement fires after
+  // the new heading exists — it names the page rather than falling back to the site title.
+  await expect(page.getByRole("status").filter({ hasText: /page loaded/ })).toContainText(
+    /favorite palettes/i,
+  );
+});
+
+test("landing directly on a lazy route shows the loading state", async ({ page }) => {
+  await stub(page, { loggedIn: false });
+  await delayChunk(page, "**/assets/FavoritesPage-*.js", 800);
+
+  // No previous page to hold on to, so the Suspense boundary is what fills <main>. This is the
+  // bookmark and email-link case, and the only one where the fallback is ever visible.
+  await page.goto("/favorites", { waitUntil: "commit" });
+  await expect(
+    page.getByRole("status").filter({ hasText: "Loading page" }),
+  ).toBeAttached();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 });
