@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import * as styles from "./Toast.css";
 
 type ToastKind = "info" | "error";
 interface Toast {
@@ -35,12 +36,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext value={{ showToast }}>
       {children}
-      <div className="toast-container" aria-live="polite" aria-atomic="true">
+      <div className={styles.container} aria-live="polite" aria-atomic="true">
         {toasts.map((t) => (
           <div
             key={t.id}
             role="status"
-            className={`toast${t.kind === "error" ? " toast--error" : ""}`}
+            className={`${styles.toast}${t.kind === "error" ? ` ${styles.error}` : ""}`}
           >
             {t.message}
           </div>

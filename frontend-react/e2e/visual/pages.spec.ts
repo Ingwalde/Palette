@@ -145,6 +145,32 @@ test("state: password revealed", async ({ page }) => {
   await expect(page).toHaveScreenshot("state-password-revealed.png");
 });
 
+test("state: error toast", async ({ page }) => {
+  // Nothing else in the suite renders a toast, so without this the toast styles migrate
+  // with no visual cover at all.
+  await stub(page, { loggedIn: false });
+  await page.route("**/api/v1/auth/reset-password", (r) =>
+    r.fulfill({
+      status: 400,
+      json: { detail: "Invalid or expired password reset link" },
+    }),
+  );
+  await page.goto("/reset-password?token=baseline", { waitUntil: "networkidle" });
+  await settle(page);
+
+  const passwords = page.locator('input[type="password"]');
+  await passwords.nth(0).fill("newpassword1");
+  await passwords.nth(1).fill("newpassword1");
+  await page.getByRole("button", { name: "Reset password" }).click();
+
+  // The same message lands inline and in the toast; role="status" is the toast.
+  await expect(page.getByRole("status")).toHaveText(
+    "Invalid or expired password reset link",
+  );
+  await settle(page);
+  await expect(page).toHaveScreenshot("state-error-toast.png");
+});
+
 test("state: empty list", async ({ page }) => {
   // EmptyState is rendered by Favorites and Admin, not the home grid.
   await stub(page, { loggedIn: true });
