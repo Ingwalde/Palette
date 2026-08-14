@@ -504,43 +504,6 @@ input[type="search"] {
   white-space: nowrap;
 }
 
-.empty-state {
-  grid-column: 1 / -1;
-  padding: 44px 24px;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  background: rgba(255, 250, 242, 0.58);
-  animation: empty-state-in 550ms ease both;
-}
-
-@keyframes empty-state-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.empty-state h3 {
-  margin-bottom: 8px;
-  animation: empty-line-in 500ms ease 120ms both;
-}
-
-.empty-state p {
-  margin-bottom: 0;
-  color: var(--color-muted);
-  animation: empty-line-in 500ms ease 280ms both;
-}
-
-.empty-state__action {
-  margin-top: 20px;
-  animation: empty-line-in 500ms ease 400ms both;
-}
-
 /* Confirmation / prompt modal */
 .modal-overlay {
   position: fixed;
@@ -610,25 +573,6 @@ input[type="search"] {
 @media (prefers-reduced-motion: reduce) {
   .modal-overlay,
   .modal {
-    animation: none;
-  }
-}
-
-@keyframes empty-line-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .empty-state,
-  .empty-state h3,
-  .empty-state p {
     animation: none;
   }
 }

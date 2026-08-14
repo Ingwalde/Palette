@@ -122,21 +122,26 @@ for (const { name, path, fullPage = true } of ADMIN_ROUTES) {
 // --- States only reachable through interaction -----------------------------------------
 // Coverage tools and route-level screenshots both miss these, and they carry some of the
 // fiddliest CSS in the project.
+//
+// Located by role and accessible name, never by CSS class: the whole point of the migration
+// is that class names become generated hashes, so a class-based locator would break on the
+// commit that moves its component.
 
 test("state: sort select open", async ({ page }) => {
   await open(page, "/");
-  await page.getByRole("button", { name: "Sort palettes" }).click();
-  await expect(page.locator(".custom-select--open")).toBeVisible();
+  const sort = page.getByRole("button", { name: "Sort palettes" });
+  await sort.click();
+  await expect(sort).toHaveAttribute("aria-expanded", "true");
   await expect(page).toHaveScreenshot("state-select-open.png");
 });
 
 test("state: password revealed", async ({ page }) => {
   await open(page, "/login");
-  const field = page.locator(".password-field").first();
   // A password input has no implicit ARIA role, so it is not reachable by getByRole.
-  await field.locator("input").fill("hunter2");
-  await field.locator(".password-toggle").click();
-  await expect(field.locator("input")).toHaveAttribute("type", "text");
+  const input = page.locator('input[type="password"]').first();
+  await input.fill("hunter2");
+  await page.getByRole("button", { name: "Show password" }).first().click();
+  await expect(page.getByRole("button", { name: "Hide password" }).first()).toBeVisible();
   await expect(page).toHaveScreenshot("state-password-revealed.png");
 });
 
@@ -146,6 +151,6 @@ test("state: empty list", async ({ page }) => {
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: [] }));
   await page.goto("/favorites", { waitUntil: "networkidle" });
   await settle(page);
-  await expect(page.locator(".empty-state")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No favorites yet" })).toBeVisible();
   await expect(page).toHaveScreenshot("state-empty-list.png", { fullPage: true });
 });
