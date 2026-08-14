@@ -43,9 +43,12 @@ describe("RouteAnnouncer", () => {
 
     await user.click(screen.getByRole("link", { name: "Go" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Your favorite palettes — page loaded",
-    );
+    // findByText, not findByRole followed by a content assertion: the live region element is
+    // present from the first render, so waiting for the element proves nothing and the text
+    // check would run once, before the announcement is written in a requestAnimationFrame.
+    expect(
+      await screen.findByText("Your favorite palettes — page loaded"),
+    ).toBeInTheDocument();
     expect(document.activeElement).toBe(document.getElementById("main-content"));
   });
 });
