@@ -83,7 +83,7 @@ export function ForgotPasswordPage() {
               </small>
             </label>
 
-            <div className="form-actions">
+            <div className={ui.formActions}>
               <button className="button button--primary" type="submit" disabled={sending}>
                 {sending ? "Sending…" : "Send reset link"}
               </button>

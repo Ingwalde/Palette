@@ -70,10 +70,30 @@ async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   );
 }
 
+/**
+ * Pins anything sticky for the duration of the capture.
+ *
+ * A full-page screenshot is stitched while Playwright scrolls, so a sticky element travels
+ * with the viewport and lands somewhere different in each pass — the shot never settles, and
+ * even when it does the text rasterises slightly differently.
+ *
+ * Found by computed style rather than by class name. The stylesheet version of this named
+ * `.site-header`, `.export-panel` and `.admin-form`, and each one silently stopped matching
+ * the moment its component moved to a generated class.
+ */
+async function unstick(page: Page) {
+  await page.evaluate(() => {
+    for (const el of document.querySelectorAll<HTMLElement>("*")) {
+      if (getComputedStyle(el).position === "sticky") el.style.position = "static";
+    }
+  });
+}
+
 // Web fonts arrive asynchronously; screenshotting before they settle swaps the typeface
 // mid-capture and produces a diff on every run.
 async function settle(page: Page) {
   await page.evaluate(() => document.fonts.ready);
+  await unstick(page);
   await page.waitForTimeout(300);
 }
 

@@ -97,7 +97,7 @@ export function VerifyPage() {
             <>
               <h1>You're in, {state.user.username}! 🎉</h1>
               <p className="muted">{state.line}</p>
-              <div className="form-actions form-actions--centered">
+              <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
                 <Link className="button button--primary" to="/profile">
                   Go to my account
                 </Link>
@@ -112,7 +112,7 @@ export function VerifyPage() {
                 {resentMessage ||
                   `${state.message} The link may be invalid or expired — request a new one below.`}
               </p>
-              <div className="form-actions form-actions--centered">
+              <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
                 <input
                   className={ui.input}
                   type="email"

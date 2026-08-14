@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { reportError } from "../lib/observability";
 import * as auth from "../styles/auth.css";
+import * as ui from "../styles/ui.css";
 
 interface Props {
   children: ReactNode;
@@ -30,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <p className="muted">
             An unexpected error occurred. Reloading the page usually fixes it.
           </p>
-          <div className="form-actions form-actions--centered">
+          <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
             <button
               className="button button--primary"
               type="button"

@@ -5,6 +5,7 @@ import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
 
 export function ResetPasswordPage() {
   const { showToast } = useToast();
@@ -121,7 +122,7 @@ export function ResetPasswordPage() {
               </small>
             )}
 
-            <div className="form-actions">
+            <div className={ui.formActions}>
               <button className="button button--primary" type="submit" disabled={sending}>
                 {sending ? "Resetting…" : "Reset password"}
               </button>

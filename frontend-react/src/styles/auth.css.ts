@@ -1,5 +1,6 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { vars } from "./theme.css";
+import { formActions } from "./ui.css";
 
 /**
  * Styles for the four pages reached from an email link or the login screen.
@@ -9,10 +10,9 @@ import { vars } from "./theme.css";
  * class on the document. Scoping them to the layout element instead removes both the hook and
  * the reason for it.
  *
- * The descendant rules below stay as globalStyle because they target `.field`, `.form-actions`
- * and `.button` — still global classes owned by components that have not migrated yet. They
- * are now anchored to a generated class rather than to <body>, so the reach is one container
- * deep instead of document-wide.
+ * The descendant rules below stay as globalStyle because they reach into children — `.field`
+ * and `.button` are still global, the form-actions row is not. Either way they are anchored to
+ * a generated class rather than to <body>, so the reach is one container deep.
  */
 
 /**
@@ -112,12 +112,12 @@ globalStyle(`${card} .field`, {
   margin: 0,
 });
 
-globalStyle(`${card} .form-actions`, {
+globalStyle(`${card} ${formActions}`, {
   display: "flex",
   marginTop: "4px",
 });
 
-globalStyle(`${card} .form-actions .button`, {
+globalStyle(`${card} ${formActions} .button`, {
   width: "auto",
   minWidth: "170px",
   "@media": {

@@ -52,7 +52,7 @@ export function AdminPage() {
             <p className="eyebrow">Protected area</p>
             <h2>{title}</h2>
             <p className="muted">{message}</p>
-            <div className="form-actions">
+            <div className={ui.formActions}>
               <Link className="button button--primary" to="/login">
                 Go to login
               </Link>
@@ -410,7 +410,7 @@ function PalettesView() {
           </small>
         </div>
 
-        <div className="form-actions">
+        <div className={ui.formActions}>
           <button className="button button--primary" type="submit">
             {editingId !== null ? "Update palette" : "Create palette"}
           </button>

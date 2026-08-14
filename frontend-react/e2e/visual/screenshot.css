@@ -1,15 +1,6 @@
 /* Injected only while a baseline is captured — never shipped.
  *
- * A full-page screenshot is stitched while Playwright scrolls the document, so anything
- * sticky travels with the viewport and lands in a different place in each pass. Playwright
- * then keeps re-shooting, waiting for two identical frames, and times out. Pinning these for
- * the duration of the capture makes the result deterministic; their normal positioning is
- * still exercised by the functional specs.
- *
- * Matched by element, not class: the site header's class is a generated hash now, so a
- * class-based rule here silently stopped applying the moment Layout migrated. */
-header,
-.export-panel,
-.admin-form {
-  position: static !important;
-}
+ * Intentionally minimal: neutralising sticky positioning is done in JS instead (see
+ * `unstick` in pages.spec.ts), because it has to find elements by computed style. Every
+ * class-based rule here went stale the moment its component moved to vanilla-extract, and
+ * did so silently. */

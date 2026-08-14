@@ -78,6 +78,10 @@ export const formActions = style({
   gap: "10px",
 });
 
+export const formActionsCentered = style({
+  justifyContent: "center",
+});
+
 // --- Form controls -----------------------------------------------------------------------
 //
 // Deferred from the earlier component steps because these four selectors shared a base rule

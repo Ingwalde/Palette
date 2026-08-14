@@ -108,7 +108,7 @@ export function LoginPage() {
             required
           />
 
-          <div className="form-actions">
+          <div className={ui.formActions}>
             <button className="button button--primary" type="submit" disabled={loggingIn}>
               {loggingIn ? "Logging in..." : "Login"}
             </button>
@@ -166,7 +166,7 @@ export function LoginPage() {
             required
           />
 
-          <div className="form-actions">
+          <div className={ui.formActions}>
             <button
               className="button button--primary"
               type="submit"

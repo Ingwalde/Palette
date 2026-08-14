@@ -199,7 +199,7 @@ export function ProfilePage() {
                 required
               />
 
-              <div className="form-actions">
+              <div className={ui.formActions}>
                 <button
                   className="button button--primary"
                   type="submit"
