@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { RouteAnnouncer } from "./RouteAnnouncer";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
 
@@ -86,9 +87,13 @@ export function Layout() {
         </nav>
       </header>
 
+      {/* tabIndex -1 so the skip link and the route change can both put focus here; it is not
+          in the tab order itself. */}
       <main id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
+
+      <RouteAnnouncer mainId="main-content" />
 
       <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>

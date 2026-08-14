@@ -241,10 +241,14 @@ test("state: error toast", async ({ page }) => {
   await passwords.nth(1).fill("newpassword1");
   await page.getByRole("button", { name: "Reset password" }).click();
 
-  // The same message lands inline and in the toast; role="status" is the toast.
-  await expect(page.getByRole("status")).toHaveText(
-    "Invalid or expired password reset link",
-  );
+  // The same message lands inline and in the toast, and role="status" no longer identifies the
+  // toast on its own: the route announcer is a second live region with the same role. Both
+  // belong on the page, so the locator narrows by text rather than the markup weakening.
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Invalid or expired password reset link" }),
+  ).toBeVisible();
   await settle(page);
   await expect(page).toHaveScreenshot("state-error-toast.png");
 });
