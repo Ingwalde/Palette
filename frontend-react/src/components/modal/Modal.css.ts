@@ -53,7 +53,7 @@ export const message = style({
   color: vars.color.muted,
 });
 
-/** Sits alongside the still-global `.input`; only the width belongs to the modal. */
+/** Sits alongside the shared input; only the width belongs to the modal. */
 export const input = style({
   width: "100%",
 });

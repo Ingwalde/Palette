@@ -5,6 +5,7 @@ import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
 import { EmptyState } from "../components/EmptyState";
+import * as ui from "../styles/ui.css";
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
 
@@ -99,7 +100,7 @@ export function HomePage() {
 
       <section className="section toolbar-section" aria-label="Palette tools">
         <div className="toolbar">
-          <label className="search-field" htmlFor="searchInput">
+          <label className={ui.searchField} htmlFor="searchInput">
             <span className="visually-hidden">Search palettes</span>
             <input
               id="searchInput"
@@ -111,7 +112,7 @@ export function HomePage() {
             />
             <button
               type="button"
-              className="search-clear"
+              className={ui.searchClear}
               aria-label="Clear search"
               onClick={() => setSearchInput("")}
             ></button>

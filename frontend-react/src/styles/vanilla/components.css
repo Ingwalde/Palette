@@ -57,10 +57,7 @@
   margin-bottom: 16px;
 }
 
-.search-field input,
-.input,
-.select,
-.textarea {
+.select {
   width: 100%;
   font: inherit;
   border: 1px solid var(--color-border);
@@ -73,23 +70,9 @@
     box-shadow var(--transition);
 }
 
-.search-field input,
-.input,
 .select {
   min-height: 50px;
   border-radius: 999px;
-}
-
-.textarea {
-  min-height: 120px;
-  padding: 15px 18px;
-  border-radius: 22px;
-  resize: none;
-}
-
-.search-field input,
-.input {
-  padding: 0 20px;
 }
 
 .select {
@@ -107,34 +90,9 @@
   background-repeat: no-repeat;
 }
 
-.search-field input:focus,
-.input:focus,
-.select:focus,
-.textarea:focus {
+.select:focus {
   border-color: rgba(47, 45, 42, 0.35);
   box-shadow: 0 0 0 4px rgba(48, 47, 44, 0.08);
-}
-
-/* Placeholder styled to match the page (Poppins, muted warm tone). */
-.search-field input::placeholder,
-.input::placeholder,
-.textarea::placeholder {
-  color: var(--color-muted);
-  opacity: 0.7;
-  font-weight: 400;
-  font-size: 0.9rem;
-  letter-spacing: 0.01em;
-}
-
-.search-field input:focus::placeholder,
-.input:focus::placeholder,
-.textarea:focus::placeholder {
-  opacity: 0.55;
-}
-
-/* Bold typed text in the search fields (placeholder stays regular weight above). */
-input[type="search"] {
-  font-weight: 600;
 }
 
 .tag-filters {
@@ -213,72 +171,6 @@ input[type="search"] {
    so no layout shift) to avoid a flash of the native control on page load. */
 .js select.select:not(.native-select--enhanced) {
   opacity: 0;
-}
-
-/* Custom search clear button (home + export). The native webkit button is hidden and
-   replaced with a real, perfectly-centered button for full control and cross-browser. */
-input[type="search"]::-webkit-search-cancel-button {
-  -webkit-appearance: none;
-  appearance: none;
-  display: none;
-}
-
-.search-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-input-wrap {
-  position: relative;
-  display: block;
-}
-
-/* Room on the right so the text never runs under the clear button. */
-.search-field input[type="search"],
-.search-input-wrap input[type="search"] {
-  padding-right: 58px;
-}
-
-.search-clear {
-  position: absolute;
-  top: 50%;
-  right: 18px;
-  transform: translateY(-50%);
-  display: none;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: none;
-  cursor: pointer;
-  background-color: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 7l10 10M17 7L7 17' stroke='%23746c63' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 21px 21px;
-  transition:
-    transform var(--transition),
-    background-image var(--transition);
-}
-
-/* Show only when the field has text (placeholder no longer shown). */
-.search-field input[type="search"]:not(:placeholder-shown) ~ .search-clear,
-.search-input-wrap input[type="search"]:not(:placeholder-shown) ~ .search-clear {
-  display: block;
-}
-
-.search-clear:hover {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 7l10 10M17 7L7 17' stroke='%23302f2c' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
-  transform: translateY(-50%) scale(1.12);
-}
-
-.search-clear:active {
-  transform: translateY(-50%) scale(0.92);
-}
-
-.search-clear:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
 
 /* Bottom info panel — v3.2 */

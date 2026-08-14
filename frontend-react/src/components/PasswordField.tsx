@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import * as styles from "./PasswordField.css";
+import * as ui from "../styles/ui.css";
 
 const eyeOff = (
   <svg
@@ -62,7 +63,7 @@ export function PasswordField({
       <span className={styles.wrapper}>
         <input
           id={id}
-          className="input"
+          className={ui.input}
           type={show ? "text" : "password"}
           autoComplete={autoComplete}
           required={required}

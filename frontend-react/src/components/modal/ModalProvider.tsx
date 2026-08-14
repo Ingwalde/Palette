@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import * as styles from "./Modal.css";
+import * as ui from "../../styles/ui.css";
 
 interface BaseOptions {
   title: string;
@@ -102,7 +103,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
             {state.message && <p className={styles.message}>{state.message}</p>}
             {state.isPrompt && (
               <input
-                className={`input ${styles.input}`}
+                className={`${ui.input} ${styles.input}`}
                 type="text"
                 aria-label={state.title}
                 autoFocus

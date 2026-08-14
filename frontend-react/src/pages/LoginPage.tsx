@@ -5,6 +5,7 @@ import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
 
 export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
@@ -90,7 +91,7 @@ export function LoginPage() {
           <label className="field">
             <span>Username/Email</span>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               autoComplete="username"
               required
@@ -131,7 +132,7 @@ export function LoginPage() {
           <label className="field">
             <span>Username</span>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               autoComplete="username"
               required
@@ -146,7 +147,7 @@ export function LoginPage() {
           <label className="field">
             <span>Email</span>
             <input
-              className="input"
+              className={ui.input}
               type="email"
               autoComplete="email"
               required

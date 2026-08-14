@@ -13,6 +13,7 @@ import {
   type ExportFormat,
 } from "../lib/exportGenerators";
 import type { Palette } from "../types/api";
+import * as ui from "../styles/ui.css";
 
 const SOURCE_OPTIONS = [
   { value: "single", label: "Choose palette" },
@@ -161,9 +162,9 @@ export function ExportPage() {
             <div className="palette-picker">
               <label className="field">
                 <span>Search palette</span>
-                <span className="search-input-wrap">
+                <span className={ui.searchInputWrap}>
                   <input
-                    className="input"
+                    className={ui.input}
                     type="search"
                     placeholder="Type palette name, slug or tag..."
                     autoComplete="off"
@@ -175,7 +176,7 @@ export function ExportPage() {
                   />
                   <button
                     type="button"
-                    className="search-clear"
+                    className={ui.searchClear}
                     aria-label="Clear search"
                     onClick={() => {
                       setSearchInput("");

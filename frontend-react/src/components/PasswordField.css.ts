@@ -1,5 +1,6 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
+import { input } from "../styles/ui.css";
 
 /** Positioning context for the eye toggle that sits inside the input. */
 export const wrapper = style({
@@ -7,11 +8,9 @@ export const wrapper = style({
   display: "block",
 });
 
-// Reaches the still-global `.input`, which cannot move on its own: it shares a base rule and
-// its focus and placeholder states with `.search-field input`, `.select` and `.textarea`.
-// The whole form-control family migrates in one step later; until then this keeps the room
-// the toggle needs.
-globalStyle(`${wrapper} .input`, {
+// Room for the toggle inside the field. The input is a scoped style now, so this no longer
+// reaches into the global namespace.
+globalStyle(`${wrapper} ${input}`, {
   paddingRight: "52px",
 });
 

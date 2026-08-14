@@ -4,6 +4,7 @@ import { forgotPassword } from "../api/auth";
 import { useToast } from "../components/toast/ToastProvider";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
 
 export function ForgotPasswordPage() {
   const { showToast } = useToast();
@@ -70,7 +71,7 @@ export function ForgotPasswordPage() {
             <label className="field">
               <span>Email</span>
               <input
-                className="input"
+                className={ui.input}
                 type="email"
                 autoComplete="email"
                 required

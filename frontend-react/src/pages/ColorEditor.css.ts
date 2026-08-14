@@ -50,7 +50,7 @@ globalStyle(`${picker}::-moz-color-swatch`, {
   borderRadius: "12px",
 });
 
-/** Sits alongside the still-global `.input`. */
+/** Sits alongside the shared input. */
 export const hex = style({
   flex: "1 1 auto",
   textTransform: "uppercase",

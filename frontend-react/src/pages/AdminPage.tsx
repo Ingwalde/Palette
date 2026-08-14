@@ -19,6 +19,7 @@ import { useDebounce } from "../lib/useDebounce";
 import type { Palette, Tag, TagKind } from "../types/api";
 import * as colorEditor from "./ColorEditor.css";
 import * as styles from "./AdminPage.css";
+import * as ui from "../styles/ui.css";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -269,7 +270,7 @@ function PalettesView() {
         <label className="field">
           <span>Name</span>
           <input
-            className="input"
+            className={ui.input}
             type="text"
             placeholder="Nordic Blue"
             required
@@ -281,7 +282,7 @@ function PalettesView() {
         <label className="field">
           <span>Description</span>
           <textarea
-            className="textarea"
+            className={ui.textarea}
             rows={4}
             placeholder="Short description..."
             required
@@ -303,7 +304,7 @@ function PalettesView() {
                   onChange={(e) => setColorAt(i, e.target.value.toUpperCase())}
                 />
                 <input
-                  className={`input ${colorEditor.hex}`}
+                  className={`${ui.input} ${colorEditor.hex}`}
                   type="text"
                   maxLength={7}
                   aria-label="HEX color"
@@ -353,7 +354,7 @@ function PalettesView() {
           </div>
           <div className={styles.tagSuggest}>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               placeholder="Type or pick a tag"
               autoComplete="off"
@@ -439,7 +440,7 @@ function PalettesView() {
           </p>
         </div>
 
-        <label className={`search-field ${styles.listSearch}`}>
+        <label className={`${ui.searchField} ${styles.listSearch}`}>
           <span className="visually-hidden">Search palettes</span>
           <input
             type="search"
@@ -450,7 +451,7 @@ function PalettesView() {
           />
           <button
             type="button"
-            className="search-clear"
+            className={ui.searchClear}
             aria-label="Clear search"
             onClick={() => setSearchInput("")}
           />
@@ -653,7 +654,7 @@ function TagsView() {
         </div>
         <div className={styles.tagAddRow}>
           <input
-            className="input"
+            className={ui.input}
             type="text"
             placeholder="new-tag"
             autoComplete="off"

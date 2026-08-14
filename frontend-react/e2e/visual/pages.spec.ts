@@ -77,7 +77,24 @@ async function settle(page: Page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * The home page shuffles its tag filters with Math.random, so two runs render different chips
+ * and a screenshot can never settle. Replace it with a fixed sequence before any app code
+ * runs — the alternative is a tolerance wide enough to hide real breakage, which is exactly
+ * what a 1% allowance did here.
+ */
+async function freezeRandom(page: Page) {
+  await page.addInitScript(() => {
+    let seed = 42;
+    Math.random = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+  });
+}
+
 async function open(page: Page, path: string, loggedIn = false) {
+  await freezeRandom(page);
   await stub(page, { loggedIn });
   await page.goto(path, { waitUntil: "networkidle" });
   await settle(page);
@@ -148,6 +165,7 @@ test("state: password revealed", async ({ page }) => {
 test("state: home with no results", async ({ page }) => {
   // The home grid has its own empty branches. They went unstyled for several commits because
   // no baseline stubs an empty palette list — the page shot always has results.
+  await freezeRandom(page);
   await stub(page, { loggedIn: false });
   await page.route("**/api/v1/palettes*", (r) =>
     r.fulfill({ json: { items: [], total: 0, limit: 100, offset: 0 } }),
@@ -161,6 +179,7 @@ test("state: home with no results", async ({ page }) => {
 test("state: error toast", async ({ page }) => {
   // Nothing else in the suite renders a toast, so without this the toast styles migrate
   // with no visual cover at all.
+  await freezeRandom(page);
   await stub(page, { loggedIn: false });
   await page.route("**/api/v1/auth/reset-password", (r) =>
     r.fulfill({
@@ -214,6 +233,7 @@ test("state: confirm modal", async ({ page }) => {
 
 test("state: empty list", async ({ page }) => {
   // EmptyState is rendered by Favorites and Admin, not the home grid.
+  await freezeRandom(page);
   await stub(page, { loggedIn: true });
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: [] }));
   await page.goto("/favorites", { waitUntil: "networkidle" });

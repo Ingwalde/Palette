@@ -24,8 +24,12 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      // Absorbs subpixel antialiasing without hiding a real layout shift.
-      maxDiffPixelRatio: 0.01,
+      // Zero, not a percentage. A 1% allowance sounds harmless but scales with page height:
+      // the same broken component was 3% of the admin page and under 1% of the taller home
+      // page, so home passed while admin failed. Per-pixel antialiasing is already absorbed by
+      // `threshold`; this one only decides how many pixels may differ outright, and the answer
+      // is none.
+      maxDiffPixelRatio: 0,
       animations: "disabled",
       caret: "hide",
       scale: "css",

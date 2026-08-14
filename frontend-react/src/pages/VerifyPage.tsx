@@ -7,6 +7,7 @@ import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import type { User } from "../types/api";
 import * as layout from "../components/Layout.css";
+import * as ui from "../styles/ui.css";
 
 const SUCCESS_LINES = [
   "Boom — inbox conquered. You're in and ready to collect colors.",
@@ -113,7 +114,7 @@ export function VerifyPage() {
               </p>
               <div className="form-actions form-actions--centered">
                 <input
-                  className="input"
+                  className={ui.input}
                   type="email"
                   autoComplete="email"
                   placeholder="you@example.com"
