@@ -6,6 +6,7 @@ import { queryKeys } from "../api/queryKeys";
 import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import type { User } from "../types/api";
+import * as layout from "../components/Layout.css";
 
 const SUCCESS_LINES = [
   "Boom — inbox conquered. You're in and ready to collect colors.",
@@ -75,10 +76,10 @@ export function VerifyPage() {
 
   return (
     <>
-      <header className="site-header site-header--bare">
-        <Link className="logo" to="/" aria-label="Palette home">
-          <span className="logo__mark">P</span>
-          <span className="logo__text">Palette</span>
+      <header className={`${layout.header} ${layout.headerBare}`}>
+        <Link className={layout.logo} to="/" aria-label="Palette home">
+          <span className={layout.logoMark}>P</span>
+          <span className={layout.logoText}>Palette</span>
         </Link>
       </header>
 

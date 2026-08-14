@@ -1,9 +1,10 @@
 import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import * as styles from "./Layout.css";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  isActive ? "site-nav__link site-nav__link--active" : "site-nav__link";
+  isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink;
 
 export function Layout() {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
@@ -16,13 +17,13 @@ export function Layout() {
     const nav = navRef.current;
     if (!nav) return;
     const move = () => {
-      const active = nav.querySelector<HTMLElement>(".site-nav__link--active");
+      const active = nav.querySelector<HTMLElement>(`.${styles.navLinkActive}`);
       if (!active) return;
       nav.style.setProperty("--nav-indicator-x", `${active.offsetLeft}px`);
       nav.style.setProperty("--nav-indicator-y", `${active.offsetTop}px`);
       nav.style.setProperty("--nav-indicator-width", `${active.offsetWidth}px`);
       nav.style.setProperty("--nav-indicator-height", `${active.offsetHeight}px`);
-      nav.classList.add("site-nav--ready");
+      nav.classList.add(styles.navReady);
     };
     move();
     window.addEventListener("resize", move);
@@ -36,14 +37,14 @@ export function Layout() {
         Skip to content
       </a>
 
-      <header className="site-header">
-        <NavLink to="/" className="logo" aria-label="Palette home">
-          <span className="logo__mark">P</span>
-          <span className="logo__text">Palette</span>
+      <header className={styles.header}>
+        <NavLink to="/" className={styles.logo} aria-label="Palette home">
+          <span className={styles.logoMark}>P</span>
+          <span className={styles.logoText}>Palette</span>
         </NavLink>
 
-        <nav className="site-nav" aria-label="Main navigation" ref={navRef}>
-          <span className="site-nav__indicator" aria-hidden="true" />
+        <nav className={styles.nav} aria-label="Main navigation" ref={navRef}>
+          <span className={styles.navIndicator} aria-hidden="true" />
           <NavLink to="/" end className={linkClass}>
             Home
           </NavLink>
@@ -65,7 +66,7 @@ export function Layout() {
               </NavLink>
               <button
                 type="button"
-                className="site-nav__link site-nav__button"
+                className={`${styles.navLink} ${styles.navButton}`}
                 onClick={() => void logout()}
               >
                 Logout
@@ -75,7 +76,7 @@ export function Layout() {
             <NavLink
               to="/login"
               className={({ isActive }) =>
-                `site-nav__link site-nav__button${isActive ? " site-nav__link--active" : ""}`
+                `${styles.navLink} ${styles.navButton}${isActive ? ` ${styles.navLinkActive}` : ""}`
               }
             >
               Login
@@ -88,15 +89,15 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="site-footer section">
-        <div className="site-footer__panel">
-          <div className="site-footer__content">
-            <p className="site-footer__eyebrow">Palette v4.8.3</p>
-            <p className="site-footer__text">
+      <footer className={`section ${styles.footer}`}>
+        <div className={styles.footerPanel}>
+          <div className={styles.footerContent}>
+            <p className={styles.footerEyebrow}>Palette v4.8.3</p>
+            <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.
             </p>
-            <div className="site-footer__features" aria-label="Project highlights">
+            <div className={styles.footerFeatures} aria-label="Project highlights">
               <span>Personal palette library</span>
               <span>Account-based favorites</span>
               <span>Single palette export</span>
@@ -105,7 +106,7 @@ export function Layout() {
             </div>
           </div>
           {isAdmin && (
-            <div className="site-footer__meta" aria-label="Project links">
+            <div className={styles.footerMeta} aria-label="Project links">
               <a href="/api/docs" target="_blank" rel="noreferrer">
                 API docs
               </a>
