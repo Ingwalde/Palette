@@ -69,7 +69,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         </button>
       </div>
 
-      <div className={styles.colors} aria-label={`${palette.name} colors`}>
+      <div className={styles.colors} role="group" aria-label={`${palette.name} colors`}>
         {palette.colors.map((color, i) => (
           <button
             key={`${color}-${i}`}

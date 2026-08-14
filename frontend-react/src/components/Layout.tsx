@@ -97,16 +97,21 @@ export function Layout() {
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.
             </p>
-            <div className={styles.footerFeatures} aria-label="Project highlights">
-              <span>Personal palette library</span>
-              <span>Account-based favorites</span>
-              <span>Single palette export</span>
-              <span>PNG palette cards</span>
-              <span>Admin collection tools</span>
+            {/* A labelled div has no role, so the label is dropped. These are a list. */}
+            <div
+              className={styles.footerFeatures}
+              role="list"
+              aria-label="Project highlights"
+            >
+              <span role="listitem">Personal palette library</span>
+              <span role="listitem">Account-based favorites</span>
+              <span role="listitem">Single palette export</span>
+              <span role="listitem">PNG palette cards</span>
+              <span role="listitem">Admin collection tools</span>
             </div>
           </div>
           {isAdmin && (
-            <div className={styles.footerMeta} aria-label="Project links">
+            <div className={styles.footerMeta} role="group" aria-label="Project links">
               <a href="/api/docs" target="_blank" rel="noreferrer">
                 API docs
               </a>
