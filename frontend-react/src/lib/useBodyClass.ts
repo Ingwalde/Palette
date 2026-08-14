@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 
-// Toggle a class on <body> while a page is mounted — mirrors the per-page body classes the
-// vanilla HTML sets (e.g. `auth-page`), which the shared stylesheets scope their rules under.
+// Toggle a class on <body> while a page is mounted.
+//
+// Only needed because styles/vanilla/*.css is still global and scopes some rules under a
+// body class (e.g. `.auth-page` in pages.css). Scoping those styles to their components
+// retires this hook.
 export function useBodyClass(className: string): void {
   useEffect(() => {
     document.body.classList.add(className);

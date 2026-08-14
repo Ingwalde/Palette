@@ -57,13 +57,17 @@ boot the backend creates the schema and seeds the default palettes and admin use
 
 ```text
 Frontend:       http://localhost:5500
-Login:          http://localhost:5500/login.html
-Account:        http://localhost:5500/profile.html
-Favorites:      http://localhost:5500/favorites.html
-Export:         http://localhost:5500/export.html
-Admin:          http://localhost:5500/admin.html
-Backend API:    http://localhost:8000/docs
+Login:          http://localhost:5500/login
+Account:        http://localhost:5500/profile
+Favorites:      http://localhost:5500/favorites
+Export:         http://localhost:5500/export
+Admin:          http://localhost:5500/admin
+Backend API:    http://localhost:8000/api/v1/palettes
 ```
+
+The routes are extensionless — the `.html` pages belonged to the vanilla frontend, removed
+in 4.8.0. Swagger lives at `http://localhost:8000/api/docs` and is off unless you set
+`ENABLE_API_DOCS=true`.
 
 Admin credentials come from `DEFAULT_ADMIN_*` in `.env`. Regular users can register
 from the Login page.

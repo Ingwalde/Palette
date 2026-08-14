@@ -122,7 +122,7 @@ flowchart LR
 |---|---|
 | **Backend** | FastAPI · async SQLAlchemy 2.0 (asyncpg) · Pydantic v2 · Alembic · Argon2 · slowapi |
 | **Data** | PostgreSQL 16 (JSONB + GIN) · Redis |
-| **Frontend** | Vanilla JS (ES modules) · HTML · CSS — no build step |
+| **Frontend** | Vite · React 19 · TypeScript · React Router · TanStack Query |
 | **Infra** | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age |
 | **Quality / CI** | GitHub Actions · ruff · mypy · pytest · Sentry |
 

@@ -20,9 +20,12 @@ docker compose logs backend
 Then verify:
 
 ```text
-http://localhost:8000/docs
+http://localhost:8000/health/ready
 http://localhost:8000/api/v1/palettes
 ```
+
+(Swagger is at `/api/docs`, not `/docs`, and only when `ENABLE_API_DOCS=true` — so it is
+not a useful liveness check.)
 
 ---
 

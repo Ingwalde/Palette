@@ -1,4 +1,4 @@
-// Colour helpers ported from the vanilla frontend (frontend/js/utils/color.js).
+// Colour helpers: clipboard, contrast and format conversion.
 
 export function copyToClipboard(text: string): Promise<void> {
   if (navigator.clipboard?.writeText) {

@@ -10,8 +10,8 @@ export function Layout() {
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
 
-  // Position the sliding indicator pill behind the active nav link (ported from the vanilla
-  // nav indicator). Re-measure on route change, auth change, resize and after fonts load.
+  // Position the sliding indicator pill behind the active nav link. Re-measure on route
+  // change, auth change, resize and after fonts load.
   useLayoutEffect(() => {
     const nav = navRef.current;
     if (!nav) return;

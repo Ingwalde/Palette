@@ -9,8 +9,8 @@ import { ModalProvider } from "./components/modal/ModalProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { initObservability } from "./lib/observability";
 import { App } from "./App";
-// Reuse the vanilla stylesheets verbatim so the React app is visually 1:1 with the
-// original frontend. These are retired once the migration is complete.
+// Global stylesheets carried over verbatim from the original frontend, which is why the port
+// came out pixel-identical. Still unscoped: see styles/vanilla/ in the README.
 import "./styles/vanilla/base.css";
 import "./styles/vanilla/components.css";
 import "./styles/vanilla/pages.css";
