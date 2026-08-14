@@ -553,10 +553,6 @@
   .hero-preview__grid span {
     min-height: 88px;
   }
-
-  .palette-card__colors {
-    min-height: 110px;
-  }
 }
 
 .image-preview {

@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
 import { useToast } from "./toast/ToastProvider";
 import { ApiError } from "../lib/http";
+import * as styles from "./PaletteCard.css";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const { isAuthenticated } = useAuth();
@@ -49,11 +50,11 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   };
 
   return (
-    <article className="palette-card" data-palette-id={palette.slug}>
-      <div className="palette-card__header">
+    <article className={styles.card} data-palette-id={palette.slug}>
+      <div className={styles.header}>
         <div>
-          <h3 className="palette-card__title">{palette.name}</h3>
-          <p className="palette-card__meta">{palette.description}</p>
+          <h3 className={styles.title}>{palette.name}</h3>
+          <p className={styles.meta}>{palette.description}</p>
         </div>
         <button
           type="button"
@@ -67,12 +68,12 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         </button>
       </div>
 
-      <div className="palette-card__colors" aria-label={`${palette.name} colors`}>
+      <div className={styles.colors} aria-label={`${palette.name} colors`}>
         {palette.colors.map((color, i) => (
           <button
             key={`${color}-${i}`}
             type="button"
-            className={`color-swatch${revealed === color ? " color-swatch--revealed" : ""}`}
+            className={`${styles.swatch}${revealed === color ? ` ${styles.swatchRevealed}` : ""}`}
             style={{ "--swatch-color": color } as CSSProperties}
             data-color={color}
             aria-label={`Copy ${color}`}
@@ -81,7 +82,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         ))}
       </div>
 
-      <div className="palette-card__tags">
+      <div className={styles.tags}>
         {palette.tags.map((tag) => (
           <span key={tag} className="tag">
             #{tag}
@@ -89,8 +90,8 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         ))}
       </div>
 
-      <div className="palette-card__footer">
-        <span className="contrast-badge">
+      <div className={styles.footer}>
+        <span className={styles.contrastBadge}>
           {contrast.label} · {contrast.ratio}:1
         </span>
         <button
