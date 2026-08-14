@@ -20,7 +20,8 @@
     "css:orphans": "bash scripts/orphan-classes.sh",
     "test:visual:docker": "bash scripts/visual.sh",
     "test:visual:docker:update": "bash scripts/visual.sh --update",
-    "lighthouse": "bash scripts/lighthouse.sh"
+    "lighthouse": "bash scripts/lighthouse.sh",
+    "test:integration": "bash scripts/integration.sh"
   },
   "dependencies": {
     "@sentry/react": "^10.69.0",
