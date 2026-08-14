@@ -6,7 +6,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: "list",
+  // Locally the list output is enough; in CI also write the HTML report the workflow
+  // uploads as an artifact when the suite fails.
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://localhost:4173",
     trace: "on-first-retry",
