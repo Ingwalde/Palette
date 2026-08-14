@@ -104,21 +104,6 @@
   display: none !important;
 }
 
-.admin-access {
-  max-width: 720px;
-  padding-bottom: 60px;
-}
-
-.admin-access__card {
-  display: grid;
-  gap: 18px;
-  padding: 24px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 250, 242, 0.78);
-  box-shadow: var(--shadow-soft);
-}
-
 .export-layout {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -127,111 +112,18 @@
   padding-bottom: 60px;
 }
 
-.admin-layout {
-  display: block;
-  padding-bottom: 60px;
-}
-
-.admin-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.admin-mode {
-  position: relative;
-  display: inline-flex;
-  padding: 5px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-}
-
-/* Sliding pill behind the active tab, mirroring the main nav indicator. */
-.admin-mode__pill {
-  position: absolute;
-  top: 5px;
-  bottom: 5px;
-  left: 5px;
-  width: calc(50% - 5px);
-  border-radius: 999px;
-  background: var(--color-primary);
-  box-shadow: 0 10px 24px rgba(47, 45, 42, 0.14);
-  transition: left 280ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.admin-mode[data-active="tags"] .admin-mode__pill {
-  left: 50%;
-}
-
-.admin-mode__btn {
-  position: relative;
-  z-index: 1;
-  flex: 1 1 0;
-  min-width: 104px;
-  padding: 9px 20px;
-  border: none;
-  border-radius: 999px;
-  background: none;
-  color: var(--color-muted);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 200ms ease;
-}
-
-.admin-mode__btn--active {
-  color: #fff;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-mode__pill {
-    transition: none;
-  }
-}
-
-.admin-view {
-  display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-}
-
-/* The [hidden] attribute must win over display:grid so only the active mode shows. */
-.admin-view[hidden] {
-  display: none;
-}
-
-.export-panel,
-.admin-form,
-.admin-list {
+.export-panel {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: rgba(255, 250, 242, 0.78);
   box-shadow: var(--shadow-soft);
 }
 
-.export-panel,
-.admin-form {
+.export-panel {
   position: sticky;
   top: 104px;
   display: grid;
   gap: 18px;
-  padding: 20px;
-}
-
-/* The admin form is not sticky, so the whole admin page scrolls together (avoids the form
-   pinning while the list scrolls past it). */
-.admin-form {
-  position: static;
-  top: auto;
-}
-
-.admin-list {
-  min-width: 0;
   padding: 20px;
 }
 
@@ -245,240 +137,14 @@
   min-width: 0;
 }
 
-.admin-list__search {
-  margin-bottom: 16px;
-}
-
-.admin-items {
-  display: grid;
-  gap: 14px;
-}
-
-.admin-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 18px;
-}
-
-.admin-pagination__info {
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
-
-.admin-item {
-  display: grid;
-  gap: 14px;
-  padding: 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 22px;
-  background: var(--color-surface);
-}
-
-.admin-item__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.admin-item__title {
-  margin-bottom: 4px;
-  font-size: 1rem;
-}
-
-.admin-item__slug {
-  margin-bottom: 0;
-  color: var(--color-muted);
-  font-size: 0.86rem;
-}
-
-.admin-item__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.admin-swatches {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  height: 46px;
-  overflow: hidden;
-  border-radius: 999px;
-  border: 1px solid var(--color-border);
-}
-
-.admin-swatches span {
-  background: var(--swatch-color);
-}
-
-/* Tag chip editor on the palette form */
-.tag-editor {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag-editor:empty {
-  display: none;
-}
-
-/* Custom tag suggestions dropdown on the palette form */
-.tag-suggest {
-  position: relative;
-}
-
-.tag-suggest__menu {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  display: grid;
-  gap: 2px;
-  max-height: 200px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px;
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  background: var(--color-surface);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16);
-}
-
-/* [hidden] must win over display:grid so the menu truly hides (and doesn't leave a strip). */
-.tag-suggest__menu[hidden] {
-  display: none;
-}
-
-.tag-suggest__option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 12px;
-  border: none;
-  border-radius: 10px;
-  background: none;
-  color: var(--color-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background 120ms ease;
-}
-
-.tag-suggest__option:hover {
-  background: var(--color-primary-soft, rgba(0, 0, 0, 0.06));
-}
-
-.tag-suggest__name {
-  font-weight: 600;
-}
-
-.tag-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 6px 5px 12px;
-  border-radius: 999px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  font-size: 0.86rem;
-  font-weight: 600;
-}
-
-.tag-chip__remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--color-muted);
-  font-size: 0.72rem;
-  line-height: 1;
-  cursor: pointer;
-  transition:
-    background 140ms ease,
-    color 140ms ease;
-}
-
-.tag-chip__remove:hover {
-  background: rgba(200, 60, 60, 0.14);
-  color: #b23b3b;
-}
-
 /* Tag catalog management */
 #tagForm {
   gap: 12px;
 }
 
-.tag-add-row {
-  display: grid;
-  gap: 10px;
-  margin-top: -2px;
-}
-
-.tag-add-row .button {
-  justify-self: start;
-}
-
-.admin-item--tag .admin-item__top {
-  align-items: center;
-}
-
-.tag-item__info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  min-width: 0;
-}
-
-.tag-item__info .admin-item__title {
-  margin-bottom: 0;
-}
-
-.tag-badge {
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.tag-badge--purpose {
-  background: rgba(60, 120, 90, 0.16);
-  color: #2f6b46;
-}
-
-.tag-badge--free {
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--color-muted);
-}
-
-.tag-item__count {
-  color: var(--color-muted);
-  font-size: 0.84rem;
-}
-
-@media (max-width: 560px) {
-  .tag-add-row {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 920px) {
   .hero,
-  .export-layout,
-  .admin-view {
+  .export-layout {
     grid-template-columns: 1fr;
   }
 
@@ -490,8 +156,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .export-panel,
-  .admin-form {
+  .export-panel {
     position: static;
   }
 }
@@ -508,8 +173,7 @@
     grid-template-columns: 1fr;
   }
 
-  .section-heading,
-  .admin-item__top {
+  .section-heading {
     align-items: flex-start;
     flex-direction: column;
   }

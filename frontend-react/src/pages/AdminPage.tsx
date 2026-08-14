@@ -18,6 +18,7 @@ import { ApiError } from "../lib/http";
 import { useDebounce } from "../lib/useDebounce";
 import type { Palette, Tag, TagKind } from "../types/api";
 import * as colorEditor from "./ColorEditor.css";
+import * as styles from "./AdminPage.css";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -44,8 +45,8 @@ export function AdminPage() {
     return (
       <>
         <AdminHero />
-        <section className="section admin-access">
-          <div className="admin-access__card">
+        <section className={`section ${styles.access}`}>
+          <div className={styles.accessCard}>
             <p className="eyebrow">Protected area</p>
             <h2>{title}</h2>
             <p className="muted">{message}</p>
@@ -89,21 +90,21 @@ function AdminPanel({ username }: { username: string }) {
   return (
     <>
       <AdminHero />
-      <section className="section admin-layout">
-        <div className="admin-toolbar">
+      <section className={`section ${styles.layout}`}>
+        <div className={styles.toolbar}>
           <div>
             <p className="eyebrow">Admin session · {username}</p>
             <h2>Admin panel</h2>
           </div>
           <div
-            className="admin-mode"
+            className={styles.mode}
             role="tablist"
             aria-label="Admin mode"
             data-active={mode}
           >
-            <span className="admin-mode__pill" aria-hidden="true" />
+            <span className={styles.modePill} aria-hidden="true" />
             <button
-              className={`admin-mode__btn${mode === "palettes" ? " admin-mode__btn--active" : ""}`}
+              className={`${styles.modeButton}${mode === "palettes" ? ` ${styles.modeButtonActive}` : ""}`}
               type="button"
               role="tab"
               aria-selected={mode === "palettes"}
@@ -112,7 +113,7 @@ function AdminPanel({ username }: { username: string }) {
               Palettes
             </button>
             <button
-              className={`admin-mode__btn${mode === "tags" ? " admin-mode__btn--active" : ""}`}
+              className={`${styles.modeButton}${mode === "tags" ? ` ${styles.modeButtonActive}` : ""}`}
               type="button"
               role="tab"
               aria-selected={mode === "tags"}
@@ -256,8 +257,8 @@ function PalettesView() {
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
-    <div className="admin-view">
-      <form className="admin-form" onSubmit={onSave}>
+    <div className={styles.view}>
+      <form className={styles.form} onSubmit={onSave}>
         <div className="section-heading section-heading--compact">
           <div>
             <p className="eyebrow">Palette</p>
@@ -335,12 +336,12 @@ function PalettesView() {
 
         <div className="field">
           <span>Tags</span>
-          <div className="tag-editor">
+          <div className={styles.tagEditor}>
             {paletteTags.map((tag) => (
-              <span className="tag-chip" key={tag} data-value={tag}>
+              <span className={styles.tagChip} key={tag} data-value={tag}>
                 {tag}
                 <button
-                  className="tag-chip__remove"
+                  className={styles.tagChipRemove}
                   type="button"
                   aria-label={`Remove ${tag}`}
                   onClick={() => setPaletteTags((t) => t.filter((x) => x !== tag))}
@@ -350,7 +351,7 @@ function PalettesView() {
               </span>
             ))}
           </div>
-          <div className="tag-suggest">
+          <div className={styles.tagSuggest}>
             <input
               className="input"
               type="text"
@@ -376,14 +377,14 @@ function PalettesView() {
               }}
             />
             <div
-              className="tag-suggest__menu"
+              className={styles.tagSuggestMenu}
               role="listbox"
               hidden={!suggestOpen || suggestions.length === 0}
             >
               {suggestions.map((tag) => (
                 <button
                   key={tag.name}
-                  className="tag-suggest__option"
+                  className={styles.tagSuggestOption}
                   type="button"
                   role="option"
                   onMouseDown={(e) => {
@@ -392,9 +393,11 @@ function PalettesView() {
                     setTagInput("");
                   }}
                 >
-                  <span className="tag-suggest__name">{tag.name}</span>
+                  <span className={styles.tagSuggestName}>{tag.name}</span>
                   {tag.kind === "purpose" && (
-                    <span className="tag-badge tag-badge--purpose">Category</span>
+                    <span className={`${styles.tagBadge} ${styles.tagBadgeKind.purpose}`}>
+                      Category
+                    </span>
                   )}
                 </button>
               ))}
@@ -421,7 +424,7 @@ function PalettesView() {
         </div>
       </form>
 
-      <section className="admin-list" aria-label="Palettes in the database">
+      <section className={styles.list} aria-label="Palettes in the database">
         <div className="section-heading section-heading--compact">
           <div>
             <p className="eyebrow">Database</p>
@@ -436,7 +439,7 @@ function PalettesView() {
           </p>
         </div>
 
-        <label className="search-field admin-list__search">
+        <label className={`search-field ${styles.listSearch}`}>
           <span className="visually-hidden">Search palettes</span>
           <input
             type="search"
@@ -453,7 +456,7 @@ function PalettesView() {
           />
         </label>
 
-        <div className="admin-items">
+        <div className={styles.items}>
           {isError ? (
             <EmptyState
               title="Backend is not available"
@@ -475,13 +478,13 @@ function PalettesView() {
             />
           ) : (
             items.map((palette) => (
-              <article className="admin-item" key={palette.id}>
-                <div className="admin-item__top">
+              <article className={styles.item} key={palette.id}>
+                <div className={styles.itemTop}>
                   <div>
-                    <h3 className="admin-item__title">{palette.name}</h3>
-                    <p className="admin-item__slug">/{palette.slug}</p>
+                    <h3 className={styles.itemTitle}>{palette.name}</h3>
+                    <p className={styles.itemSlug}>/{palette.slug}</p>
                   </div>
-                  <div className="admin-item__actions">
+                  <div className={styles.itemActions}>
                     <button
                       className="button button--ghost"
                       type="button"
@@ -498,7 +501,7 @@ function PalettesView() {
                     </button>
                   </div>
                 </div>
-                <div className="admin-swatches">
+                <div className={styles.swatches}>
                   {palette.colors.map((color, i) => (
                     <span
                       key={i}
@@ -513,7 +516,7 @@ function PalettesView() {
         </div>
 
         {total > PAGE_SIZE && (
-          <div className="admin-pagination">
+          <div className={styles.pagination}>
             <button
               className="button button--ghost"
               type="button"
@@ -522,7 +525,7 @@ function PalettesView() {
             >
               ← Prev
             </button>
-            <span className="admin-pagination__info">
+            <span className={styles.paginationInfo}>
               Page {currentPage} of {totalPages}
             </span>
             <button
@@ -640,15 +643,15 @@ function TagsView() {
   const pageItems = catalog.slice(offset, offset + PAGE_SIZE);
 
   return (
-    <div className="admin-view">
-      <form className="admin-form" onSubmit={onAdd}>
+    <div className={styles.view}>
+      <form className={styles.form} onSubmit={onAdd}>
         <div className="section-heading section-heading--compact">
           <div>
             <p className="eyebrow">Tag catalog</p>
             <h2>Add a tag</h2>
           </div>
         </div>
-        <div className="tag-add-row">
+        <div className={styles.tagAddRow}>
           <input
             className="input"
             type="text"
@@ -672,7 +675,7 @@ function TagsView() {
         </small>
       </form>
 
-      <section className="admin-list" aria-label="All tags">
+      <section className={styles.list} aria-label="All tags">
         <div className="section-heading section-heading--compact">
           <div>
             <p className="eyebrow">Database</p>
@@ -687,7 +690,7 @@ function TagsView() {
           </p>
         </div>
 
-        <div className="admin-items">
+        <div className={styles.items}>
           {isError ? (
             <EmptyState
               title="Backend is not available"
@@ -705,18 +708,20 @@ function TagsView() {
             />
           ) : (
             pageItems.map((tag) => (
-              <article className="admin-item admin-item--tag" key={tag.name}>
-                <div className="admin-item__top">
-                  <div className="tag-item__info">
-                    <h3 className="admin-item__title">{tag.name}</h3>
-                    <span className={`tag-badge tag-badge--${tag.kind}`}>
+              <article className={styles.item} key={tag.name}>
+                <div className={`${styles.itemTop} ${styles.itemTopTag}`}>
+                  <div className={styles.tagItemInfo}>
+                    <h3 className={styles.itemTitle}>{tag.name}</h3>
+                    <span
+                      className={`${styles.tagBadge} ${styles.tagBadgeKind[tag.kind]}`}
+                    >
                       {tag.kind === "purpose" ? "Category" : "Tag"}
                     </span>
-                    <span className="tag-item__count">
+                    <span className={styles.tagItemCount}>
                       {tag.count} palette{tag.count === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <div className="admin-item__actions">
+                  <div className={styles.itemActions}>
                     <button
                       className="button button--ghost"
                       type="button"
@@ -746,7 +751,7 @@ function TagsView() {
         </div>
 
         {total > PAGE_SIZE && (
-          <div className="admin-pagination">
+          <div className={styles.pagination}>
             <button
               className="button button--ghost"
               type="button"
@@ -755,7 +760,7 @@ function TagsView() {
             >
               ← Prev
             </button>
-            <span className="admin-pagination__info">
+            <span className={styles.paginationInfo}>
               Page {currentPage} of {totalPages}
             </span>
             <button
