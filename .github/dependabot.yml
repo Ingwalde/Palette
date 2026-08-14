@@ -1,0 +1,29 @@
+version: 2
+
+# Weekly dependency PRs. pip-audit and npm audit in CI catch known CVEs in what is pinned
+# today; this is what actually moves the pins forward.
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for the routine patch/minor churn; majors still come through individually
+      # because they are the ones that need reading.
+      python-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend-react
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

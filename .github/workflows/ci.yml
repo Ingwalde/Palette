@@ -39,6 +39,11 @@ jobs:
       - name: Mypy
         run: mypy backend/app
 
+      - name: Audit Python dependencies
+        # Fails the job on a known CVE in a pinned dependency. Both requirement files are
+        # checked because -r pulls the runtime pins into the dev file anyway.
+        run: pip-audit -r backend/requirements-dev.txt --strict
+
   backend-tests:
     name: Backend tests (pytest · PostgreSQL)
     runs-on: ubuntu-latest
@@ -125,6 +130,9 @@ jobs:
 
       - name: Type-check (tsc)
         run: npm run typecheck
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
 
       - name: Unit tests + coverage gate (vitest)
         run: npm run test:coverage
