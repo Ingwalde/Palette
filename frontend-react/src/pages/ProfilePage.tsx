@@ -8,6 +8,8 @@ import { queryKeys } from "../api/queryKeys";
 import { changePassword, resendVerification, deleteAccount } from "../api/auth";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./ProfilePage.css";
 
 export function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -102,7 +104,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <section className={`section ${ui.pageHero} page-hero--account`}>
+      <section className={`section ${ui.pageHero} ${styles.pageHero}`}>
         <p className="eyebrow">Authentication</p>
         <h1>Personal account</h1>
         <p>
@@ -110,10 +112,10 @@ export function ProfilePage() {
         </p>
       </section>
 
-      <section className="section account-layout">
-        <article className="account-card">
-          <div className="account-card__header">
-            <div className="account-avatar" aria-hidden="true">
+      <section className={`section ${styles.layout}`}>
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.avatar} aria-hidden="true">
               {initial}
             </div>
             <div>
@@ -122,19 +124,19 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="account-detail">
-            <span className="account-detail__label">Email</span>
-            <span className="account-detail__value">{user.email}</span>
+          <div className={styles.detail}>
+            <span className={styles.detailLabel}>Email</span>
+            <span className={styles.detailValue}>{user.email}</span>
           </div>
 
           {!user.email_verified && (
-            <div className="verify-banner" role="status">
-              <p className="verify-banner__text">
+            <div className={styles.verifyBanner} role="status">
+              <p className={styles.verifyBannerText}>
                 Your email address isn't verified yet. Check your inbox for the
                 confirmation link.
               </p>
               <button
-                className="button button--secondary"
+                className={buttonClass("secondary")}
                 type="button"
                 onClick={onResend}
                 disabled={resending}
@@ -144,13 +146,13 @@ export function ProfilePage() {
             </div>
           )}
 
-          <div className="account-actions">
-            <div className="account-actions__main">
-              <Link className="button button--primary" to="/favorites">
+          <div className={styles.actions}>
+            <div className={styles.actionsMain}>
+              <Link className={buttonClass("primary")} to="/favorites">
                 Open favorites
               </Link>
               <button
-                className="button button--secondary"
+                className={buttonClass("secondary")}
                 type="button"
                 onClick={() => setShowForm(true)}
                 disabled={showForm}
@@ -159,7 +161,7 @@ export function ProfilePage() {
               </button>
             </div>
             <button
-              className="button button--danger account-actions__logout"
+              className={`${buttonClass("danger")} ${styles.logout}`}
               type="button"
               onClick={() => void onLogout()}
             >
@@ -168,7 +170,7 @@ export function ProfilePage() {
           </div>
 
           {showForm && (
-            <form className="password-form" onSubmit={onChangePassword}>
+            <form className={styles.passwordForm} onSubmit={onChangePassword}>
               <div>
                 <p className="eyebrow">Security</p>
                 <h3>Change password</h3>
@@ -201,14 +203,14 @@ export function ProfilePage() {
 
               <div className={ui.formActions}>
                 <button
-                  className="button button--primary"
+                  className={buttonClass("primary")}
                   type="submit"
                   disabled={saving}
                 >
                   {saving ? "Saving..." : "Save new password"}
                 </button>
                 <button
-                  className="button button--secondary"
+                  className={buttonClass("secondary")}
                   type="button"
                   onClick={hideForm}
                 >
@@ -218,7 +220,7 @@ export function ProfilePage() {
             </form>
           )}
 
-          <div className="account-danger">
+          <div className={styles.dangerZone}>
             <div>
               <p className="eyebrow">Danger zone</p>
               <p className="muted">
@@ -226,7 +228,7 @@ export function ProfilePage() {
               </p>
             </div>
             <button
-              className="button button--danger"
+              className={buttonClass("danger")}
               type="button"
               onClick={() => void onDelete()}
               disabled={deleting}

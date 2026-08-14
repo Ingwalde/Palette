@@ -1,4 +1,5 @@
 import * as ui from "../styles/ui.css";
+import * as styles from "./ChangelogPage.css";
 
 interface Entry {
   version: string;
@@ -227,10 +228,10 @@ export function ChangelogPage() {
         </p>
       </section>
 
-      <section className="section changelog-layout">
+      <section className={`section ${styles.layout}`}>
         {CHANGELOG.map((entry) => (
-          <article className="changelog-card" key={entry.version}>
-            <p className="changelog-card__version">{entry.version}</p>
+          <article className={styles.card} key={entry.version}>
+            <p className={styles.version}>{entry.version}</p>
             <h2>{entry.title}</h2>
             <ul>
               {entry.items.map((item, i) => (
