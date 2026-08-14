@@ -128,12 +128,19 @@ export function HomePage() {
           />
         </div>
 
-        <div className={styles.tagFilters} aria-label="Filter palettes by tag">
+        {/* role="group" so the label is announced: an aria-label on a bare div is dropped. */}
+        <div
+          className={styles.tagFilters}
+          role="group"
+          aria-label="Filter palettes by tag"
+        >
           {["all", ...chips].map((name) => (
             <button
               key={name}
               type="button"
               className={`${styles.tagButton}${tag === name ? ` ${styles.tagButtonActive}` : ""}`}
+              // Which filter is on was conveyed only by colour until now.
+              aria-pressed={tag === name}
               data-tag={name}
               onClick={() => setTag(name)}
             >

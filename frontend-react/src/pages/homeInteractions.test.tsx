@@ -65,9 +65,17 @@ describe("HomePage interactions", () => {
     const user = userEvent.setup();
     renderHome();
     const chip = await screen.findByRole("button", { name: "#cold" });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
     await user.click(chip);
-    // Compared against the imported style, not a literal: the class is a generated hash.
+
+    // The state is exposed to assistive tech now, so assert that rather than the class.
+    expect(chip).toHaveAttribute("aria-pressed", "true");
     expect(chip.className).toContain(homeStyles.tagButtonActive);
+    // Selecting one filter clears the others.
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 
   it("selects a palette name into the search when clicking Random palette", async () => {
