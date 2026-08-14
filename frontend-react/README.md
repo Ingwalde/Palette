@@ -161,6 +161,14 @@ One caveat about the numbers. The audit runs against the static `dist` with no b
 page passes through an extra cycle of loading and error states that it would not in
 production. Asset sizes are unaffected; the timings are mildly pessimistic.
 
+**Cumulative Layout Shift is deliberately not asserted here.** The static audit reported 0.218
+against a 0.1 target, and it is an artefact of that environment: a real Chromium run against
+the same build, instrumented with a `layout-shift` PerformanceObserver, records no shift
+entries at all. A warning that always fires teaches people to ignore warnings, and reshaping
+the page to satisfy it would be fixing the instrument. Field CLS already arrives from real
+users through the Sentry Web Vitals reporting, which is the number that describes what anyone
+actually experiences.
+
 ## API base URL
 
 `src/lib/apiBase.ts` picks the base from the page protocol: over HTTPS the API is same-origin
