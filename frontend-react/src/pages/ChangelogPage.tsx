@@ -220,15 +220,15 @@ const CHANGELOG: Entry[] = [
 export function ChangelogPage() {
   return (
     <>
-      <section className={`section ${ui.pageHero}`}>
-        <p className="eyebrow">Project history</p>
+      <section className={`${ui.section} ${ui.pageHero}`}>
+        <p className={ui.eyebrow}>Project history</p>
         <h1>Changelog</h1>
         <p>
           Short overview of the main project versions and what changed between releases.
         </p>
       </section>
 
-      <section className={`section ${styles.layout}`}>
+      <section className={`${ui.section} ${styles.layout}`}>
         {CHANGELOG.map((entry) => (
           <article className={styles.card} key={entry.version}>
             <p className={styles.version}>{entry.version}</p>

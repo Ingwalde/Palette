@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
       <main className={auth.verifyShell}>
         <div className={`${auth.card} ${auth.verifyCard}`}>
           <h1>Something went wrong</h1>
-          <p className="muted">
+          <p className={ui.muted}>
             An unexpected error occurred. Reloading the page usually fixes it.
           </p>
           <div className={`${ui.formActions} ${ui.formActionsCentered}`}>

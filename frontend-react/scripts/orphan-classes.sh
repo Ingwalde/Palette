@@ -21,8 +21,13 @@ defined=$(mktemp)
 trap 'rm -f "$used" "$defined"' EXIT
 
 # Literal className="..." values only. Anything built from a template is out of scope.
-grep -rhoE 'className="[^"{]+"' src --include=*.tsx \
-  | sed 's/className="//; s/"$//' | tr ' ' '\n' | sort -u | grep -v '^$' > "$used"
+#
+# `|| true` matters: with every class scoped there are no literals left, and a grep that
+# matches nothing exits 1. Under `set -euo pipefail` that killed the script before it printed
+# anything — a silent pass that looked exactly like a clean run, and it hid a real missed
+# replacement until the check was pointed at it deliberately.
+grep -rhoE 'className="[^"{]+"' src --include=*.tsx 2>/dev/null \
+  | sed 's/className="//; s/"$//' | tr ' ' '\n' | sort -u | grep -v '^$' > "$used" || true
 
 : > "$defined"
 

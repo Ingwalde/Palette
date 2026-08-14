@@ -64,9 +64,9 @@ export function HomePage() {
 
   return (
     <>
-      <section className={`section ${styles.hero}`} aria-labelledby="hero-title">
+      <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className="eyebrow">Palette v4.8.3 · Update!</p>
+          <p className={ui.eyebrow}>Palette v4.8.3 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
             Search, filter, save and export palettes. The React + TypeScript frontend now
@@ -100,10 +100,13 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className={`section ${styles.toolbarSection}`} aria-label="Palette tools">
+      <section
+        className={`${ui.section} ${styles.toolbarSection}`}
+        aria-label="Palette tools"
+      >
         <div className={ui.toolbar}>
           <label className={ui.searchField} htmlFor="searchInput">
-            <span className="visually-hidden">Search palettes</span>
+            <span className={ui.visuallyHidden}>Search palettes</span>
             <input
               id="searchInput"
               type="search"
@@ -151,13 +154,13 @@ export function HomePage() {
       </section>
 
       <section
-        className={`section ${styles.palettesAnchor}`}
+        className={`${ui.section} ${styles.palettesAnchor}`}
         id="palettes"
         aria-labelledby="palettes-title"
       >
         <div className={ui.sectionHeading}>
           <div>
-            <p className="eyebrow">Backend data</p>
+            <p className={ui.eyebrow}>Backend data</p>
             <h2 id="palettes-title">Available palettes</h2>
           </div>
           <p className={styles.resultCount} aria-live="polite">

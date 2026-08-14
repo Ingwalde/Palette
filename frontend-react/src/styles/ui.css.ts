@@ -302,3 +302,56 @@ export const tag = style({
   color: vars.color.muted,
   background: vars.color.surfaceStrong,
 });
+
+// --- Utilities ---------------------------------------------------------------------------
+// Scoped like everything else. They were the last class names written as strings in the
+// markup, which is the only reason the orphan check had anything to look at.
+
+/** Centred column with the app's max width. */
+export const section = style({
+  width: `min(${vars.layout.container}, calc(100% - 32px))`,
+  marginInline: "auto",
+});
+
+/** Small uppercase label above a heading. */
+export const eyebrow = style({
+  margin: "0 0 10px",
+  color: vars.color.muted,
+  fontSize: "0.78rem",
+  fontWeight: 700,
+  letterSpacing: "0.12em",
+  textTransform: "uppercase",
+});
+
+export const muted = style({
+  color: vars.color.muted,
+});
+
+export const visuallyHidden = style({
+  position: "absolute",
+  width: "1px",
+  height: "1px",
+  padding: 0,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+});
+
+/** Skip-to-content link — off-screen until it takes keyboard focus. */
+export const skipLink = style({
+  position: "absolute",
+  left: "12px",
+  top: "-48px",
+  zIndex: 1000,
+  padding: "10px 16px",
+  borderRadius: "10px",
+  background: vars.color.primary,
+  color: "#fff",
+  fontWeight: 600,
+  textDecoration: "none",
+  transition: "top 160ms ease",
+  selectors: {
+    "&:focus": { top: "12px" },
+  },
+});

@@ -133,8 +133,8 @@ export function ExportPage() {
 
   return (
     <>
-      <section className={`section ${ui.pageHero}`}>
-        <p className="eyebrow">Developer tools</p>
+      <section className={`${ui.section} ${ui.pageHero}`}>
+        <p className={ui.eyebrow}>Developer tools</p>
         <h1>Export palettes</h1>
         <p>
           Generate ready-to-use CSS variables, SCSS variables, JSON or a polished PNG
@@ -142,7 +142,7 @@ export function ExportPage() {
         </p>
       </section>
 
-      <section className={`section ${styles.layout}`}>
+      <section className={`${ui.section} ${styles.layout}`}>
         <aside className={styles.panel} aria-label="Export settings">
           <label className={ui.field}>
             <span>Palette source</span>
@@ -246,7 +246,7 @@ export function ExportPage() {
         <section className={styles.result} aria-labelledby="export-title">
           <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
             <div>
-              <p className="eyebrow">Preview</p>
+              <p className={ui.eyebrow}>Preview</p>
               <h2 id="export-title">Generated output</h2>
             </div>
           </div>

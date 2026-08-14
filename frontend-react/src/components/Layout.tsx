@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import * as styles from "./Layout.css";
+import * as ui from "../styles/ui.css";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink;
@@ -33,7 +34,7 @@ export function Layout() {
 
   return (
     <>
-      <a className="skip-link" href="#main-content">
+      <a className={ui.skipLink} href="#main-content">
         Skip to content
       </a>
 
@@ -89,7 +90,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className={`section ${styles.footer}`}>
+      <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>
           <div className={styles.footerContent}>
             <p className={styles.footerEyebrow}>Palette v4.8.3</p>

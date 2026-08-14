@@ -1,6 +1,0 @@
-/* Injected only while a baseline is captured — never shipped.
- *
- * Intentionally minimal: neutralising sticky positioning is done in JS instead (see
- * `unstick` in pages.spec.ts), because it has to find elements by computed style. Every
- * class-based rule here went stale the moment its component moved to vanilla-extract, and
- * did so silently. */

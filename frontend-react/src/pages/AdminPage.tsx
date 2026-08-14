@@ -38,7 +38,7 @@ export function AdminPage() {
 
   const refreshAccess = () => queryClient.invalidateQueries({ queryKey: queryKeys.auth });
 
-  if (isLoading) return <section className="section" />;
+  if (isLoading) return <section className={ui.section} />;
 
   if (!isAuthenticated || !isAdmin) {
     const title = !isAuthenticated ? "Login required" : "Admin role required";
@@ -48,11 +48,11 @@ export function AdminPage() {
     return (
       <>
         <AdminHero />
-        <section className={`section ${styles.access}`}>
+        <section className={`${ui.section} ${styles.access}`}>
           <div className={styles.accessCard}>
-            <p className="eyebrow">Protected area</p>
+            <p className={ui.eyebrow}>Protected area</p>
             <h2>{title}</h2>
-            <p className="muted">{message}</p>
+            <p className={ui.muted}>{message}</p>
             <div className={ui.formActions}>
               <Link className={buttonClass("primary")} to="/login">
                 Go to login
@@ -76,8 +76,8 @@ export function AdminPage() {
 
 function AdminHero() {
   return (
-    <section className={`section ${ui.pageHero}`}>
-      <p className="eyebrow">Admin</p>
+    <section className={`${ui.section} ${ui.pageHero}`}>
+      <p className={ui.eyebrow}>Admin</p>
       <h1>Manage palettes</h1>
       <p>
         Admin actions are protected with username/password authentication and an admin
@@ -93,10 +93,10 @@ function AdminPanel({ username }: { username: string }) {
   return (
     <>
       <AdminHero />
-      <section className={`section ${styles.layout}`}>
+      <section className={`${ui.section} ${styles.layout}`}>
         <div className={styles.toolbar}>
           <div>
-            <p className="eyebrow">Admin session · {username}</p>
+            <p className={ui.eyebrow}>Admin session · {username}</p>
             <h2>Admin panel</h2>
           </div>
           <div
@@ -264,7 +264,7 @@ function PalettesView() {
       <form className={styles.form} onSubmit={onSave}>
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Palette</p>
+            <p className={ui.eyebrow}>Palette</p>
             <h2>{editingId !== null ? "Edit palette" : "Add palette"}</h2>
           </div>
         </div>
@@ -430,7 +430,7 @@ function PalettesView() {
       <section className={styles.list} aria-label="Palettes in the database">
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Database</p>
+            <p className={ui.eyebrow}>Database</p>
             <h2>Palettes in the database</h2>
           </div>
           <p className={home.resultCount}>
@@ -443,7 +443,7 @@ function PalettesView() {
         </div>
 
         <label className={`${ui.searchField} ${styles.listSearch}`}>
-          <span className="visually-hidden">Search palettes</span>
+          <span className={ui.visuallyHidden}>Search palettes</span>
           <input
             type="search"
             placeholder="Search by name, description or tag..."
@@ -650,7 +650,7 @@ function TagsView() {
       <form className={styles.form} onSubmit={onAdd}>
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Tag catalog</p>
+            <p className={ui.eyebrow}>Tag catalog</p>
             <h2>Add a tag</h2>
           </div>
         </div>
@@ -681,7 +681,7 @@ function TagsView() {
       <section className={styles.list} aria-label="All tags">
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Database</p>
+            <p className={ui.eyebrow}>Database</p>
             <h2>All tags</h2>
           </div>
           <p className={home.resultCount}>

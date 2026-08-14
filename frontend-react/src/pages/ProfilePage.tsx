@@ -104,22 +104,22 @@ export function ProfilePage() {
 
   return (
     <>
-      <section className={`section ${ui.pageHero} ${styles.pageHero}`}>
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${ui.pageHero} ${styles.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Personal account</h1>
         <p>
           View your account details, open your saved palettes and manage your session.
         </p>
       </section>
 
-      <section className={`section ${styles.layout}`}>
+      <section className={`${ui.section} ${styles.layout}`}>
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.avatar} aria-hidden="true">
               {initial}
             </div>
             <div>
-              <p className="eyebrow">Logged in as</p>
+              <p className={ui.eyebrow}>Logged in as</p>
               <h2>{user.username}</h2>
             </div>
           </div>
@@ -172,9 +172,9 @@ export function ProfilePage() {
           {showForm && (
             <form className={styles.passwordForm} onSubmit={onChangePassword}>
               <div>
-                <p className="eyebrow">Security</p>
+                <p className={ui.eyebrow}>Security</p>
                 <h3>Change password</h3>
-                <p className="muted">
+                <p className={ui.muted}>
                   Enter your current password and confirm the new password.
                 </p>
               </div>
@@ -222,8 +222,8 @@ export function ProfilePage() {
 
           <div className={styles.dangerZone}>
             <div>
-              <p className="eyebrow">Danger zone</p>
-              <p className="muted">
+              <p className={ui.eyebrow}>Danger zone</p>
+              <p className={ui.muted}>
                 Deleting your account is permanent and also removes your saved favorites.
               </p>
             </div>

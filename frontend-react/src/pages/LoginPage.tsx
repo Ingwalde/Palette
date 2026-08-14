@@ -70,8 +70,8 @@ export function LoginPage() {
 
   return (
     <>
-      <section className={`section ${auth.pageHero}`}>
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${auth.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Login to Palette</h1>
         <p>
           Use username, email and password authentication. Admin access is connected to
@@ -79,12 +79,12 @@ export function LoginPage() {
         </p>
       </section>
 
-      <section className={`section ${auth.layout}`}>
+      <section className={`${ui.section} ${auth.layout}`}>
         <form className={auth.card} onSubmit={onLogin}>
           <div>
-            <p className="eyebrow">Existing account</p>
+            <p className={ui.eyebrow}>Existing account</p>
             <h2>Login</h2>
-            <p className="muted">
+            <p className={ui.muted}>
               For local admin access, use the admin user from backend/.env.
             </p>
           </div>
@@ -122,9 +122,9 @@ export function LoginPage() {
 
         <form className={auth.card} onSubmit={onRegister}>
           <div>
-            <p className="eyebrow">New account</p>
+            <p className={ui.eyebrow}>New account</p>
             <h2>Create account</h2>
-            <p className="muted">
+            <p className={ui.muted}>
               New users are created without admin rights. Admin users are created from
               backend settings.
             </p>

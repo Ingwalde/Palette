@@ -50,17 +50,17 @@ export function FavoritesPage() {
 
   return (
     <>
-      <section className={`section ${ui.pageHero}`}>
-        <p className="eyebrow">Saved palettes</p>
+      <section className={`${ui.section} ${ui.pageHero}`}>
+        <p className={ui.eyebrow}>Saved palettes</p>
         <h1>Your favorite palettes</h1>
         <p>Favorites are connected to your account and stored in the backend database.</p>
       </section>
 
-      <section className="section">
+      <section className={ui.section}>
         <div className={ui.sectionHeading}>
           <div>
             <h2>Favorites</h2>
-            <p className="muted">{count}</p>
+            <p className={ui.muted}>{count}</p>
           </div>
           <button
             className={buttonClass("danger")}

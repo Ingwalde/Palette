@@ -33,8 +33,6 @@ export default defineConfig({
       animations: "disabled",
       caret: "hide",
       scale: "css",
-      // Neutralises sticky positioning, which otherwise never settles on a full-page shot.
-      stylePath: "./e2e/visual/screenshot.css",
     },
   },
   projects: [

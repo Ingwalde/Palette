@@ -40,20 +40,20 @@ export function ForgotPasswordPage() {
 
   return (
     <>
-      <section className={`section ${auth.pageHero}`}>
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${auth.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Forgot your password?</h1>
         <p>
           Enter your account email and we'll send you a link to choose a new password.
         </p>
       </section>
 
-      <section className={`section ${auth.layout} ${auth.layoutSingle}`}>
+      <section className={`${ui.section} ${auth.layout} ${auth.layoutSingle}`}>
         {result !== null ? (
           <div className={auth.card}>
             <div className={auth.cardResult}>
               <h2>Check your inbox</h2>
-              <p className="muted">{result}</p>
+              <p className={ui.muted}>{result}</p>
               <Link className={buttonClass("primary")} to="/login">
                 Back to login
               </Link>
@@ -62,9 +62,9 @@ export function ForgotPasswordPage() {
         ) : (
           <form className={auth.card} onSubmit={onSubmit}>
             <div>
-              <p className="eyebrow">Reset password</p>
+              <p className={ui.eyebrow}>Reset password</p>
               <h2>Send reset link</h2>
-              <p className="muted">
+              <p className={ui.muted}>
                 The link is valid for a limited time and can be used once.
               </p>
             </div>

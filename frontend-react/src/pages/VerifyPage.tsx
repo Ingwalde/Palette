@@ -90,14 +90,14 @@ export function VerifyPage() {
           {state.status === "pending" && (
             <>
               <h1>Verifying your email…</h1>
-              <p className="muted">Please wait a moment.</p>
+              <p className={ui.muted}>Please wait a moment.</p>
             </>
           )}
 
           {state.status === "success" && (
             <>
               <h1>You're in, {state.user.username}! 🎉</h1>
-              <p className="muted">{state.line}</p>
+              <p className={ui.muted}>{state.line}</p>
               <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
                 <Link className={buttonClass("primary")} to="/profile">
                   Go to my account
@@ -109,7 +109,7 @@ export function VerifyPage() {
           {state.status === "error" && (
             <>
               <h1>Verification failed</h1>
-              <p className="muted">
+              <p className={ui.muted}>
                 {resentMessage ||
                   `${state.message} The link may be invalid or expired — request a new one below.`}
               </p>
