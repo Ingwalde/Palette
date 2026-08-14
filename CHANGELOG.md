@@ -1,5 +1,99 @@
 # Changelog
 
+## v4.8.4 — Code review remediation
+
+An external code review found twelve defects; all twelve are fixed here, along with five
+adjacent problems found while confirming them. Two were breaking production silently. The
+release also finishes the v4.8.0 cutover: the last of the vanilla frontend — its global
+stylesheets — is gone.
+
+### Fixed
+
+- **Email links led to a 404.** `email_service` built verification and reset links against
+  `/verify.html` and `/reset-password.html`, paths belonging to the vanilla frontend deleted in
+  v4.8.0. Email confirmation and password reset had been unusable since that release. A test now
+  pins both paths against the real React routes, so renaming a route fails the suite.
+- **CSP blocked Sentry.** The nginx `connect-src` never listed an ingest host, so the v4.8.3
+  frontend observability work reported nothing in production. The policy is now a template:
+  ingest hosts are static, and the dev-only backend ports come from `CONNECT_SRC_EXTRA`, set for
+  local Compose and empty in production.
+- **500 when deleting a favourited palette.** `favorites` and `refresh_tokens` had foreign keys
+  with no `ON DELETE` action, so removing a palette anyone had saved raised a foreign-key
+  violation. Migration `0006` recreates all three with `ON DELETE CASCADE`, resolving the real
+  constraint names from `pg_constraint` rather than assuming Postgres's defaults.
+- **Truncated backups looked valid.** `backup-db.sh` redirected into the final filename, so a
+  `pg_dump` that died mid-stream left a plausible-looking `.gz` behind. It now writes to a
+  temporary file and renames only after the dump succeeds — which matters more now that the
+  deploy depends on it.
+- **The test suite talked to production services.** `backend/.env` is bind-mounted into the test
+  container, so runs picked up the real `RESEND_API_KEY` and `SENTRY_DSN`. The `tests` service
+  blanks both.
+- **Home page empty, loading and error states** were hand-rolled markup duplicating the
+  `EmptyState` component, and had been unstyled since the React port. They use the component now.
+- **`/404`** rendered the migration-era `PlaceholderPage` instead of a real not-found page.
+
+### Security
+
+- **Access tokens are revocable.** Each user row carries a `token_version`; access tokens carry
+  it as a `ver` claim, and `get_current_user` compares the two on a row it already loads — so
+  revocation costs no extra query. Changing a password, resetting one, or the new
+  `POST /auth/logout-all` retires every token already issued, immediately rather than at expiry.
+- **Reset links are single use.** The reset token carries the user's `token_version`, and
+  completing a reset bumps it, so replaying the same link fails for the rest of its window.
+- **`change_password` revokes refresh tokens**, matching `reset_password`, which already did.
+- **Production and staging secrets are separate files.** `secrets.enc.env` had picked up a second
+  copy of `POSTGRES_DB` and all three `DEFAULT_ADMIN_*` keys — staging values appended to the
+  production file. dotenv resolves duplicates last-wins, so production had been running on the
+  second block, admin password included. Staging also inherited `backend/.env`, meaning it shared
+  production's credentials outright; it now has its own decrypted env file and `env_file:
+  !override` so no production value can leak through a key staging forgot to set.
+- **Source maps are no longer published.** The build emits them `hidden` for Sentry and the image
+  build deletes them, instead of serving the readable TypeScript source to anyone who asks.
+
+### Changed
+
+- **The global stylesheets are gone** — 2309 lines of `src/styles/vanilla/` migrated to
+  vanilla-extract, one `.css.ts` per component or page, with the design tokens as a typed
+  contract. Class names are build-time hashes; nothing addresses a style by string any more, and
+  `npm run css:orphans` fails the build if anything does. Nineteen Playwright screenshot
+  baselines, compared at zero pixel tolerance, held byte-identical across the whole migration.
+- **Deploys ship the commit CI validated.** The workflow checked out `main`'s head, which is not
+  necessarily the commit that went green. It now checks out `workflow_run.head_sha`, takes a
+  database backup before `up -d` — migrations run at startup, so that is the point of no
+  return — and layers `docker-compose.prod.yml`.
+- **The production image no longer contains pytest.** Test dependencies moved behind an
+  `INSTALL_DEV` build arg that only the `tests` service passes.
+
+### Performance
+
+- **Tag aggregation runs in Postgres.** `GET /tags` read every palette's tag array and counted in
+  Python. One `jsonb_array_elements_text` + `GROUP BY` replaces it: 125.5 ms to 15.4 ms.
+- **Search is indexed.** Migration `0008` adds `pg_trgm` and trigram indexes over the search
+  predicates, and repairs the GIN index that `0003` could skip on databases that predated
+  Alembic: 67.4 ms to 2.46 ms. Search also escapes `%` and `_` now, so they match literally
+  rather than acting as wildcards.
+- **Slugs resolve in one query** instead of one per candidate, and seeding is a single bulk
+  insert instead of a commit per palette.
+
+### Accessibility
+
+- The tag filter chips expose their state through `aria-pressed`, and the remaining labelled
+  containers carry a role, so a screen reader can tell which filters are active.
+
+### CI
+
+- The Playwright and axe suites run on every pull request — the e2e job that would have caught
+  the broken email links. Added `format:check`, `pip-audit` and `npm audit`.
+
+### Notes
+
+- **Everyone is signed out once by this release.** Access tokens minted before the `ver` claim
+  existed have no version to compare, so they are rejected. Signing in again is the whole fix.
+- Documentation was audited against the code and corrected throughout: `docs/database.md` still
+  claimed Alembic was planned while eight migrations ran at startup, and `docs/api.md` documented
+  `Authorization: Bearer` auth and a login response containing an `access_token`, neither of
+  which has been true since v4.5.
+
 ## v4.8.3 — Frontend observability
 
 Wires the existing client-error funnel to Sentry, opt-in via a build-time DSN.

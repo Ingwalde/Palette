@@ -113,6 +113,64 @@ async def test_password_change_success(user_client, user_csrf):
     assert new.status_code == 200
 
 
+async def test_password_change_retires_other_sessions_but_not_this_one(user_client, user_csrf):
+    other_device = user_client.cookies.get("access_token")
+    assert (await user_client.get("/api/v1/auth/me")).status_code == 200
+
+    resp = await user_client.put(
+        "/api/v1/auth/password",
+        headers=user_csrf,
+        json={
+            "current_password": "strong-password",
+            "new_password": "new-strong-password",
+            "confirm_password": "new-strong-password",
+        },
+    )
+    assert resp.status_code == 200
+
+    # The cookie captured before the change is dead straight away, not in 24 hours.
+    stale = await user_client.get("/api/v1/auth/me", cookies={"access_token": other_device})
+    assert stale.status_code == 401
+    # The caller keeps the tab they just used: the response re-issued their cookies.
+    assert (await user_client.get("/api/v1/auth/me")).status_code == 200
+
+
+async def test_logout_all_ends_every_session(user_client, user_csrf):
+    other_device = user_client.cookies.get("access_token")
+
+    resp = await user_client.post("/api/v1/auth/logout-all", headers=user_csrf)
+    assert resp.status_code == 204
+
+    for cookie in (other_device,):
+        stale = await user_client.get("/api/v1/auth/me", cookies={"access_token": cookie})
+        assert stale.status_code == 401
+
+
+async def test_login_still_works_after_hash_upgrade(client, db_session):
+    """The transparent Argon2 rehash must not count as a credential change.
+
+    authenticate_user rewrites password_hash when the stored hash is legacy or uses outdated
+    parameters. If that bumped token_version it would log the user out mid-login.
+    """
+    from app import crud
+    from app.security import _pbkdf2_hash
+
+    await _register(client, username="legacy", email="legacy@test.com", password="strong-password")
+    user = await crud.get_user_by_username(db_session, "legacy")
+    salt = "00112233445566778899aabbccddeeff"
+    legacy = f"pbkdf2_sha256$210000${salt}${_pbkdf2_hash('strong-password', salt)}"
+    await crud.update_user_password(db_session, user, legacy)
+    version_before = user.token_version
+
+    resp = await _login(client, username="legacy")
+    assert resp.status_code == 200
+    assert (await client.get("/api/v1/auth/me")).status_code == 200
+
+    await db_session.refresh(user)
+    assert user.password_hash.startswith("$argon2")
+    assert user.token_version == version_before
+
+
 async def test_login_sets_refresh_cookie(client):
     await _register(client)
     resp = await _login(client)

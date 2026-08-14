@@ -9,11 +9,9 @@ import { ModalProvider } from "./components/modal/ModalProvider";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { initObservability } from "./lib/observability";
 import { App } from "./App";
-// Reuse the vanilla stylesheets verbatim so the React app is visually 1:1 with the
-// original frontend. These are retired once the migration is complete.
-import "./styles/vanilla/base.css";
-import "./styles/vanilla/components.css";
-import "./styles/vanilla/pages.css";
+// Document-level layer: reset, design tokens, typography. Everything else is scoped to the
+// component or page that owns it.
+import "./styles/global.css";
 
 initObservability();
 

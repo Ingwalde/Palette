@@ -107,9 +107,11 @@ Status: completed.
 
 Status: completed.
 
-- Email verification flow: send a token link on registration, confirm before login.
-- `is_verified` + verification token on the user model.
-- SMTP configuration (dev via Mailtrap, prod via a mail provider).
+- Email verification flow: send a token link on registration; the link confirms the address
+  and signs the user in. Verification is deliberately **not** required to log in — see
+  `docs/auth.md`.
+- `email_verified` + `email_verified_at` on the user model, plus a resend endpoint.
+- Outbound email via Resend (logged to the console when no API key is configured).
 - Password reset by email.
 
 ## v4.3 — Account Management and Home Tags
@@ -171,6 +173,29 @@ Status: completed.
   revoked on reset); dedicated forgot-password and reset-password pages.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
+
+## v4.8.4 — Code Review Remediation
+
+Status: completed.
+
+- Fixed the two defects that were breaking production silently: verification and reset emails
+  linked to the vanilla pages removed in v4.8.0, and the CSP had no Sentry ingest host, so the
+  v4.8.3 reporting collected nothing.
+- Revocable sessions: `users.token_version` + a `ver` claim, `POST /auth/logout-all`, single-use
+  password-reset links, and refresh revocation on password change.
+- `ON DELETE CASCADE` on favourites and refresh tokens (deleting a favourited palette returned
+  500); atomic backup files; production and staging secrets split into separate encrypted files.
+- Search and tag counts moved into indexed PostgreSQL queries (`pg_trgm`, `GROUP BY`).
+- Global stylesheets replaced by vanilla-extract, one module per component, guarded by
+  zero-tolerance screenshot baselines.
+- Deploys ship the CI-validated SHA and back the database up before migrating; e2e/axe, format
+  and dependency-audit checks run on every pull request.
+
+Planned next:
+
+- v4.8.5 — manual accessibility pass, route-level code splitting, integration e2e against the
+  real stack, and a dedicated frontend Sentry project.
+- v4.8.6 — security automation (Dependabot, CodeQL).
 
 ## v4.8.3 — Frontend Observability
 

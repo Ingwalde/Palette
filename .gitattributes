@@ -1,5 +1,5 @@
 # SOPS-encrypted secrets: the age MAC covers exact bytes — never let git rewrite line endings.
-secrets.enc.env -text
+secrets/*.enc.env -text
 
 # Shell scripts must stay LF so they run on the Linux VM regardless of host platform.
 *.sh text eol=lf

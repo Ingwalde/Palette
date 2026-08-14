@@ -131,17 +131,21 @@ describe("AdminPage palettes", () => {
 
   it("adds and removes colour rows (capped at 8)", async () => {
     const user = userEvent.setup();
-    const { container } = renderAdmin();
+    renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
 
-    expect(container.querySelectorAll(".color-row").length).toBe(1);
+    // Counted by the per-row colour picker's accessible name rather than a CSS class, which
+    // is a generated hash now.
+    const rows = () => screen.getAllByLabelText(/Colour \d+ picker/);
+
+    expect(rows()).toHaveLength(1);
     const addBtn = screen.getByRole("button", { name: "+ Add color" });
     for (let i = 0; i < 10; i++) await user.click(addBtn);
-    expect(container.querySelectorAll(".color-row").length).toBe(8);
+    expect(rows()).toHaveLength(8);
     expect(addBtn).toBeDisabled();
 
-    await user.click(container.querySelector(".color-row__remove")!);
-    expect(container.querySelectorAll(".color-row").length).toBe(7);
+    await user.click(screen.getAllByRole("button", { name: "Remove color" })[0]);
+    expect(rows()).toHaveLength(7);
   });
 
   it("adds a tag chip via Enter", async () => {

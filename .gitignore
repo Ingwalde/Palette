@@ -15,6 +15,7 @@ env/
 # Environment
 .env
 backend/.env
+backend/.env.staging
 
 # Logs
 *.log
@@ -45,5 +46,5 @@ htmlcov/
 age.key
 *.agekey
 .config/sops/
-!secrets.enc.env
+!secrets/*.enc.env
 backups/

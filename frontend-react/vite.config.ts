@@ -1,16 +1,22 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  // Emit source maps so Sentry can symbolicate minified stack traces back to the TS source.
-  build: { sourcemap: true },
+  plugins: [react(), vanillaExtractPlugin()],
+  // "hidden": emit source maps for Sentry to symbolicate with, but omit the sourceMappingURL
+  // comment so browsers never request them. The Dockerfile deletes them before they reach
+  // nginx — a plain `true` published the entire TypeScript source at /assets/*.map.
+  build: { sourcemap: "hidden" },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    // Has to exceed the 5s asyncUtilTimeout set in the setup file, or a slow `findBy` would
+    // fail the test on the runner's budget before its own wait expired.
+    testTimeout: 15000,
     // Playwright specs live under e2e/ and run with their own runner, not Vitest.
     exclude: ["**/node_modules/**", "**/dist/**", "e2e/**"],
     coverage: {

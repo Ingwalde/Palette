@@ -13,6 +13,9 @@ import {
   type ExportFormat,
 } from "../lib/exportGenerators";
 import type { Palette } from "../types/api";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./ExportPage.css";
 
 const SOURCE_OPTIONS = [
   { value: "single", label: "Choose palette" },
@@ -130,8 +133,8 @@ export function ExportPage() {
 
   return (
     <>
-      <section className="page-hero section">
-        <p className="eyebrow">Developer tools</p>
+      <section className={`${ui.section} ${ui.pageHero}`}>
+        <p className={ui.eyebrow}>Developer tools</p>
         <h1>Export palettes</h1>
         <p>
           Generate ready-to-use CSS variables, SCSS variables, JSON or a polished PNG
@@ -139,9 +142,9 @@ export function ExportPage() {
         </p>
       </section>
 
-      <section className="section export-layout">
-        <aside className="export-panel" aria-label="Export settings">
-          <label className="field">
+      <section className={`${ui.section} ${styles.layout}`}>
+        <aside className={styles.panel} aria-label="Export settings">
+          <label className={ui.field}>
             <span>Palette source</span>
             <CustomSelect
               options={SOURCE_OPTIONS}
@@ -158,12 +161,12 @@ export function ExportPage() {
           </label>
 
           {singleMode && (
-            <div className="palette-picker">
-              <label className="field">
+            <div className={styles.picker}>
+              <label className={ui.field}>
                 <span>Search palette</span>
-                <span className="search-input-wrap">
+                <span className={ui.searchInputWrap}>
                   <input
-                    className="input"
+                    className={ui.input}
                     type="search"
                     placeholder="Type palette name, slug or tag..."
                     autoComplete="off"
@@ -175,7 +178,7 @@ export function ExportPage() {
                   />
                   <button
                     type="button"
-                    className="search-clear"
+                    className={ui.searchClear}
                     aria-label="Clear search"
                     onClick={() => {
                       setSearchInput("");
@@ -185,21 +188,21 @@ export function ExportPage() {
                 </span>
               </label>
 
-              <div className="palette-picker__results" aria-live="polite">
+              <div className={styles.pickerResults} aria-live="polite">
                 {pickerResults.length === 0
                   ? null
                   : pickerResults.map((palette) => (
                       <button
                         key={palette.slug}
                         type="button"
-                        className={`palette-picker__option${palette.slug === selectedSlug ? " palette-picker__option--selected" : ""}`}
+                        className={`${styles.pickerOption}${palette.slug === selectedSlug ? ` ${styles.pickerOptionSelected}` : ""}`}
                         onClick={() => onPickPalette(palette)}
                       >
-                        <span className="palette-picker__option-info">
+                        <span className={styles.pickerOptionInfo}>
                           <strong>{palette.name}</strong>
                           <small>{palette.slug}</small>
                         </span>
-                        <span className="palette-picker__swatches" aria-hidden="true">
+                        <span className={styles.pickerSwatches} aria-hidden="true">
                           {palette.colors.map((color, i) => (
                             <span
                               key={i}
@@ -210,13 +213,13 @@ export function ExportPage() {
                       </button>
                     ))}
               </div>
-              <p className="palette-picker__status">
+              <p className={styles.pickerStatus}>
                 {pickerResults.length === 0 ? "No palettes found." : pickerStatus}
               </p>
             </div>
           )}
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Format</span>
             <CustomSelect
               options={FORMAT_OPTIONS}
@@ -226,12 +229,12 @@ export function ExportPage() {
             />
           </label>
 
-          <div className="export-panel__actions">
-            <button className="button button--primary" type="button" onClick={onPreview}>
+          <div className={styles.panelActions}>
+            <button className={buttonClass("primary")} type="button" onClick={onPreview}>
               {isPng ? "Refresh preview" : "Copy result"}
             </button>
             <button
-              className="button button--secondary"
+              className={buttonClass("secondary")}
               type="button"
               onClick={onDownload}
             >
@@ -240,23 +243,23 @@ export function ExportPage() {
           </div>
         </aside>
 
-        <section className="export-result" aria-labelledby="export-title">
-          <div className="section-heading section-heading--compact">
+        <section className={styles.result} aria-labelledby="export-title">
+          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
             <div>
-              <p className="eyebrow">Preview</p>
+              <p className={ui.eyebrow}>Preview</p>
               <h2 id="export-title">Generated output</h2>
             </div>
           </div>
 
           {isPng && pngDataUrl ? (
-            <div className="image-preview">
-              <div className="image-preview__frame">
+            <div className={styles.imagePreview}>
+              <div className={styles.imageFrame}>
                 <img id="exportPreviewImage" src={pngDataUrl} alt="PNG export preview" />
               </div>
-              <p className="image-preview__caption">{caption}</p>
+              <p className={styles.imageCaption}>{caption}</p>
             </div>
           ) : (
-            <pre className="code-output">
+            <pre className={styles.codeOutput}>
               <code>
                 {isPng ? "Choose one palette to generate PNG preview." : textOutput}
               </code>

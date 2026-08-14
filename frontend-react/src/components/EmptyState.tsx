@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./EmptyState.css";
 
 interface EmptyStateProps {
   title: string;
@@ -6,14 +8,13 @@ interface EmptyStateProps {
   action?: { label: string; to: string };
 }
 
-// Ported from the vanilla createEmptyState — same .empty-state markup and optional action link.
 export function EmptyState({ title, text, action }: EmptyStateProps) {
   return (
-    <div className="empty-state">
+    <div className={styles.root}>
       <h3>{title}</h3>
       <p>{text}</p>
       {action && (
-        <Link className="button button--primary empty-state__action" to={action.to}>
+        <Link className={`${buttonClass("primary")} ${styles.action}`} to={action.to}>
           {action.label}
         </Link>
       )}

@@ -16,8 +16,12 @@ RESEND_ENDPOINT = "https://api.resend.com/emails"
 
 
 def build_verification_link(token: str) -> str:
-    """Link the user clicks in the email — points at the frontend verify page."""
-    return f"{settings.public_base_url}/verify.html?token={token}"
+    """Link the user clicks in the email — points at the frontend verify page.
+
+    Extensionless: the React route is `/verify` (frontend-react/src/App.tsx). Keep it in
+    sync with tests/test_email_links.py.
+    """
+    return f"{settings.public_base_url}/verify?token={token}"
 
 
 def send_email(to: str, subject: str, html: str) -> None:
@@ -40,8 +44,11 @@ def send_email(to: str, subject: str, html: str) -> None:
 
 
 def build_reset_link(token: str) -> str:
-    """Link the user clicks in the email — points at the frontend reset-password page."""
-    return f"{settings.public_base_url}/reset-password.html?token={token}"
+    """Link the user clicks in the email — points at the frontend reset-password page.
+
+    Extensionless: the React route is `/reset-password` (frontend-react/src/App.tsx).
+    """
+    return f"{settings.public_base_url}/reset-password?token={token}"
 
 
 def send_password_reset_email(to: str, username: str, token: str) -> None:

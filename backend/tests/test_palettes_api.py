@@ -32,6 +32,19 @@ async def test_search(client, seeded):
     assert [p["name"] for p in resp.json()["items"]] == ["Beta Cold"]
 
 
+async def test_search_matches_tags(client, seeded):
+    # Tags are searchable through the JSONB-as-text branch, not just the ?tag= filter.
+    resp = await client.get("/api/v1/palettes", params={"search": "bol"})
+    assert [p["name"] for p in resp.json()["items"]] == ["Alpha Warm"]
+
+
+async def test_search_treats_wildcards_literally(client, seeded):
+    # "%" used to be passed straight into LIKE and matched every palette.
+    for pattern in ("%", "_", "%%"):
+        resp = await client.get("/api/v1/palettes", params={"search": pattern})
+        assert resp.json()["total"] == 0, f"{pattern!r} behaved as a wildcard"
+
+
 async def test_tag_filter(client, seeded):
     resp = await client.get("/api/v1/palettes", params={"tag": "warm"})
     names = {p["name"] for p in resp.json()["items"]}
@@ -87,3 +100,72 @@ async def test_admin_create_update_delete(admin_client, admin_csrf):
 
     deleted = await admin_client.delete(f"/api/v1/palettes/{palette_id}", headers=admin_csrf)
     assert deleted.status_code == 204
+
+
+async def test_update_with_unchanged_name_keeps_slug(admin_client, admin_csrf):
+    created = await admin_client.post(
+        "/api/v1/palettes",
+        headers=admin_csrf,
+        json={"name": "Stable Name", "colors": ["#123456"], "tags": []},
+    )
+    palette_id, original_slug = created.json()["id"], created.json()["slug"]
+
+    updated = await admin_client.put(
+        f"/api/v1/palettes/{palette_id}",
+        headers=admin_csrf,
+        json={"name": "Stable Name", "description": "only the description moved"},
+    )
+    assert updated.status_code == 200
+    assert updated.json()["slug"] == original_slug
+
+
+async def test_seeding_gives_colliding_names_distinct_slugs(db_session):
+    created = await crud.create_many_if_empty(
+        db_session,
+        [
+            schemas.PaletteCreate(name="Same Name", colors=["#111111"], tags=[]),
+            schemas.PaletteCreate(name="Same Name", colors=["#222222"], tags=[]),
+            schemas.PaletteCreate(name="Same Name", colors=["#333333"], tags=[]),
+        ],
+    )
+    assert created == 3
+
+    slugs = [p.slug for p in await crud.get_palettes(db_session)]
+    assert sorted(slugs) == ["same-name", "same-name-2", "same-name-3"]
+
+
+async def _login(client, username, password="strong-password"):
+    resp = await client.post(
+        "/api/v1/auth/login", json={"username": username, "password": password}
+    )
+    assert resp.status_code == 200
+    return {"X-CSRF-Token": client.cookies.get("csrf_token", "")}
+
+
+async def test_admin_delete_palette_that_someone_favorited(admin_client, admin_csrf):
+    """favorites.palette_id references the palette, so deleting it must cascade.
+
+    Without ON DELETE CASCADE this raises ForeignKeyViolation and the endpoint 500s.
+    """
+    created = await admin_client.post(
+        "/api/v1/palettes",
+        headers=admin_csrf,
+        json={"name": "Loved Palette", "colors": ["#123456"], "tags": []},
+    )
+    assert created.status_code == 201
+    palette_id, slug = created.json()["id"], created.json()["slug"]
+
+    await admin_client.post(
+        "/api/v1/auth/register",
+        json={"username": "fan", "email": "fan@test.com", "password": "strong-password"},
+    )
+    fan_csrf = await _login(admin_client, "fan")
+    favorited = await admin_client.post(f"/api/v1/favorites/{slug}", headers=fan_csrf)
+    assert favorited.status_code == 201
+
+    csrf = await _login(admin_client, "adminuser")
+    deleted = await admin_client.delete(f"/api/v1/palettes/{palette_id}", headers=csrf)
+    assert deleted.status_code == 204
+
+    await _login(admin_client, "fan")
+    assert (await admin_client.get("/api/v1/favorites")).json() == []

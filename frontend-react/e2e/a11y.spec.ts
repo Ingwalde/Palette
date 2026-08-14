@@ -52,6 +52,7 @@ const GUEST_PAGES = [
   "/export",
   "/changelog",
   "/forgot-password",
+  "/no-such-page", // the 404 is a real page now, so it gets audited like the rest
 ];
 const ADMIN_PAGES = ["/admin", "/profile"];
 

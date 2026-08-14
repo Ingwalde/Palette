@@ -4,6 +4,10 @@ import { useDebounce } from "../lib/useDebounce";
 import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
+import { EmptyState } from "../components/EmptyState";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./HomePage.css";
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
 
@@ -60,20 +64,21 @@ export function HomePage() {
 
   return (
     <>
-      <section className="hero section" aria-labelledby="hero-title">
-        <div className="hero__content">
-          <p className="eyebrow">Palette v4.8.3 · Update!</p>
+      <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
+        <div>
+          <p className={ui.eyebrow}>Palette v4.8.4 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
-          <p className="hero__text">
-            Search, filter, save and export palettes. The React + TypeScript frontend now ships
-            with Sentry error &amp; Web&nbsp;Vitals reporting, on top of a WCAG&nbsp;AA pass.
+          <p className={ui.heroText}>
+            Search, filter, save and export palettes. This release makes every session
+            revocable, moves search onto PostgreSQL indexes, and rebuilds the styling on
+            type-checked, per-component CSS.
           </p>
-          <div className="hero__actions">
-            <a className="button button--primary" href="#palettes">
+          <div className={styles.heroActions}>
+            <a className={buttonClass("primary")} href="#palettes">
               Browse palettes
             </a>
             <button
-              className="button button--secondary"
+              className={buttonClass("secondary")}
               type="button"
               onClick={randomPalette}
             >
@@ -82,10 +87,10 @@ export function HomePage() {
           </div>
         </div>
 
-        <div className="hero-preview" aria-hidden="true">
-          <div className="hero-preview__window">
-            <div className="hero-preview__top"></div>
-            <div className="hero-preview__grid">
+        <div className={styles.heroPreview} aria-hidden="true">
+          <div className={styles.heroPreviewWindow}>
+            <div className={styles.heroPreviewTop}></div>
+            <div className={styles.heroPreviewGrid}>
               <span></span>
               <span></span>
               <span></span>
@@ -95,10 +100,13 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section toolbar-section" aria-label="Palette tools">
-        <div className="toolbar">
-          <label className="search-field" htmlFor="searchInput">
-            <span className="visually-hidden">Search palettes</span>
+      <section
+        className={`${ui.section} ${styles.toolbarSection}`}
+        aria-label="Palette tools"
+      >
+        <div className={ui.toolbar}>
+          <label className={ui.searchField} htmlFor="searchInput">
+            <span className={ui.visuallyHidden}>Search palettes</span>
             <input
               id="searchInput"
               type="search"
@@ -109,7 +117,7 @@ export function HomePage() {
             />
             <button
               type="button"
-              className="search-clear"
+              className={ui.searchClear}
               aria-label="Clear search"
               onClick={() => setSearchInput("")}
             ></button>
@@ -123,12 +131,19 @@ export function HomePage() {
           />
         </div>
 
-        <div className="tag-filters" aria-label="Filter palettes by tag">
+        {/* role="group" so the label is announced: an aria-label on a bare div is dropped. */}
+        <div
+          className={styles.tagFilters}
+          role="group"
+          aria-label="Filter palettes by tag"
+        >
           {["all", ...chips].map((name) => (
             <button
               key={name}
               type="button"
-              className={`tag-button${tag === name ? " tag-button--active" : ""}`}
+              className={`${styles.tagButton}${tag === name ? ` ${styles.tagButtonActive}` : ""}`}
+              // Which filter is on was conveyed only by colour until now.
+              aria-pressed={tag === name}
               data-tag={name}
               onClick={() => setTag(name)}
             >
@@ -138,13 +153,17 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="section" id="palettes" aria-labelledby="palettes-title">
-        <div className="section-heading">
+      <section
+        className={`${ui.section} ${styles.palettesAnchor}`}
+        id="palettes"
+        aria-labelledby="palettes-title"
+      >
+        <div className={ui.sectionHeading}>
           <div>
-            <p className="eyebrow">Backend data</p>
+            <p className={ui.eyebrow}>Backend data</p>
             <h2 id="palettes-title">Available palettes</h2>
           </div>
-          <p className="result-count" aria-live="polite">
+          <p className={styles.resultCount} aria-live="polite">
             {isLoading
               ? "Loading..."
               : isError
@@ -153,22 +172,22 @@ export function HomePage() {
           </p>
         </div>
 
-        <div className="palette-grid">
+        <div className={ui.paletteGrid}>
           {isError ? (
-            <div className="empty-state">
-              <h3>Backend unavailable</h3>
-              <p>Could not reach the backend API. Start the stack and try again.</p>
-            </div>
+            <EmptyState
+              title="Backend unavailable"
+              text="Could not reach the backend API. Start the stack and try again."
+            />
           ) : isLoading ? (
-            <div className="empty-state">
-              <h3>Loading palettes</h3>
-              <p>The frontend is requesting data from the backend API.</p>
-            </div>
+            <EmptyState
+              title="Loading palettes"
+              text="The frontend is requesting data from the backend API."
+            />
           ) : palettes.length === 0 ? (
-            <div className="empty-state">
-              <h3>No palettes found</h3>
-              <p>Try another name, tag or filter.</p>
-            </div>
+            <EmptyState
+              title="No palettes found"
+              text="Try another name, tag or filter."
+            />
           ) : (
             palettes.map((palette) => <PaletteCard key={palette.id} palette={palette} />)
           )}

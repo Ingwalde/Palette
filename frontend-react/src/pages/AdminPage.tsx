@@ -17,6 +17,11 @@ import { queryKeys } from "../api/queryKeys";
 import { ApiError } from "../lib/http";
 import { useDebounce } from "../lib/useDebounce";
 import type { Palette, Tag, TagKind } from "../types/api";
+import * as colorEditor from "./ColorEditor.css";
+import * as styles from "./AdminPage.css";
+import * as ui from "../styles/ui.css";
+import * as home from "./HomePage.css";
+import { buttonClass } from "../styles/ui";
 
 const DEFAULT_COLOR = "#3f4e4f";
 const MAX_COLORS = 8;
@@ -33,7 +38,7 @@ export function AdminPage() {
 
   const refreshAccess = () => queryClient.invalidateQueries({ queryKey: queryKeys.auth });
 
-  if (isLoading) return <section className="section" />;
+  if (isLoading) return <section className={ui.section} />;
 
   if (!isAuthenticated || !isAdmin) {
     const title = !isAuthenticated ? "Login required" : "Admin role required";
@@ -43,17 +48,17 @@ export function AdminPage() {
     return (
       <>
         <AdminHero />
-        <section className="section admin-access">
-          <div className="admin-access__card">
-            <p className="eyebrow">Protected area</p>
+        <section className={`${ui.section} ${styles.access}`}>
+          <div className={styles.accessCard}>
+            <p className={ui.eyebrow}>Protected area</p>
             <h2>{title}</h2>
-            <p className="muted">{message}</p>
-            <div className="form-actions">
-              <Link className="button button--primary" to="/login">
+            <p className={ui.muted}>{message}</p>
+            <div className={ui.formActions}>
+              <Link className={buttonClass("primary")} to="/login">
                 Go to login
               </Link>
               <button
-                className="button button--ghost"
+                className={buttonClass("ghost")}
                 type="button"
                 onClick={refreshAccess}
               >
@@ -71,8 +76,8 @@ export function AdminPage() {
 
 function AdminHero() {
   return (
-    <section className="page-hero section">
-      <p className="eyebrow">Admin</p>
+    <section className={`${ui.section} ${ui.pageHero}`}>
+      <p className={ui.eyebrow}>Admin</p>
       <h1>Manage palettes</h1>
       <p>
         Admin actions are protected with username/password authentication and an admin
@@ -88,21 +93,21 @@ function AdminPanel({ username }: { username: string }) {
   return (
     <>
       <AdminHero />
-      <section className="section admin-layout">
-        <div className="admin-toolbar">
+      <section className={`${ui.section} ${styles.layout}`}>
+        <div className={styles.toolbar}>
           <div>
-            <p className="eyebrow">Admin session · {username}</p>
+            <p className={ui.eyebrow}>Admin session · {username}</p>
             <h2>Admin panel</h2>
           </div>
           <div
-            className="admin-mode"
+            className={styles.mode}
             role="tablist"
             aria-label="Admin mode"
             data-active={mode}
           >
-            <span className="admin-mode__pill" aria-hidden="true" />
+            <span className={styles.modePill} aria-hidden="true" />
             <button
-              className={`admin-mode__btn${mode === "palettes" ? " admin-mode__btn--active" : ""}`}
+              className={`${styles.modeButton}${mode === "palettes" ? ` ${styles.modeButtonActive}` : ""}`}
               type="button"
               role="tab"
               aria-selected={mode === "palettes"}
@@ -111,7 +116,7 @@ function AdminPanel({ username }: { username: string }) {
               Palettes
             </button>
             <button
-              className={`admin-mode__btn${mode === "tags" ? " admin-mode__btn--active" : ""}`}
+              className={`${styles.modeButton}${mode === "tags" ? ` ${styles.modeButtonActive}` : ""}`}
               type="button"
               role="tab"
               aria-selected={mode === "tags"}
@@ -255,19 +260,19 @@ function PalettesView() {
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
-    <div className="admin-view">
-      <form className="admin-form" onSubmit={onSave}>
-        <div className="section-heading section-heading--compact">
+    <div className={styles.view}>
+      <form className={styles.form} onSubmit={onSave}>
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Palette</p>
+            <p className={ui.eyebrow}>Palette</p>
             <h2>{editingId !== null ? "Edit palette" : "Add palette"}</h2>
           </div>
         </div>
 
-        <label className="field">
+        <label className={ui.field}>
           <span>Name</span>
           <input
-            className="input"
+            className={ui.input}
             type="text"
             placeholder="Nordic Blue"
             required
@@ -276,10 +281,10 @@ function PalettesView() {
           />
         </label>
 
-        <label className="field">
+        <label className={ui.field}>
           <span>Description</span>
           <textarea
-            className="textarea"
+            className={ui.textarea}
             rows={4}
             placeholder="Short description..."
             required
@@ -288,20 +293,20 @@ function PalettesView() {
           />
         </label>
 
-        <div className="field">
+        <div className={ui.field}>
           <span>Colors</span>
-          <div className="color-editor">
+          <div className={colorEditor.editor}>
             {colors.map((color, i) => (
-              <div className="color-row" key={i}>
+              <div className={colorEditor.row} key={i}>
                 <input
-                  className="color-row__picker"
+                  className={colorEditor.picker}
                   type="color"
                   aria-label={`Colour ${i + 1} picker`}
                   value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR}
                   onChange={(e) => setColorAt(i, e.target.value.toUpperCase())}
                 />
                 <input
-                  className="input color-row__hex"
+                  className={`${ui.input} ${colorEditor.hex}`}
                   type="text"
                   maxLength={7}
                   aria-label="HEX color"
@@ -309,7 +314,7 @@ function PalettesView() {
                   onChange={(e) => setColorAt(i, e.target.value)}
                 />
                 <button
-                  className="button button--ghost color-row__remove"
+                  className={`${buttonClass("ghost")} ${colorEditor.remove}`}
                   type="button"
                   aria-label="Remove color"
                   onClick={() => removeColor(i)}
@@ -319,27 +324,27 @@ function PalettesView() {
               </div>
             ))}
           </div>
-          <div className="color-editor__footer">
+          <div className={colorEditor.footer}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               onClick={addColor}
               disabled={colors.length >= MAX_COLORS}
             >
               + Add color
             </button>
-            <small className="hint">1–8 HEX colors.</small>
+            <small className={ui.hint}>1–8 HEX colors.</small>
           </div>
         </div>
 
-        <div className="field">
+        <div className={ui.field}>
           <span>Tags</span>
-          <div className="tag-editor">
+          <div className={styles.tagEditor}>
             {paletteTags.map((tag) => (
-              <span className="tag-chip" key={tag} data-value={tag}>
+              <span className={styles.tagChip} key={tag} data-value={tag}>
                 {tag}
                 <button
-                  className="tag-chip__remove"
+                  className={styles.tagChipRemove}
                   type="button"
                   aria-label={`Remove ${tag}`}
                   onClick={() => setPaletteTags((t) => t.filter((x) => x !== tag))}
@@ -349,9 +354,9 @@ function PalettesView() {
               </span>
             ))}
           </div>
-          <div className="tag-suggest">
+          <div className={styles.tagSuggest}>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               placeholder="Type or pick a tag"
               autoComplete="off"
@@ -375,14 +380,14 @@ function PalettesView() {
               }}
             />
             <div
-              className="tag-suggest__menu"
+              className={styles.tagSuggestMenu}
               role="listbox"
               hidden={!suggestOpen || suggestions.length === 0}
             >
               {suggestions.map((tag) => (
                 <button
                   key={tag.name}
-                  className="tag-suggest__option"
+                  className={styles.tagSuggestOption}
                   type="button"
                   role="option"
                   onMouseDown={(e) => {
@@ -391,26 +396,28 @@ function PalettesView() {
                     setTagInput("");
                   }}
                 >
-                  <span className="tag-suggest__name">{tag.name}</span>
+                  <span className={styles.tagSuggestName}>{tag.name}</span>
                   {tag.kind === "purpose" && (
-                    <span className="tag-badge tag-badge--purpose">Category</span>
+                    <span className={`${styles.tagBadge} ${styles.tagBadgeKind.purpose}`}>
+                      Category
+                    </span>
                   )}
                 </button>
               ))}
             </div>
           </div>
-          <small className="hint">
+          <small className={ui.hint}>
             Press Enter or comma to add, or pick from the list. Up to 12 tags.
           </small>
         </div>
 
-        <div className="form-actions">
-          <button className="button button--primary" type="submit">
+        <div className={ui.formActions}>
+          <button className={buttonClass("primary")} type="submit">
             {editingId !== null ? "Update palette" : "Create palette"}
           </button>
           {editingId !== null && (
             <button
-              className="button button--secondary"
+              className={buttonClass("secondary")}
               type="button"
               onClick={resetForm}
             >
@@ -420,13 +427,13 @@ function PalettesView() {
         </div>
       </form>
 
-      <section className="admin-list" aria-label="Palettes in the database">
-        <div className="section-heading section-heading--compact">
+      <section className={styles.list} aria-label="Palettes in the database">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Database</p>
+            <p className={ui.eyebrow}>Database</p>
             <h2>Palettes in the database</h2>
           </div>
-          <p className="result-count">
+          <p className={home.resultCount}>
             {isLoading
               ? "Loading..."
               : isError
@@ -435,8 +442,8 @@ function PalettesView() {
           </p>
         </div>
 
-        <label className="search-field admin-list__search">
-          <span className="visually-hidden">Search palettes</span>
+        <label className={`${ui.searchField} ${styles.listSearch}`}>
+          <span className={ui.visuallyHidden}>Search palettes</span>
           <input
             type="search"
             placeholder="Search by name, description or tag..."
@@ -446,13 +453,13 @@ function PalettesView() {
           />
           <button
             type="button"
-            className="search-clear"
+            className={ui.searchClear}
             aria-label="Clear search"
             onClick={() => setSearchInput("")}
           />
         </label>
 
-        <div className="admin-items">
+        <div className={styles.items}>
           {isError ? (
             <EmptyState
               title="Backend is not available"
@@ -474,22 +481,22 @@ function PalettesView() {
             />
           ) : (
             items.map((palette) => (
-              <article className="admin-item" key={palette.id}>
-                <div className="admin-item__top">
+              <article className={styles.item} key={palette.id}>
+                <div className={styles.itemTop}>
                   <div>
-                    <h3 className="admin-item__title">{palette.name}</h3>
-                    <p className="admin-item__slug">/{palette.slug}</p>
+                    <h3 className={styles.itemTitle}>{palette.name}</h3>
+                    <p className={styles.itemSlug}>/{palette.slug}</p>
                   </div>
-                  <div className="admin-item__actions">
+                  <div className={styles.itemActions}>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => onEdit(palette)}
                     >
                       Edit
                     </button>
                     <button
-                      className="button button--danger"
+                      className={buttonClass("danger")}
                       type="button"
                       onClick={() => void onDelete(palette)}
                     >
@@ -497,7 +504,7 @@ function PalettesView() {
                     </button>
                   </div>
                 </div>
-                <div className="admin-swatches">
+                <div className={styles.swatches}>
                   {palette.colors.map((color, i) => (
                     <span
                       key={i}
@@ -512,20 +519,20 @@ function PalettesView() {
         </div>
 
         {total > PAGE_SIZE && (
-          <div className="admin-pagination">
+          <div className={styles.pagination}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset === 0}
               onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
             >
               ← Prev
             </button>
-            <span className="admin-pagination__info">
+            <span className={styles.paginationInfo}>
               Page {currentPage} of {totalPages}
             </span>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset((o) => o + PAGE_SIZE)}
@@ -639,17 +646,17 @@ function TagsView() {
   const pageItems = catalog.slice(offset, offset + PAGE_SIZE);
 
   return (
-    <div className="admin-view">
-      <form className="admin-form" onSubmit={onAdd}>
-        <div className="section-heading section-heading--compact">
+    <div className={styles.view}>
+      <form className={styles.form} onSubmit={onAdd}>
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Tag catalog</p>
+            <p className={ui.eyebrow}>Tag catalog</p>
             <h2>Add a tag</h2>
           </div>
         </div>
-        <div className="tag-add-row">
+        <div className={styles.tagAddRow}>
           <input
-            className="input"
+            className={ui.input}
             type="text"
             placeholder="new-tag"
             autoComplete="off"
@@ -662,22 +669,22 @@ function TagsView() {
             onChange={(v) => setNewKind(v as TagKind)}
             ariaLabel="Tag kind"
           />
-          <button className="button button--primary" type="submit">
+          <button className={buttonClass("primary")} type="submit">
             Add tag
           </button>
         </div>
-        <small className="hint">
+        <small className={ui.hint}>
           Categories are the standard "what is this palette for" tags (shown first).
         </small>
       </form>
 
-      <section className="admin-list" aria-label="All tags">
-        <div className="section-heading section-heading--compact">
+      <section className={styles.list} aria-label="All tags">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
           <div>
-            <p className="eyebrow">Database</p>
+            <p className={ui.eyebrow}>Database</p>
             <h2>All tags</h2>
           </div>
-          <p className="result-count">
+          <p className={home.resultCount}>
             {isLoading
               ? "Loading..."
               : isError
@@ -686,7 +693,7 @@ function TagsView() {
           </p>
         </div>
 
-        <div className="admin-items">
+        <div className={styles.items}>
           {isError ? (
             <EmptyState
               title="Backend is not available"
@@ -704,34 +711,36 @@ function TagsView() {
             />
           ) : (
             pageItems.map((tag) => (
-              <article className="admin-item admin-item--tag" key={tag.name}>
-                <div className="admin-item__top">
-                  <div className="tag-item__info">
-                    <h3 className="admin-item__title">{tag.name}</h3>
-                    <span className={`tag-badge tag-badge--${tag.kind}`}>
+              <article className={styles.item} key={tag.name}>
+                <div className={`${styles.itemTop} ${styles.itemTopTag}`}>
+                  <div className={styles.tagItemInfo}>
+                    <h3 className={styles.itemTitle}>{tag.name}</h3>
+                    <span
+                      className={`${styles.tagBadge} ${styles.tagBadgeKind[tag.kind]}`}
+                    >
                       {tag.kind === "purpose" ? "Category" : "Tag"}
                     </span>
-                    <span className="tag-item__count">
+                    <span className={styles.tagItemCount}>
                       {tag.count} palette{tag.count === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <div className="admin-item__actions">
+                  <div className={styles.itemActions}>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => void onToggleKind(tag)}
                     >
                       {tag.kind === "purpose" ? "Make tag" : "Make category"}
                     </button>
                     <button
-                      className="button button--ghost"
+                      className={buttonClass("ghost")}
                       type="button"
                       onClick={() => void onRename(tag)}
                     >
                       Rename
                     </button>
                     <button
-                      className="button button--danger"
+                      className={buttonClass("danger")}
                       type="button"
                       onClick={() => void onDelete(tag)}
                     >
@@ -745,20 +754,20 @@ function TagsView() {
         </div>
 
         {total > PAGE_SIZE && (
-          <div className="admin-pagination">
+          <div className={styles.pagination}>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset === 0}
               onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
             >
               ← Prev
             </button>
-            <span className="admin-pagination__info">
+            <span className={styles.paginationInfo}>
               Page {currentPage} of {totalPages}
             </span>
             <button
-              className="button button--ghost"
+              className={buttonClass("ghost")}
               type="button"
               disabled={offset + PAGE_SIZE >= total}
               onClick={() => setOffset((o) => o + PAGE_SIZE)}

@@ -17,8 +17,15 @@ outfile="$BACKUP_DIR/palette-${stamp}.sql.gz"
 
 # Dump from inside the db container, using its own POSTGRES_USER/POSTGRES_DB env (no need to
 # parse backend/.env, whose values may contain shell metacharacters).
+#
+# Write to a .part file and rename only on success. The shell creates the redirect target
+# before pg_dump can fail, so a failed dump would otherwise leave a truncated .sql.gz sitting
+# next to the good ones, indistinguishable from a real backup until you try to restore it.
+# The deploy workflow gates on this script's exit code, so the failure must be loud.
 echo "Backing up database -> ${outfile}"
-docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "$outfile"
+trap 'rm -f "${outfile}.part"' EXIT
+docker compose exec -T db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' | gzip > "${outfile}.part"
+mv "${outfile}.part" "$outfile"
 echo "Wrote $(du -h "$outfile" | cut -f1) to ${outfile}"
 
 # Prune old backups.

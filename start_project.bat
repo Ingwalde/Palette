@@ -1,7 +1,7 @@
 @echo off
-title Palette v4.0 Launcher
+title Palette Launcher
 
-echo Starting Palette v4.0 (Docker Compose)...
+echo Starting Palette (Docker Compose)...
 echo.
 
 cd /d "%~dp0"
@@ -24,12 +24,13 @@ if errorlevel 1 (
 timeout /t 4 /nobreak > nul
 
 start http://localhost:5500
-start http://localhost:8000/docs
 
 echo.
-echo Palette v4.0 started.
+echo Palette started.
 echo Frontend:     http://localhost:5500
-echo Backend docs: http://localhost:8000/docs
+echo Backend:      http://localhost:8000/api/v1/palettes
+echo.
+echo Swagger is at /api/docs and only when ENABLE_API_DOCS=true, so it is not opened here.
 echo.
 echo Stop with: docker compose down
 pause

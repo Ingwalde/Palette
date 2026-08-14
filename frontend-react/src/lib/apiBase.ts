@@ -1,4 +1,4 @@
-// Single source for the API base URL, ported from the vanilla frontend.
+// Single source for the API base URL.
 // Same-origin `/api/v1` when served over HTTPS (behind the Caddy reverse proxy), or the
 // backend port directly for local HTTP Docker dev.
 export const API_BASE_URL =

@@ -7,6 +7,9 @@ import { PasswordField } from "../components/PasswordField";
 import { queryKeys } from "../api/queryKeys";
 import { changePassword, resendVerification, deleteAccount } from "../api/auth";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
+import * as styles from "./ProfilePage.css";
 
 export function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -101,39 +104,39 @@ export function ProfilePage() {
 
   return (
     <>
-      <section className="page-hero page-hero--account section">
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${ui.pageHero} ${styles.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Personal account</h1>
         <p>
           View your account details, open your saved palettes and manage your session.
         </p>
       </section>
 
-      <section className="section account-layout">
-        <article className="account-card">
-          <div className="account-card__header">
-            <div className="account-avatar" aria-hidden="true">
+      <section className={`${ui.section} ${styles.layout}`}>
+        <article className={styles.card}>
+          <div className={styles.cardHeader}>
+            <div className={styles.avatar} aria-hidden="true">
               {initial}
             </div>
             <div>
-              <p className="eyebrow">Logged in as</p>
+              <p className={ui.eyebrow}>Logged in as</p>
               <h2>{user.username}</h2>
             </div>
           </div>
 
-          <div className="account-detail">
-            <span className="account-detail__label">Email</span>
-            <span className="account-detail__value">{user.email}</span>
+          <div className={styles.detail}>
+            <span className={styles.detailLabel}>Email</span>
+            <span className={styles.detailValue}>{user.email}</span>
           </div>
 
           {!user.email_verified && (
-            <div className="verify-banner" role="status">
-              <p className="verify-banner__text">
+            <div className={styles.verifyBanner} role="status">
+              <p className={styles.verifyBannerText}>
                 Your email address isn't verified yet. Check your inbox for the
                 confirmation link.
               </p>
               <button
-                className="button button--secondary"
+                className={buttonClass("secondary")}
                 type="button"
                 onClick={onResend}
                 disabled={resending}
@@ -143,13 +146,13 @@ export function ProfilePage() {
             </div>
           )}
 
-          <div className="account-actions">
-            <div className="account-actions__main">
-              <Link className="button button--primary" to="/favorites">
+          <div className={styles.actions}>
+            <div className={styles.actionsMain}>
+              <Link className={buttonClass("primary")} to="/favorites">
                 Open favorites
               </Link>
               <button
-                className="button button--secondary"
+                className={buttonClass("secondary")}
                 type="button"
                 onClick={() => setShowForm(true)}
                 disabled={showForm}
@@ -158,7 +161,7 @@ export function ProfilePage() {
               </button>
             </div>
             <button
-              className="button button--danger account-actions__logout"
+              className={`${buttonClass("danger")} ${styles.logout}`}
               type="button"
               onClick={() => void onLogout()}
             >
@@ -167,11 +170,11 @@ export function ProfilePage() {
           </div>
 
           {showForm && (
-            <form className="password-form" onSubmit={onChangePassword}>
+            <form className={styles.passwordForm} onSubmit={onChangePassword}>
               <div>
-                <p className="eyebrow">Security</p>
+                <p className={ui.eyebrow}>Security</p>
                 <h3>Change password</h3>
-                <p className="muted">
+                <p className={ui.muted}>
                   Enter your current password and confirm the new password.
                 </p>
               </div>
@@ -198,16 +201,16 @@ export function ProfilePage() {
                 required
               />
 
-              <div className="form-actions">
+              <div className={ui.formActions}>
                 <button
-                  className="button button--primary"
+                  className={buttonClass("primary")}
                   type="submit"
                   disabled={saving}
                 >
                   {saving ? "Saving..." : "Save new password"}
                 </button>
                 <button
-                  className="button button--secondary"
+                  className={buttonClass("secondary")}
                   type="button"
                   onClick={hideForm}
                 >
@@ -217,15 +220,15 @@ export function ProfilePage() {
             </form>
           )}
 
-          <div className="account-danger">
+          <div className={styles.dangerZone}>
             <div>
-              <p className="eyebrow">Danger zone</p>
-              <p className="muted">
+              <p className={ui.eyebrow}>Danger zone</p>
+              <p className={ui.muted}>
                 Deleting your account is permanent and also removes your saved favorites.
               </p>
             </div>
             <button
-              className="button button--danger"
+              className={buttonClass("danger")}
               type="button"
               onClick={() => void onDelete()}
               disabled={deleting}

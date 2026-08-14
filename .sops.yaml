@@ -1,4 +1,4 @@
-# SOPS configuration. Secrets are stored encrypted (secrets.enc.env) and committed to git;
+# SOPS configuration. Secrets are stored encrypted (secrets/*.enc.env) and committed to git;
 # the age private key lives only on the machine that decrypts (your VM / your laptop) and is
 # NEVER committed.
 #
@@ -6,12 +6,16 @@
 # ~/.config/sops/age/keys.txt (and never in git). To re-key on a new machine:
 #   1. Install: sops + age (https://github.com/getsops/sops, https://github.com/FiloSottile/age)
 #   2. Generate a keypair:  age-keygen -o age.key      # prints the public key (age1...)
-#   3. Add the new public key as an extra `age:` recipient, then: sops updatekeys secrets.enc.env
+#   3. Add the new public key as an extra `age:` recipient, then run `sops updatekeys` on each
+#      file under secrets/. Do this: today there is a single recipient whose private half exists
+#      only on the VM, so losing that machine loses every secret in the repo.
 #   4. Keep age.key private. On the VM place it at ~/.config/sops/age/keys.txt
 #
 # See docs/secrets.md for the full encrypt / decrypt / deploy flow.
+# Production and staging are separate files so a staging value can never win a duplicate-key
+# race against a production one, the way it did in the old combined secrets.enc.env.
 creation_rules:
-  - path_regex: secrets\.enc\.env$
+  - path_regex: secrets/(prod|staging)\.enc\.env$
     input_type: dotenv
     output_type: dotenv
     age: "age12hyq0xjn3lyt83xp4csr06vgpvyrdztzu7kg7z09902p2qhvgssqtn7a3j"

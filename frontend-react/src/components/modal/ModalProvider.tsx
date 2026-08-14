@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import * as styles from "./Modal.css";
+import * as ui from "../../styles/ui.css";
+import { buttonClass } from "../../styles/ui";
 
 interface BaseOptions {
   title: string;
@@ -30,8 +33,8 @@ interface ModalContextValue {
 
 const ModalContext = createContext<ModalContextValue | null>(null);
 
-// Promise-based confirm/prompt dialogs (ported from the vanilla modal.js) — styled, accessible
-// replacements for window.confirm / window.prompt used by the admin destructive actions.
+// Promise-based confirm/prompt dialogs: accessible replacements for window.confirm and
+// window.prompt, used by the admin destructive actions.
 export function ModalProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ModalState | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -86,17 +89,22 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       {children}
       {state && (
         <div
-          className="modal-overlay"
+          className={styles.overlay}
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) cancel();
           }}
         >
-          <div className="modal" role="dialog" aria-modal="true" aria-label={state.title}>
-            <h2 className="modal__title">{state.title}</h2>
-            {state.message && <p className="modal__message">{state.message}</p>}
+          <div
+            className={styles.dialog}
+            role="dialog"
+            aria-modal="true"
+            aria-label={state.title}
+          >
+            <h2 className={styles.title}>{state.title}</h2>
+            {state.message && <p className={styles.message}>{state.message}</p>}
             {state.isPrompt && (
               <input
-                className="input modal__input"
+                className={`${ui.input} ${styles.input}`}
                 type="text"
                 aria-label={state.title}
                 autoFocus
@@ -104,13 +112,13 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 onChange={(e) => setInputValue(e.target.value)}
               />
             )}
-            <div className="modal__actions">
-              <button type="button" className="button button--ghost" onClick={cancel}>
+            <div className={styles.actions}>
+              <button type="button" className={buttonClass("ghost")} onClick={cancel}>
                 {state.cancelLabel ?? "Cancel"}
               </button>
               <button
                 type="button"
-                className={`button ${state.danger ? "button--danger" : "button--primary"}`}
+                className={buttonClass(state.danger ? "danger" : "primary")}
                 onClick={accept}
               >
                 {state.confirmLabel ?? "Confirm"}

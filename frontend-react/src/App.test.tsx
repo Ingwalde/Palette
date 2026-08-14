@@ -71,9 +71,14 @@ describe("App shell", () => {
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
-  it("renders the not-found placeholder for an unknown route", () => {
+  it("renders a real 404 for an unknown route", () => {
     renderAt("/nope");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Not found");
-    expect(screen.getByText(/coming soon/i)).toBeInTheDocument();
+    expect(screen.getByText("404")).toBeInTheDocument();
+    // A dead end needs a way out; the old placeholder offered none.
+    expect(screen.getByRole("link", { name: /back to palettes/i })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 });

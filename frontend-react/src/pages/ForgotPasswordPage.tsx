@@ -2,11 +2,12 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../api/auth";
 import { useToast } from "../components/toast/ToastProvider";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function ForgotPasswordPage() {
-  useBodyClass("auth-page");
   const { showToast } = useToast();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -39,57 +40,57 @@ export function ForgotPasswordPage() {
 
   return (
     <>
-      <section className="page-hero page-hero--auth section">
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${auth.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Forgot your password?</h1>
         <p>
           Enter your account email and we'll send you a link to choose a new password.
         </p>
       </section>
 
-      <section className="section auth-layout auth-layout--single">
+      <section className={`${ui.section} ${auth.layout} ${auth.layoutSingle}`}>
         {result !== null ? (
-          <div className="auth-card">
-            <div className="auth-card__result">
+          <div className={auth.card}>
+            <div className={auth.cardResult}>
               <h2>Check your inbox</h2>
-              <p className="muted">{result}</p>
-              <Link className="button button--primary" to="/login">
+              <p className={ui.muted}>{result}</p>
+              <Link className={buttonClass("primary")} to="/login">
                 Back to login
               </Link>
             </div>
           </div>
         ) : (
-          <form className="auth-card" onSubmit={onSubmit}>
+          <form className={auth.card} onSubmit={onSubmit}>
             <div>
-              <p className="eyebrow">Reset password</p>
+              <p className={ui.eyebrow}>Reset password</p>
               <h2>Send reset link</h2>
-              <p className="muted">
+              <p className={ui.muted}>
                 The link is valid for a limited time and can be used once.
               </p>
             </div>
 
-            <label className="field">
+            <label className={ui.field}>
               <span>Email</span>
               <input
-                className="input"
+                className={ui.input}
                 type="email"
                 autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <small className="hint" role="alert">
+              <small className={ui.hint} role="alert">
                 {error}
               </small>
             </label>
 
-            <div className="form-actions">
-              <button className="button button--primary" type="submit" disabled={sending}>
+            <div className={ui.formActions}>
+              <button className={buttonClass("primary")} type="submit" disabled={sending}>
                 {sending ? "Sending…" : "Send reset link"}
               </button>
             </div>
 
-            <p className="auth-card__aside">
+            <p className={auth.cardAside}>
               <Link to="/login">Back to login</Link>
             </p>
           </form>

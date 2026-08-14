@@ -3,14 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  useBodyClass("auth-page");
 
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -69,8 +70,8 @@ export function LoginPage() {
 
   return (
     <>
-      <section className="page-hero page-hero--auth section">
-        <p className="eyebrow">Authentication</p>
+      <section className={`${ui.section} ${auth.pageHero}`}>
+        <p className={ui.eyebrow}>Authentication</p>
         <h1>Login to Palette</h1>
         <p>
           Use username, email and password authentication. Admin access is connected to
@@ -78,20 +79,20 @@ export function LoginPage() {
         </p>
       </section>
 
-      <section className="section auth-layout">
-        <form className="auth-card" onSubmit={onLogin}>
+      <section className={`${ui.section} ${auth.layout}`}>
+        <form className={auth.card} onSubmit={onLogin}>
           <div>
-            <p className="eyebrow">Existing account</p>
+            <p className={ui.eyebrow}>Existing account</p>
             <h2>Login</h2>
-            <p className="muted">
+            <p className={ui.muted}>
               For local admin access, use the admin user from backend/.env.
             </p>
           </div>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Username/Email</span>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               autoComplete="username"
               required
@@ -108,53 +109,53 @@ export function LoginPage() {
             required
           />
 
-          <div className="form-actions">
-            <button className="button button--primary" type="submit" disabled={loggingIn}>
+          <div className={ui.formActions}>
+            <button className={buttonClass("primary")} type="submit" disabled={loggingIn}>
               {loggingIn ? "Logging in..." : "Login"}
             </button>
           </div>
 
-          <p className="auth-card__aside">
+          <p className={auth.cardAside}>
             <Link to="/forgot-password">Forgot password?</Link>
           </p>
         </form>
 
-        <form className="auth-card" onSubmit={onRegister}>
+        <form className={auth.card} onSubmit={onRegister}>
           <div>
-            <p className="eyebrow">New account</p>
+            <p className={ui.eyebrow}>New account</p>
             <h2>Create account</h2>
-            <p className="muted">
+            <p className={ui.muted}>
               New users are created without admin rights. Admin users are created from
               backend settings.
             </p>
           </div>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Username</span>
             <input
-              className="input"
+              className={ui.input}
               type="text"
               autoComplete="username"
               required
               value={regUsername}
               onChange={(e) => setRegUsername(e.target.value)}
             />
-            <small className="hint">
+            <small className={ui.hint}>
               Use 3–40 characters: letters, numbers, underscore or hyphen.
             </small>
           </label>
 
-          <label className="field">
+          <label className={ui.field}>
             <span>Email</span>
             <input
-              className="input"
+              className={ui.input}
               type="email"
               autoComplete="email"
               required
               value={regEmail}
               onChange={(e) => setRegEmail(e.target.value)}
             />
-            <small className="hint">Use a valid email address.</small>
+            <small className={ui.hint}>Use a valid email address.</small>
           </label>
 
           <PasswordField
@@ -166,9 +167,9 @@ export function LoginPage() {
             required
           />
 
-          <div className="form-actions">
+          <div className={ui.formActions}>
             <button
-              className="button button--primary"
+              className={buttonClass("primary")}
               type="submit"
               disabled={registering}
             >

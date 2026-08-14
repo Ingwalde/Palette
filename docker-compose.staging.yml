@@ -15,6 +15,13 @@ services:
     # (a plain merge would keep production's 8000 and clash).
     ports: !override
       - "8001:8000"
+    # Staging has its own secrets: its own SECRET_KEY, database password and admin password,
+    # with Resend and Sentry blanked. !override rather than a merge, so no production value
+    # can leak in through the inherited backend/.env. Decrypt it before bringing the stack up:
+    #   sops --decrypt --input-type dotenv --output-type dotenv \
+    #     secrets/staging.enc.env > backend/.env.staging
+    env_file: !override
+      - backend/.env.staging
     environment:
       # Staging is reached over plain http, so cookies must not be Secure-only.
       COOKIE_SECURE: "false"

@@ -9,7 +9,14 @@ COPY . .
 ARG VITE_SENTRY_DSN=""
 ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 RUN npm run build
+# Vite emits hidden source maps (no sourceMappingURL comment), so nothing links to them and
+# they must not ship: serving them publishes the whole TypeScript source.
+RUN find dist -name '*.map' -delete
 
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# The entrypoint renders /etc/nginx/templates/*.template through envsubst. The filter keeps it
+# to CONNECT_SRC_EXTRA so nginx's own $uri is not substituted away.
+ENV NGINX_ENVSUBST_FILTER="CONNECT_SRC_EXTRA"
+ENV CONNECT_SRC_EXTRA=""
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html

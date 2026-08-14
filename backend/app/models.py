@@ -67,6 +67,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(254), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Bumped whenever every session for this user must die at once (password change, password
+    # reset, logout-everywhere). Access tokens carry it as a claim, so they stop validating
+    # immediately instead of staying good until they expire. Not touched by the transparent
+    # password-hash upgrade in authenticate_user, which is not a credential change.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -87,8 +94,14 @@ class Favorite(Base):
     __table_args__ = (UniqueConstraint("user_id", "palette_id", name="uq_user_palette_favorite"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    palette_id: Mapped[int] = mapped_column(ForeignKey("palettes.id"), index=True, nullable=False)
+    # ON DELETE CASCADE: there is no relationship() anywhere in the app, so the database is
+    # the only thing that can clean up favorites when a user or palette goes away.
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    palette_id: Mapped[int] = mapped_column(
+        ForeignKey("palettes.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -98,7 +111,9 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
     # SHA-256 hex of the opaque token; the plaintext is never stored.
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

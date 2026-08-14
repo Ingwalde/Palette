@@ -1,28 +1,30 @@
 import { useLayoutEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import * as styles from "./Layout.css";
+import * as ui from "../styles/ui.css";
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  isActive ? "site-nav__link site-nav__link--active" : "site-nav__link";
+  isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink;
 
 export function Layout() {
   const { isAuthenticated, isAdmin, user, logout } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
 
-  // Position the sliding indicator pill behind the active nav link (ported from the vanilla
-  // nav indicator). Re-measure on route change, auth change, resize and after fonts load.
+  // Position the sliding indicator pill behind the active nav link. Re-measure on route
+  // change, auth change, resize and after fonts load.
   useLayoutEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     const move = () => {
-      const active = nav.querySelector<HTMLElement>(".site-nav__link--active");
+      const active = nav.querySelector<HTMLElement>(`.${styles.navLinkActive}`);
       if (!active) return;
       nav.style.setProperty("--nav-indicator-x", `${active.offsetLeft}px`);
       nav.style.setProperty("--nav-indicator-y", `${active.offsetTop}px`);
       nav.style.setProperty("--nav-indicator-width", `${active.offsetWidth}px`);
       nav.style.setProperty("--nav-indicator-height", `${active.offsetHeight}px`);
-      nav.classList.add("site-nav--ready");
+      nav.classList.add(styles.navReady);
     };
     move();
     window.addEventListener("resize", move);
@@ -32,18 +34,18 @@ export function Layout() {
 
   return (
     <>
-      <a className="skip-link" href="#main-content">
+      <a className={ui.skipLink} href="#main-content">
         Skip to content
       </a>
 
-      <header className="site-header">
-        <NavLink to="/" className="logo" aria-label="Palette home">
-          <span className="logo__mark">P</span>
-          <span className="logo__text">Palette</span>
+      <header className={styles.header}>
+        <NavLink to="/" className={styles.logo} aria-label="Palette home">
+          <span className={styles.logoMark}>P</span>
+          <span className={styles.logoText}>Palette</span>
         </NavLink>
 
-        <nav className="site-nav" aria-label="Main navigation" ref={navRef}>
-          <span className="site-nav__indicator" aria-hidden="true" />
+        <nav className={styles.nav} aria-label="Main navigation" ref={navRef}>
+          <span className={styles.navIndicator} aria-hidden="true" />
           <NavLink to="/" end className={linkClass}>
             Home
           </NavLink>
@@ -65,7 +67,7 @@ export function Layout() {
               </NavLink>
               <button
                 type="button"
-                className="site-nav__link site-nav__button"
+                className={`${styles.navLink} ${styles.navButton}`}
                 onClick={() => void logout()}
               >
                 Logout
@@ -75,7 +77,7 @@ export function Layout() {
             <NavLink
               to="/login"
               className={({ isActive }) =>
-                `site-nav__link site-nav__button${isActive ? " site-nav__link--active" : ""}`
+                `${styles.navLink} ${styles.navButton}${isActive ? ` ${styles.navLinkActive}` : ""}`
               }
             >
               Login
@@ -88,24 +90,29 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="site-footer section">
-        <div className="site-footer__panel">
-          <div className="site-footer__content">
-            <p className="site-footer__eyebrow">Palette v4.8.3</p>
-            <p className="site-footer__text">
+      <footer className={`${ui.section} ${styles.footer}`}>
+        <div className={styles.footerPanel}>
+          <div className={styles.footerContent}>
+            <p className={styles.footerEyebrow}>Palette v4.8.4</p>
+            <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.
             </p>
-            <div className="site-footer__features" aria-label="Project highlights">
-              <span>Personal palette library</span>
-              <span>Account-based favorites</span>
-              <span>Single palette export</span>
-              <span>PNG palette cards</span>
-              <span>Admin collection tools</span>
+            {/* A labelled div has no role, so the label is dropped. These are a list. */}
+            <div
+              className={styles.footerFeatures}
+              role="list"
+              aria-label="Project highlights"
+            >
+              <span role="listitem">Personal palette library</span>
+              <span role="listitem">Account-based favorites</span>
+              <span role="listitem">Single palette export</span>
+              <span role="listitem">PNG palette cards</span>
+              <span role="listitem">Admin collection tools</span>
             </div>
           </div>
           {isAdmin && (
-            <div className="site-footer__meta" aria-label="Project links">
+            <div className={styles.footerMeta} role="group" aria-label="Project links">
               <a href="/api/docs" target="_blank" rel="noreferrer">
                 API docs
               </a>

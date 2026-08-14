@@ -2,7 +2,7 @@ import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, Text, cast, delete, func, or_, select
+from sqlalchemy import Select, Text, cast, delete, func, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
@@ -18,21 +18,35 @@ def slugify(value: str) -> str:
 async def get_unique_slug(
     db: AsyncSession, base_slug: str, current_palette_id: int | None = None
 ) -> str:
+    """First free slug of the form `base`, `base-2`, `base-3`, …
+
+    One query for the whole family instead of a round-trip per candidate, selecting the slug
+    column rather than loading whole Palette entities. The unique constraint on palettes.slug
+    remains the real guarantee: this is check-then-insert, so a concurrent create can still
+    take the slug between the check and the insert.
+    """
     base_slug = slugify(base_slug)
-    slug = base_slug
+
+    stmt = select(models.Palette.slug).where(
+        or_(
+            models.Palette.slug == base_slug,
+            models.Palette.slug.like(f"{base_slug}-%"),
+        )
+    )
+    if current_palette_id is not None:
+        stmt = stmt.where(models.Palette.id != current_palette_id)
+
+    taken = set((await db.execute(stmt)).scalars().all())
+    return _first_free_slug(base_slug, taken)
+
+
+def _first_free_slug(base_slug: str, taken: set[str]) -> str:
+    if base_slug not in taken:
+        return base_slug
     counter = 2
-
-    while True:
-        stmt = select(models.Palette).where(models.Palette.slug == slug)
-        if current_palette_id is not None:
-            stmt = stmt.where(models.Palette.id != current_palette_id)
-
-        exists = (await db.execute(stmt)).scalars().first()
-        if not exists:
-            return slug
-
-        slug = f"{base_slug}-{counter}"
+    while f"{base_slug}-{counter}" in taken:
         counter += 1
+    return f"{base_slug}-{counter}"
 
 
 async def get_palette(db: AsyncSession, palette_id: int) -> models.Palette | None:
@@ -44,17 +58,29 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
     return (await db.execute(stmt)).scalars().first()
 
 
+def _like_pattern(search: str) -> str:
+    """A contains-pattern with the user's own wildcards escaped.
+
+    Unescaped, a search for "%" matched every palette and "_" matched any single character —
+    not an injection, but not what anyone typing into a search box means either.
+    """
+    escaped = search.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
     stmt = select(models.Palette)
 
     if search:
-        like = f"%{search.strip()}%"
+        like = _like_pattern(search)
         stmt = stmt.where(
             or_(
-                models.Palette.name.ilike(like),
-                models.Palette.description.ilike(like),
-                models.Palette.slug.ilike(like),
-                cast(models.Palette.tags, Text).ilike(like),
+                models.Palette.name.ilike(like, escape="\\"),
+                models.Palette.description.ilike(like, escape="\\"),
+                models.Palette.slug.ilike(like, escape="\\"),
+                # Matches against the JSONB rendered as text, so a search finds palettes by
+                # tag too. Backed by a trgm expression index on (tags::text) — see 0008.
+                cast(models.Palette.tags, Text).ilike(like, escape="\\"),
             )
         )
 
@@ -99,15 +125,24 @@ async def count_palettes(
     return await db.scalar(stmt) or 0
 
 
+def _tag_elements():
+    """Every tag of every palette as one row, so Postgres can aggregate instead of Python.
+
+    LATERAL because the set-returning function reads a column of the row it is joined to.
+    """
+    return func.jsonb_array_elements_text(models.Palette.tags).table_valued("value").lateral()
+
+
 async def get_tags(db: AsyncSession) -> list[str]:
-    all_tags: set[str] = set()
-
-    # tags is a JSONB array — SQLAlchemy returns a native list, no JSON parsing needed.
-    result = await db.execute(select(models.Palette.tags))
-    for (tags,) in result.all():
-        all_tags.update(tags or [])
-
-    return sorted(all_tags)
+    tags = _tag_elements()
+    stmt = (
+        select(tags.c.value)
+        .select_from(models.Palette)
+        .join(tags, true())
+        .distinct()
+        .order_by(tags.c.value)
+    )
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def get_tag_by_name(db: AsyncSession, name: str) -> models.Tag | None:
@@ -115,19 +150,36 @@ async def get_tag_by_name(db: AsyncSession, name: str) -> models.Tag | None:
     return (await db.execute(stmt)).scalars().first()
 
 
-async def _palette_tag_counts(db: AsyncSession) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    result = await db.execute(select(models.Palette.tags))
-    for (tags,) in result.all():
-        for tag in tags or []:
-            counts[tag] = counts.get(tag, 0) + 1
-    return counts
+async def palette_tag_counts(db: AsyncSession) -> dict[str, int]:
+    """How many palettes use each tag, counted in one GROUP BY rather than a full read."""
+    tags = _tag_elements()
+    stmt = (
+        select(tags.c.value, func.count())
+        .select_from(models.Palette)
+        .join(tags, true())
+        .group_by(tags.c.value)
+    )
+    return {tag: count for tag, count in (await db.execute(stmt)).all()}  # noqa: C416
+
+
+async def count_palettes_with_tag(db: AsyncSession, name: str) -> int:
+    """Usage count for a single tag. JSONB containment, so it uses the GIN index."""
+    stmt = (
+        select(func.count()).select_from(models.Palette).where(models.Palette.tags.contains([name]))
+    )
+    return await db.scalar(stmt) or 0
+
+
+async def tag_in_use(db: AsyncSession, name: str) -> bool:
+    """Whether any palette carries this tag — an indexed lookup, not an aggregate."""
+    stmt = select(models.Palette.id).where(models.Palette.tags.contains([name])).limit(1)
+    return (await db.execute(stmt)).scalars().first() is not None
 
 
 async def list_tag_catalog(db: AsyncSession) -> list[dict]:
     """Every tag known to the app: catalog rows plus any tag currently used by a palette
     but not yet in the catalog. Each entry carries its kind and palette usage count."""
-    counts = await _palette_tag_counts(db)
+    counts = await palette_tag_counts(db)
     catalog = (await db.execute(select(models.Tag))).scalars().all()
     catalog_by_name = {tag.name: tag for tag in catalog}
 
@@ -222,8 +274,11 @@ async def update_palette(
 ) -> models.Palette:
     data = palette_data.model_dump(exclude_unset=True)
 
-    if "name" in data and data["name"] is not None:
+    if "name" in data and data["name"] is not None and data["name"] != palette.name:
         palette.name = data["name"]
+        # Renaming re-derives the slug, which breaks any external link to the old one. Kept
+        # as-is (favorites reference the id, so no data breaks) and documented in docs/api.md.
+        # Skipped when the name is written back unchanged, which used to redo the whole lookup.
         palette.slug = await get_unique_slug(db, palette.name, current_palette_id=palette.id)
 
     if "description" in data and data["description"] is not None:
@@ -250,12 +305,30 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
     if existing_count and existing_count > 0:
         return 0
 
-    created_count = 0
+    # The table is empty, so slug collisions can only come from the batch itself — resolve
+    # them in memory. create_palette would commit and refresh once per row and run a slug
+    # query per row on top; this is one insert and one commit for the whole seed.
+    taken: set[str] = set()
+    rows: list[models.Palette] = []
     for palette_data in palettes:
-        await create_palette(db, palette_data)
-        created_count += 1
+        slug = _first_free_slug(slugify(palette_data.slug or palette_data.name), taken)
+        taken.add(slug)
+        rows.append(
+            models.Palette(
+                slug=slug,
+                name=palette_data.name,
+                description=palette_data.description,
+                colors=palette_data.colors,
+                tags=palette_data.tags,
+            )
+        )
 
-    return created_count
+    if not rows:
+        return 0
+
+    db.add_all(rows)
+    await db.commit()
+    return len(rows)
 
 
 async def get_user(db: AsyncSession, user_id: int) -> models.User | None:
@@ -420,6 +493,19 @@ async def update_user_password(
     db: AsyncSession, user: models.User, password_hash: str
 ) -> models.User:
     user.password_hash = password_hash
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def bump_token_version(db: AsyncSession, user: models.User) -> models.User:
+    """Invalidate every access token already issued for this user.
+
+    Call alongside revoke_all_refresh_tokens wherever a session must end everywhere at once.
+    Deliberately not part of update_user_password: that is also used for the transparent
+    Argon2 rehash on login, which must not log anyone out.
+    """
+    user.token_version += 1
     await db.commit()
     await db.refresh(user)
     return user

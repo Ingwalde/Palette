@@ -27,17 +27,27 @@ jobs:
     steps:
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          # The commit CI actually validated. `git pull origin main` would take whatever HEAD
+          # happens to be at deploy time, so two quick merges shipped an untested commit.
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          envs: DEPLOY_SHA
           # Building the frontend image (npm ci + Vite) on the small VM can exceed the default
           # 10-minute SSH command timeout, so allow more time.
           command_timeout: "40m"
           script: |
             set -e
             cd ~/Palette
-            git pull origin main
+            : "${DEPLOY_SHA:?workflow_run did not supply head_sha; refusing to deploy}"
+            # Production overrides the dev-only CSP connect-src; see docker-compose.prod.yml.
+            COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
+            git fetch --quiet origin
+            git checkout --detach --quiet "$DEPLOY_SHA"
+            echo "Deploying $DEPLOY_SHA"
             # The frontend image build (npm ci + Vite) needs more RAM than the ~1 GB VM has.
             # Ensure a swap file so the build can't OOM-kill the box mid-deploy.
             if ! sudo swapon --show | grep -q /swapfile; then
@@ -46,14 +56,22 @@ jobs:
             fi
             # Decrypt secrets into backend/.env (SOPS age key lives only on this VM).
             # Guard: only overwrite .env if the decrypt produced a real SECRET_KEY.
-            sops --decrypt --input-type dotenv --output-type dotenv secrets.enc.env > backend/.env.new
+            sops --decrypt --input-type dotenv --output-type dotenv secrets/prod.enc.env > backend/.env.new
             grep -q '^SECRET_KEY=' backend/.env.new
             mv backend/.env.new backend/.env
             # Pull the CI-built frontend image from GHCR (the VM must not build it — that OOMs the
             # box). Requires the GHCR package to be public. Build only the backend on the VM.
-            docker compose pull frontend
-            docker compose build backend
-            docker compose up -d
+            $COMPOSE pull frontend
+            $COMPOSE build backend
+            # Back up before the new backend starts: migrations run automatically in the app's
+            # lifespan, so `up -d` is the point of no return. Skipped on a first-ever deploy,
+            # when there is no database container to dump yet.
+            if [ -n "$($COMPOSE ps --status running --quiet db)" ]; then
+              bash scripts/backup-db.sh
+            else
+              echo "No running db container; skipping pre-deploy backup."
+            fi
+            $COMPOSE up -d
             # Fail the deploy if the backend never becomes ready.
             for i in $(seq 1 15); do
               if curl -fsS http://localhost:8000/health/ready >/dev/null; then

@@ -1,4 +1,4 @@
-# Palette v4.8.3 — Full-Stack Color Palette App
+# Palette v4.8.4 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -24,8 +24,8 @@ Cloudflare + Caddy, auto-deployed on every green build to `main`. Full release h
 
 ## Screenshots
 
-| Home — browse & filter | Admin — colour-row editor | Export — PNG preview |
-|---|---|---|
+| Home — browse & filter                                                       | Admin — colour-row editor                                                           | Export — PNG preview                                                      |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | ![Home page: palette grid with tag filters and search](docs/assets/home.png) | ![Admin panel: dynamic HEX-row colour editor with tag chips](docs/assets/admin.png) | ![Export page: selected palette with PNG preview](docs/assets/export.png) |
 
 ![Demo: live search filtering the palette grid down to matching palettes](docs/assets/demo.gif)
@@ -51,6 +51,7 @@ erDiagram
         string email UK
         string password_hash "Argon2id"
         bool is_admin
+        int token_version "revokes issued access tokens"
         bool email_verified
     }
     PALETTES {
@@ -106,25 +107,28 @@ flowchart LR
   versioned, paginated `/api/v1`.
 - **Secrets encrypted in git** — SOPS + age; the plaintext `.env` is never committed and secrets are
   decrypted only on the deploy host.
-- **Continuous delivery** — a green CI run on `main` auto-deploys to the live VM (SSH pull + rebuild
-  + readiness gate), with an isolated staging stack via a Compose override.
+- **Continuous delivery** — a green CI run on `main` auto-deploys the exact commit CI validated,
+  taking a database backup first because migrations apply on startup; isolated staging stack with
+  its own secrets via a Compose override.
 - **Operable in production** — liveness/readiness probes, optional Sentry error tracking on both
   the backend and the browser frontend (client errors + Web Vitals), and a scripted database
   backup with retention.
-- **Tested and linted** — an async pytest suite with ruff, mypy and an 80% coverage gate, all
-  enforced in CI.
+- **Tested and linted** — an async pytest suite with ruff, mypy and an 80% coverage gate; on the
+  frontend, Vitest with a coverage gate, Playwright end-to-end and axe accessibility specs, and
+  screenshot baselines compared at zero tolerance. All enforced in CI.
 
 ---
 
 ## Built with
 
-| Layer | Stack |
-|---|---|
-| **Backend** | FastAPI · async SQLAlchemy 2.0 (asyncpg) · Pydantic v2 · Alembic · Argon2 · slowapi |
-| **Data** | PostgreSQL 16 (JSONB + GIN) · Redis |
-| **Frontend** | Vanilla JS (ES modules) · HTML · CSS — no build step |
-| **Infra** | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age |
-| **Quality / CI** | GitHub Actions · ruff · mypy · pytest · Sentry |
+| Layer            | Stack                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| **Backend**      | FastAPI · async SQLAlchemy 2.0 (asyncpg) · Pydantic v2 · Alembic · Argon2 · slowapi |
+| **Data**         | PostgreSQL 16 (JSONB + GIN) · Redis                                                 |
+| **Frontend**     | Vite · React 19 · TypeScript · React Router · TanStack Query                        |
+| **Infra**        | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age                  |
+| **Styling**      | vanilla-extract (typed, zero-runtime CSS-in-TS)                                     |
+| **Quality / CI** | GitHub Actions · ruff · mypy · pytest · Vitest · Playwright + axe · Sentry          |
 
 ---
 
@@ -156,24 +160,28 @@ flowchart LR
 
 - Liveness (`/health`) and readiness (`/health/ready`, checks database + Redis) probes; the Compose
   healthcheck uses readiness.
-- Continuous delivery: production auto-deploys after CI passes on `main`; isolated staging stack via
-  a Compose override (see [`docs/deploy.md`](docs/deploy.md)).
+- Continuous delivery: production auto-deploys the commit CI validated, after a database backup;
+  isolated staging stack with its own encrypted secrets via a Compose override (see
+  [`docs/deploy.md`](docs/deploy.md)).
 - Optional Sentry error tracking — backend (off unless `SENTRY_DSN` is set) and frontend (client
   errors + Web Vitals, off unless `VITE_SENTRY_DSN` is set); scripted database backups with
   retention (see [`docs/ops.md`](docs/ops.md)).
-- Structured logging (`LOG_LEVEL`); automated tests with ruff, mypy and an 80% coverage gate in CI.
+- Structured logging (`LOG_LEVEL`); automated tests with ruff, mypy and an 80% coverage gate in CI,
+  plus `pip-audit` and `npm audit` on every run and weekly Dependabot updates.
 
 ### Frontend
 
-- Single-page navigation (fetch + content swap, no full reload) with a page cross-fade and a sliding
-  tab indicator.
+- React Router client-side navigation with a sliding tab indicator that measures and follows the
+  active link.
 - Search by name, description, slug and tags; tag filtering and sorting; staggered card animations.
 - Save/remove favorites tied to the logged-in user; account page with password change; admin-only
   navigation hidden from guests.
 - Admin palette manager with a dynamic HEX-row colour editor and chip-based tag editing.
 - Export a selected palette as CSS, SCSS, JSON or a standalone PNG palette card, with live preview.
-- Accessible touches: skip-to-content link, visible focus states, ARIA-labelled controls; works over
-  the LAN via a dynamic API base.
+- Accessible touches: skip-to-content link, visible focus states, ARIA-labelled controls, toggle
+  state exposed via `aria-pressed`; audited by axe in CI. Works over the LAN via a dynamic API base.
+- Styling is **vanilla-extract** — every rule scoped to the component or page that owns it, with
+  design tokens typed in TypeScript. No global stylesheet beyond the document layer.
 
 ---
 
@@ -195,11 +203,25 @@ docker compose up --build
 
 ### Tests
 
+Backend, against a disposable PostgreSQL in its own Compose profile:
+
 ```bash
 docker compose --profile test run --rm tests
 ```
 
-Runs the suite against a disposable PostgreSQL in its own Compose profile.
+Frontend:
+
+```bash
+cd frontend-react
+npm run test:coverage      # Vitest + coverage gate
+npm run test:e2e           # Playwright flows + axe accessibility audit
+npm run css:orphans        # class names in markup that no stylesheet defines
+./scripts/visual.sh        # screenshot baselines, compared at zero tolerance
+```
+
+The screenshots run inside a pinned Playwright container because rendering is host-specific —
+a baseline recorded on Windows or macOS will never match CI. See
+[`frontend-react/README.md`](frontend-react/README.md).
 
 ---
 
@@ -237,10 +259,10 @@ Palette/
 │   ├── tests/                # async pytest suite
 │   └── requirements*.txt
 ├── docs/                     # architecture, deploy, ops, secrets, api, auth, database, setup…
-├── scripts/                  # backup-db.sh
+├── scripts/                  # backup-db.sh, split-secrets.sh
 ├── .github/workflows/        # ci.yml, deploy.yml
-├── docker-compose.yml        # + docker-compose.staging.yml
-├── secrets.enc.env           # SOPS-encrypted secrets (safe to commit)
+├── docker-compose.yml        # + docker-compose.prod.yml, docker-compose.staging.yml
+├── secrets/                  # SOPS-encrypted prod + staging env (safe to commit)
 ├── CHANGELOG.md · ROADMAP.md
 ```
 
@@ -277,8 +299,8 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
 `CORS_ORIGINS` is a comma-separated allowlist of browser origins (never `*`). Do not commit
-`backend/.env` — it is git-ignored; production secrets live encrypted in `secrets.enc.env`
-(see [`docs/secrets.md`](docs/secrets.md)).
+`backend/.env` — it is git-ignored; production and staging secrets live encrypted under
+`secrets/` (see [`docs/secrets.md`](docs/secrets.md)).
 
 ---
 
@@ -311,7 +333,7 @@ is paginated (`{ items, total, limit, offset }` + `X-Total-Count`). Errors are r
 ## Version
 
 ```text
-v4.8.3
+v4.8.4
 ```
 
 ## License

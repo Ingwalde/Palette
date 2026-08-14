@@ -63,7 +63,7 @@ export function downloadDataUrl(dataUrl: string, filename: string): void {
   link.remove();
 }
 
-// ---- PNG canvas rendering (ported from the vanilla export.js) ------------------------
+// ---- PNG canvas rendering ------------------------------------------------------------
 
 type Ctx = CanvasRenderingContext2D;
 

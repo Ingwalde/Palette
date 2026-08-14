@@ -3,9 +3,12 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { verifyEmail, resendVerification } from "../api/auth";
 import { queryKeys } from "../api/queryKeys";
-import { useBodyClass } from "../lib/useBodyClass";
+import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import type { User } from "../types/api";
+import * as layout from "../components/Layout.css";
+import * as ui from "../styles/ui.css";
+import { buttonClass } from "../styles/ui";
 
 const SUCCESS_LINES = [
   "Boom — inbox conquered. You're in and ready to collect colors.",
@@ -20,7 +23,6 @@ type State =
   | { status: "error"; message: string };
 
 export function VerifyPage() {
-  useBodyClass("auth-page");
   const [params] = useSearchParams();
   const queryClient = useQueryClient();
   const [state, setState] = useState<State>({ status: "pending" });
@@ -76,28 +78,28 @@ export function VerifyPage() {
 
   return (
     <>
-      <header className="site-header site-header--bare">
-        <Link className="logo" to="/" aria-label="Palette home">
-          <span className="logo__mark">P</span>
-          <span className="logo__text">Palette</span>
+      <header className={`${layout.header} ${layout.headerBare}`}>
+        <Link className={layout.logo} to="/" aria-label="Palette home">
+          <span className={layout.logoMark}>P</span>
+          <span className={layout.logoText}>Palette</span>
         </Link>
       </header>
 
-      <main className="verify-shell">
-        <div className="auth-card auth-card--centered">
+      <main className={auth.verifyShell}>
+        <div className={`${auth.card} ${auth.verifyCard}`}>
           {state.status === "pending" && (
             <>
               <h1>Verifying your email…</h1>
-              <p className="muted">Please wait a moment.</p>
+              <p className={ui.muted}>Please wait a moment.</p>
             </>
           )}
 
           {state.status === "success" && (
             <>
               <h1>You're in, {state.user.username}! 🎉</h1>
-              <p className="muted">{state.line}</p>
-              <div className="form-actions form-actions--centered">
-                <Link className="button button--primary" to="/profile">
+              <p className={ui.muted}>{state.line}</p>
+              <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
+                <Link className={buttonClass("primary")} to="/profile">
                   Go to my account
                 </Link>
               </div>
@@ -107,13 +109,13 @@ export function VerifyPage() {
           {state.status === "error" && (
             <>
               <h1>Verification failed</h1>
-              <p className="muted">
+              <p className={ui.muted}>
                 {resentMessage ||
                   `${state.message} The link may be invalid or expired — request a new one below.`}
               </p>
-              <div className="form-actions form-actions--centered">
+              <div className={`${ui.formActions} ${ui.formActionsCentered}`}>
                 <input
-                  className="input"
+                  className={ui.input}
                   type="email"
                   autoComplete="email"
                   placeholder="you@example.com"
@@ -121,7 +123,7 @@ export function VerifyPage() {
                   onChange={(e) => setEmail(e.target.value)}
                 />
                 <button
-                  className="button button--primary"
+                  className={buttonClass("primary")}
                   type="button"
                   onClick={onResend}
                   disabled={resending}

@@ -49,9 +49,7 @@ describe("LoginPage", () => {
     const user = userEvent.setup();
     renderLogin();
 
-    const loginForm = screen
-      .getByRole("heading", { name: "Login" })
-      .closest("form")!;
+    const loginForm = screen.getByRole("heading", { name: "Login" }).closest("form")!;
     await user.type(loginForm.querySelector('input[type="text"]')!, "admin");
     await user.type(loginForm.querySelector('input[type="password"]')!, "secret123");
     await user.click(loginForm.querySelector('button[type="submit"]')!);
@@ -65,9 +63,7 @@ describe("LoginPage", () => {
 
   it("renders both the login and create-account forms", () => {
     renderLogin();
-    expect(
-      screen.getByRole("heading", { name: "Login" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Login" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Create account" })).toBeInTheDocument();
   });
 });

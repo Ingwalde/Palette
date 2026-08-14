@@ -1,3 +1,6 @@
+import * as ui from "../styles/ui.css";
+import * as styles from "./ChangelogPage.css";
+
 interface Entry {
   version: string;
   title: string;
@@ -5,6 +8,16 @@ interface Entry {
 }
 
 const CHANGELOG: Entry[] = [
+  {
+    version: "v4.8.4",
+    title: "Code review remediation",
+    items: [
+      "Verification and password-reset emails link to pages that exist again; the links pointed at the vanilla frontend removed in v4.8.0.",
+      "Sessions can be ended everywhere at once, and a used reset link cannot be replayed.",
+      "Tag counts and search run as indexed PostgreSQL queries instead of scans in Python.",
+      "The stylesheet is gone: every rule is now a type-checked, per-component vanilla-extract style, verified pixel-identical by screenshot tests.",
+    ],
+  },
   {
     version: "v4.8.3",
     title: "Frontend observability",
@@ -217,18 +230,18 @@ const CHANGELOG: Entry[] = [
 export function ChangelogPage() {
   return (
     <>
-      <section className="page-hero section">
-        <p className="eyebrow">Project history</p>
+      <section className={`${ui.section} ${ui.pageHero}`}>
+        <p className={ui.eyebrow}>Project history</p>
         <h1>Changelog</h1>
         <p>
           Short overview of the main project versions and what changed between releases.
         </p>
       </section>
 
-      <section className="section changelog-layout">
+      <section className={`${ui.section} ${styles.layout}`}>
         {CHANGELOG.map((entry) => (
-          <article className="changelog-card" key={entry.version}>
-            <p className="changelog-card__version">{entry.version}</p>
+          <article className={styles.card} key={entry.version}>
+            <p className={styles.version}>{entry.version}</p>
             <h2>{entry.title}</h2>
             <ul>
               {entry.items.map((item, i) => (
