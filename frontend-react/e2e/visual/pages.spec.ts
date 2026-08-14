@@ -91,10 +91,32 @@ async function unstick(page: Page) {
 
 // Web fonts arrive asynchronously; screenshotting before they settle swaps the typeface
 // mid-capture and produces a diff on every run.
+//
+// Scroll is pinned to the top, because a viewport screenshot captures wherever the window
+// happens to be scrolled to, and opening a control near the bottom of the fold makes the
+// browser bring its list back into view.
+//
+// The pin has to defeat `scroll-behavior: smooth`, which the app sets on the document root.
+// Under it `scrollTo(0, 0)` starts an animation instead of moving, so the capture lands at
+// whatever position the animation had reached — a different one on every machine. That is the
+// whole bug: `state: sort select open` reported 48080, then 62233, then 94591 differing pixels
+// across three attempts at one assertion, and aligning the CI capture against the baseline row
+// by row gave a mean absolute difference of exactly 0.0000 at a six-row offset. The images were
+// identical. The page was six pixels lower.
+//
+// Playwright's `animations: "disabled"` does not cover this; it stops CSS animations and
+// transitions, and smooth scrolling is neither.
 async function settle(page: Page) {
   await page.evaluate(() => document.fonts.ready);
   await unstick(page);
   await page.waitForTimeout(300);
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = "auto";
+    window.scrollTo(0, 0);
+  });
+  // Named, so a recurrence says "the page scrolled" rather than showing a 48000-pixel diff and
+  // leaving the next person to measure the offset themselves.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 }
 
 /**
@@ -169,6 +191,9 @@ test("state: sort select open", async ({ page }) => {
   const sort = page.getByRole("button", { name: "Sort palettes" });
   await sort.click();
   await expect(sort).toHaveAttribute("aria-expanded", "true");
+  // The control sits at the bottom of the fold and its open list runs past it, so the click
+  // itself scrolls the page. settle() puts it back.
+  await settle(page);
   await expect(page).toHaveScreenshot("state-select-open.png");
 });
 
@@ -179,6 +204,7 @@ test("state: password revealed", async ({ page }) => {
   await input.fill("hunter2");
   await page.getByRole("button", { name: "Show password" }).first().click();
   await expect(page.getByRole("button", { name: "Hide password" }).first()).toBeVisible();
+  await settle(page);
   await expect(page).toHaveScreenshot("state-password-revealed.png");
 });
 

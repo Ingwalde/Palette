@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Run the screenshot baselines inside the pinned Playwright image.
 #
-#   ./scripts/visual.sh            # compare against the committed baselines
-#   ./scripts/visual.sh --update   # re-record after an intended visual change
+#   ./scripts/visual.sh                         # compare against the committed baselines
+#   ./scripts/visual.sh --update                # re-record every baseline
+#   ./scripts/visual.sh --update -g "sort sel"  # re-record only the matching tests
+#
+# Anything after the flag is forwarded to Playwright. Scope a re-record with -g whenever the
+# change is not meant to touch every page: --update on its own rewrites all nineteen files,
+# so running it to inspect one failure quietly rebases the other eighteen onto whatever the
+# working tree happens to render at that moment.
 #
 # Why a container: font hinting and antialiasing are host-specific, so a baseline recorded on
 # Windows or macOS will never match CI. The image tag must stay in step with the @playwright/test
@@ -20,6 +26,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 script="test:visual"
 if [ "${1:-}" = "--update" ]; then
   script="test:visual:update"
+  shift
 fi
 
 # MSYS/Git Bash rewrites container-side paths that look like absolute POSIX paths.
@@ -42,5 +49,5 @@ docker run --rm --ipc=host \
       npm ci --no-audit --no-fund
       echo "$want" > node_modules/.lock-hash
     fi
-    npm run '"${script}"'
-  '
+    npm run '"${script}"' -- "$@"
+  ' sh "$@"
