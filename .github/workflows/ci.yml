@@ -120,6 +120,9 @@ jobs:
       - name: Lint (oxlint)
         run: npm run lint
 
+      - name: Formatting (prettier)
+        run: npm run format:check
+
       - name: Type-check (tsc)
         run: npm run typecheck
 

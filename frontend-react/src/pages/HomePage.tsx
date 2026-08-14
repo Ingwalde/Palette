@@ -65,8 +65,9 @@ export function HomePage() {
           <p className="eyebrow">Palette v4.8.3 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className="hero__text">
-            Search, filter, save and export palettes. The React + TypeScript frontend now ships
-            with Sentry error &amp; Web&nbsp;Vitals reporting, on top of a WCAG&nbsp;AA pass.
+            Search, filter, save and export palettes. The React + TypeScript frontend now
+            ships with Sentry error &amp; Web&nbsp;Vitals reporting, on top of a
+            WCAG&nbsp;AA pass.
           </p>
           <div className="hero__actions">
             <a className="button button--primary" href="#palettes">
