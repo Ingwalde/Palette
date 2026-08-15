@@ -68,6 +68,11 @@ Cloudflare terminates the edge; Caddy on the VM serves TLS and splits static fro
 API. Redis backs cross-process rate limiting; Sentry receives errors from both the backend and
 the browser frontend when a DSN is set.
 
+The frontend is a single-page app served entirely by nginx: the entry bundle plus one chunk
+per route, fetched when that route is first visited, and the fonts, all from the same origin.
+Nothing on the page reaches a third party, which is why the CSP names only `'self'` and the
+Sentry ingest hosts.
+
 ```mermaid
 flowchart LR
     U["Browser"] -->|HTTPS| CF["Cloudflare"]

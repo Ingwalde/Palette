@@ -3,9 +3,12 @@ import { defineConfig, devices } from "@playwright/test";
 // E2E specs live in e2e/. Playwright starts the Vite preview server and drives Chromium.
 export default defineConfig({
   testDir: "./e2e",
-  // Screenshot baselines live in e2e/visual and only mean anything inside the pinned
-  // Playwright image — they run from playwright.visual.config.ts instead.
-  testIgnore: "visual/**",
+  // Two sibling suites are deliberately not run from here, because both need something this
+  // config does not provide. Screenshot baselines only mean anything inside the pinned
+  // Playwright image (playwright.visual.config.ts); the integration specs need the whole
+  // Compose stack rather than the preview server and a stubbed API
+  // (playwright.integration.config.ts, started by scripts/integration.sh).
+  testIgnore: ["visual/**", "integration/**"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

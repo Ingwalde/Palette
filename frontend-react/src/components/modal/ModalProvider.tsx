@@ -39,6 +39,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<ModalState | null>(null);
   const [inputValue, setInputValue] = useState("");
   const resolveRef = useRef<((value: boolean | string | null) => void) | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   const confirm = useCallback(
     (options: BaseOptions) =>
@@ -84,6 +86,66 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [state, cancel, accept]);
 
+  /**
+   * Keeps the keyboard inside the dialog while it is open, and hands focus back afterwards.
+   *
+   * `aria-modal="true"` alone does not do this. It tells assistive technology to treat the
+   * rest of the page as inert, but the browser still walks Tab straight out of the dialog and
+   * into the buttons behind the overlay — where a sighted keyboard user cannot see what is
+   * focused and a screen reader has been told nothing is there. Confirm dialogs got no focus
+   * at all before this: `autoFocus` sat on the prompt's input, so the destructive
+   * "Delete palette" dialog opened with focus still on the list button behind it.
+   *
+   * Cancel is focused first rather than confirm, so Enter or Space on a dialog that appeared
+   * unexpectedly dismisses it instead of carrying out the deletion.
+   */
+  useEffect(() => {
+    if (!state) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+
+    const opener = document.activeElement as HTMLElement | null;
+
+    const focusable = () =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'input:not([disabled]), button:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+    // The prompt's text input is the point of the dialog; a confirm starts on the safe action.
+    const initial = state.isPrompt ? focusable()[0] : cancelRef.current;
+    initial?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const items = focusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      // Wrap at both ends, and pull focus back in if it has escaped the dialog entirely.
+      if (e.shiftKey && (active === first || !dialog.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !dialog.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    dialog.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      dialog.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keydown", onKeyDown);
+      // Back to whatever opened the dialog, so the list does not dump the user at the top of
+      // the document after every delete.
+      opener?.focus();
+    };
+  }, [state]);
+
   return (
     <ModalContext value={{ confirm, prompt }}>
       {children}
@@ -95,6 +157,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
           }}
         >
           <div
+            ref={dialogRef}
             className={styles.dialog}
             role="dialog"
             aria-modal="true"
@@ -107,13 +170,17 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 className={`${ui.input} ${styles.input}`}
                 type="text"
                 aria-label={state.title}
-                autoFocus
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
               />
             )}
             <div className={styles.actions}>
-              <button type="button" className={buttonClass("ghost")} onClick={cancel}>
+              <button
+                ref={cancelRef}
+                type="button"
+                className={buttonClass("ghost")}
+                onClick={cancel}
+              >
                 {state.cancelLabel ?? "Cancel"}
               </button>
               <button

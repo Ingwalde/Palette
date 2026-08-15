@@ -19,7 +19,9 @@
     "test:visual:update": "playwright test -c playwright.visual.config.ts --update-snapshots",
     "css:orphans": "bash scripts/orphan-classes.sh",
     "test:visual:docker": "bash scripts/visual.sh",
-    "test:visual:docker:update": "bash scripts/visual.sh --update"
+    "test:visual:docker:update": "bash scripts/visual.sh --update",
+    "lighthouse": "bash scripts/lighthouse.sh",
+    "test:integration": "bash scripts/integration.sh"
   },
   "dependencies": {
     "@sentry/react": "^10.69.0",
@@ -31,6 +33,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@playwright/test": "^1.62.1",
+    "@sentry/vite-plugin": "^5.4.0",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",

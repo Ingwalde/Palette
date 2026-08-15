@@ -1,4 +1,4 @@
-# Palette v4.8.4 — Full-Stack Color Palette App
+# Palette v4.8.5 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -214,14 +214,21 @@ Frontend:
 ```bash
 cd frontend-react
 npm run test:coverage      # Vitest + coverage gate
-npm run test:e2e           # Playwright flows + axe accessibility audit
+npm run test:e2e           # Playwright flows, focus management + axe accessibility audit
 npm run css:orphans        # class names in markup that no stylesheet defines
 ./scripts/visual.sh        # screenshot baselines, compared at zero tolerance
+./scripts/integration.sh   # the same browser against the real Compose stack
+./scripts/lighthouse.sh    # performance budget: asset sizes fail, timings warn
 ```
 
-The screenshots run inside a pinned Playwright container because rendering is host-specific —
-a baseline recorded on Windows or macOS will never match CI. See
-[`frontend-react/README.md`](frontend-react/README.md).
+The stubbed E2E specs intercept every request, which is what makes them fast and what stops
+them noticing when the front end and the API disagree. `integration.sh` brings the whole stack
+up — nginx, FastAPI, PostgreSQL, Redis — runs against it, and tears it down with its volume;
+it needs ports 5500 and 8000 free, so a dev stack has to come down first.
+
+The screenshots and the performance budget run inside a pinned Playwright container because
+rendering and timing are host-specific — a baseline recorded on Windows or macOS will never
+match CI. See [`frontend-react/README.md`](frontend-react/README.md).
 
 ---
 
@@ -333,7 +340,7 @@ is paginated (`{ items, total, limit, offset }` + `X-Total-Count`). Errors are r
 ## Version
 
 ```text
-v4.8.4
+v4.8.5
 ```
 
 ## License

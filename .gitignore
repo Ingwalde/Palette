@@ -48,3 +48,6 @@ age.key
 .config/sops/
 !secrets/*.enc.env
 backups/
+
+# Lighthouse CI reports: regenerated on every run, one JSON + HTML per run.
+frontend-react/.lighthouseci/

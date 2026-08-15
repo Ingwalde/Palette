@@ -174,6 +174,24 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.8.5 — Accessibility, Performance and Real End-to-End Tests
+
+Status: completed.
+
+- Focus and announcement on route change, and a focus trap that returns focus in dialogs — the
+  behaviours an automated audit of a rendered page cannot see.
+- Route-level code splitting and a self-hosted font: entry chunk 336 kB to 249 kB, first paint
+  737 ms to 560 ms, and no request from the page leaving this origin.
+- A Lighthouse budget on every pull request: asset sizes fail the build, timings warn.
+- An integration end-to-end suite against the real Compose stack, covering the API contract
+  that the stubbed specs assume rather than check.
+- Source maps uploaded to Sentry with the commit as the release, the auth token passed as a
+  BuildKit secret.
+
+Planned next:
+
+- v4.8.6 — CodeQL. Dependabot and the `npm audit` / `pip-audit` checks shipped in v4.8.4.
+
 ## v4.8.4 — Code Review Remediation
 
 Status: completed.
@@ -190,12 +208,6 @@ Status: completed.
   zero-tolerance screenshot baselines.
 - Deploys ship the CI-validated SHA and back the database up before migrating; e2e/axe, format
   and dependency-audit checks run on every pull request.
-
-Planned next:
-
-- v4.8.5 — manual accessibility pass, route-level code splitting, integration e2e against the
-  real stack, and a dedicated frontend Sentry project.
-- v4.8.6 — security automation (Dependabot, CodeQL).
 
 ## v4.8.3 — Frontend Observability
 

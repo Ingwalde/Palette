@@ -9,6 +9,16 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.8.5",
+    title: "Accessibility, speed and real end-to-end tests",
+    items: [
+      "Navigating now moves focus to the page and announces where you landed, and dialogs keep the keyboard inside them and hand focus back.",
+      "Every page but the home page is fetched only when you visit it, and the font is served from this site — the first paint is a quarter faster and no request leaves the origin.",
+      "A performance budget runs on every change, so a page that gets heavier fails the build.",
+      "A second end-to-end suite drives the real backend and database instead of a stubbed one.",
+    ],
+  },
+  {
     version: "v4.8.4",
     title: "Code review remediation",
     items: [
