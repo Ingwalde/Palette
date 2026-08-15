@@ -34,15 +34,20 @@ npm run test:e2e       # playwright (builds + previews, then runs specs)
 npm run test:visual    # screenshot baselines, in the pinned container
 npm run test:integration  # the real Compose stack, not a stubbed API
 npm run lighthouse     # performance budget, in the pinned container
+npm run screenshots    # regenerate the README images from the running stack
 npm run css:orphans    # class names in markup that no stylesheet defines
 ```
 
-All of these run in CI on every pull request — see `.github/workflows/ci.yml`, which is seven
-jobs: backend tests, ruff/mypy, this package's lint-types-test-build, the stubbed E2E and axe
-suite, the screenshot baselines, the performance budget and the integration stack.
+All of these run in CI on every pull request — `.github/workflows/ci.yml` is seven jobs
+(backend tests, ruff/mypy, this package's lint-types-test-build, the stubbed E2E and axe suite,
+the screenshot baselines, the performance budget and the integration stack), and
+`codeql.yml` adds two more that analyse this repository's own code.
 
-`test:visual`, `test:integration` and `lighthouse` each need something a bare `playwright test`
-cannot arrange — a fixed rendering environment, a running stack, a browser Lighthouse can
+`screenshots` is the exception: it writes into `docs/assets/` and is run deliberately after a
+release, not on a pull request.
+
+`test:visual`, `test:integration`, `lighthouse` and `screenshots` each need something a bare
+`playwright test` cannot arrange — a fixed rendering environment, a running stack, a browser Lighthouse can
 drive — so each is a wrapper under `scripts/`. Run them through the npm script or the script
 directly; both do the same thing.
 

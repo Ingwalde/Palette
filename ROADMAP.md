@@ -174,6 +174,22 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.8.6 — Code Scanning, Current Dependencies, Generated Screenshots
+
+Status: completed.
+
+- CodeQL on JavaScript/TypeScript and Python, per push and weekly — the first analysis of this
+  repository's own code, as opposed to the dependencies it pulls in.
+- Every open Dependabot pull request applied: four Actions majors, twelve grouped minors, and
+  two development majors examined separately — TypeScript 7, which is the Go port rather than a
+  version bump, and @types/node 26.
+- Dependabot version updates moved onto a long-lived `deps` branch; security updates still go
+  straight to the default branch.
+- The README screenshots are generated from the running stack instead of captured by hand. The
+  previous set had been showing v4.7.1 for eight releases.
+- Corrected the database driver in the docs and the validator's error message, and the project
+  structure in the README, which still listed a directory deleted at the v4.8.0 cutover.
+
 ## v4.8.5 — Accessibility, Performance and Real End-to-End Tests
 
 Status: completed.
@@ -188,16 +204,8 @@ Status: completed.
 - Source maps uploaded to Sentry with the commit as the release, the auth token passed as a
   BuildKit secret.
 
-Planned next:
-
-- v4.8.6 — CodeQL, and clearing the Dependabot backlog. Dependabot itself and the
-  `npm audit` / `pip-audit` checks shipped in v4.8.4; what is left is the eight pull requests
-  it has opened since, which include two major bumps that need reading rather than merging:
-  TypeScript 6 to 7, and `@types/node` 24 to 26.
-- Not scheduled: a separate Sentry project for the browser frontend. The upload and release
-  tagging landed in v4.8.5 and stay inert until `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
-  `SENTRY_PROJECT` exist — until then the frontend shares the backend's DSN, so JavaScript and
-  Python events land in one project.
+Follow-up, now done: the separate Sentry project for the browser frontend exists and the
+credentials are configured, so JavaScript and Python events no longer share one project.
 
 ## v4.8.4 — Code Review Remediation
 

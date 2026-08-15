@@ -4,3 +4,7 @@ coverage
 package-lock.json
 playwright-report
 test-results
+
+# Lighthouse CI output: generated HTML and JSON reports, regenerated on every run. Gitignored,
+# but Prettier reads .prettierignore rather than .gitignore, so it would scan them otherwise.
+.lighthouseci
