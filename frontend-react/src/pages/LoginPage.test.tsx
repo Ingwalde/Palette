@@ -24,6 +24,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(() => Promise.resolve(admin)),
   register: vi.fn(() => Promise.resolve(admin)),
   logout: vi.fn(),
+  logoutEverywhere: vi.fn(),
 }));
 
 function renderLogin() {

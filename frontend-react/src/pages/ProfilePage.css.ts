@@ -110,11 +110,16 @@ export const actionsMain = style({
   },
 });
 
+// Holds the two session controls: ending this session, and ending every session. Laid out with
+// gap rather than margins on the buttons, so the pair keeps its spacing wherever it is used.
 export const logout = style({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.75rem",
   width: "max-content",
   minWidth: "240px",
   "@media": {
-    [PHONE]: { width: "100%", minWidth: 0 },
+    [PHONE]: { width: "100%", minWidth: 0, flexDirection: "column" },
   },
 });
 

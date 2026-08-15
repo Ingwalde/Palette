@@ -13,6 +13,7 @@ interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User>;
   logout: () => Promise<void>;
+  logoutEverywhere: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -59,6 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
     },
   });
+  // Same local teardown as an ordinary logout — the difference is entirely server-side, where
+  // every refresh token is revoked and the user's token_version bumped.
+  const logoutEverywhereMutation = useMutation({
+    mutationFn: authApi.logoutEverywhere,
+    onSettled: () => {
+      setUser(null);
+      queryClient.clear();
+    },
+  });
 
   const user = data ?? null;
   const value: AuthContextValue = {
@@ -69,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login: loginMutation.mutateAsync,
     register: registerMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
+    logoutEverywhere: logoutEverywhereMutation.mutateAsync,
   };
 
   return <AuthContext value={value}>{children}</AuthContext>;

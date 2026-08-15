@@ -86,16 +86,16 @@ test("logging in sets httpOnly cookies and returns no token in the body", async 
   expect(httpOnly.access_token).toBe(true);
   expect(httpOnly.refresh_token).toBe(true);
   expect(httpOnly.csrf_token).toBe(false);
-});
 
-test("a mutation without the CSRF header is refused", async ({ request }) => {
-  await request.post(`${API}/api/v1/auth/login`, {
-    data: { username: NEW_USER.username, password: NEW_USER.password },
-  });
+  // Folded into this test rather than logging in again: login is rate limited to five a
+  // minute, and the suite was making seven attempts in twenty seconds — the sixth got a 429
+  // and the failure looked like a broken sign-in rather than a test spending a budget it
+  // shares with every other test in the file.
+  //
   // Authenticated by cookie, but no X-CSRF-Token: the middleware must reject it before the
   // endpoint runs.
-  const res = await request.post(`${API}/api/v1/favorites/sea-breeze`);
-  expect(res.status()).toBe(403);
+  const withoutCsrf = await request.post(`${API}/api/v1/favorites/sea-breeze`);
+  expect(withoutCsrf.status()).toBe(403);
 });
 
 test("a signed-in user can save and unsave a palette", async ({ page }) => {
@@ -137,4 +137,32 @@ test("an admin can create a palette and a visitor can find it", async ({ page })
   await page.goto("/");
   await page.getByPlaceholder(/search/i).fill(palette);
   await expect(page.getByRole("heading", { name: palette })).toBeVisible();
+});
+
+test("logging out everywhere ends a session opened in another browser", async ({
+  browser,
+}) => {
+  // Two contexts are two devices: separate cookie jars, one account. That is the only way to
+  // show what this control is for — a single context could not tell "logged out here" from
+  // "logged out everywhere".
+  const first = await browser.newContext();
+  const second = await browser.newContext();
+  const a = await first.newPage();
+  const b = await second.newPage();
+
+  await signIn(a, NEW_USER.username, NEW_USER.password);
+  await signIn(b, NEW_USER.username, NEW_USER.password);
+
+  await a.goto("/profile");
+  await a.getByRole("button", { name: "Log out everywhere" }).click();
+  await a.getByRole("dialog").getByRole("button", { name: "Log out everywhere" }).click();
+  await expect(a.getByRole("link", { name: "Login" })).toBeVisible();
+
+  // The second device never touched anything: its cookies are still in place, and the server
+  // is what decides they are worthless now.
+  await b.goto("/profile");
+  await expect(b.getByRole("link", { name: "Login" })).toBeVisible();
+
+  await first.close();
+  await second.close();
 });

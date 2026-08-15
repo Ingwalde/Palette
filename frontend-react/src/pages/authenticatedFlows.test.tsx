@@ -34,6 +34,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(),
+  logoutEverywhere: vi.fn(),
 }));
 vi.mock("../api/favorites", () => ({
   listFavorites: vi.fn(() => Promise.resolve([palette])),

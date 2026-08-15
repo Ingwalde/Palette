@@ -14,6 +14,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(),
+  logoutEverywhere: vi.fn(),
 }));
 
 const palette: Palette = {

@@ -165,6 +165,13 @@ jobs:
       - name: Audit npm dependencies
         run: npm audit --audit-level=high
 
+      - name: Orphaned class names (css:orphans)
+        # Every style is a build-time hash now, so a class name written as a string in markup
+        # matches nothing and fails silently — no error, no missing import, just an unstyled
+        # element. This check has existed since the vanilla-extract migration and was the one
+        # guard still run by hand.
+        run: npm run css:orphans
+
       - name: Unit tests + coverage gate (vitest)
         run: npm run test:coverage
 
