@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.8.6",
+    title: "Housekeeping: code scanning and current dependencies",
+    items: [
+      "The project's own code is now scanned for security and quality flaws on every change and once a week.",
+      "Every dependency is up to date, including a compiler that was rewritten in another language.",
+      "The screenshots in the README are generated from the running app instead of captured by hand — the old ones had been showing an eight-release-old version.",
+    ],
+  },
+  {
     version: "v4.8.5",
     title: "Accessibility, speed and real end-to-end tests",
     items: [

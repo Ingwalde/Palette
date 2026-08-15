@@ -1,4 +1,4 @@
-# Palette v4.8.5 — Full-Stack Color Palette App
+# Palette v4.8.6 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -114,8 +114,10 @@ flowchart LR
   the backend and the browser frontend (client errors + Web Vitals), and a scripted database
   backup with retention.
 - **Tested and linted** — an async pytest suite with ruff, mypy and an 80% coverage gate; on the
-  frontend, Vitest with a coverage gate, Playwright end-to-end and axe accessibility specs, and
-  screenshot baselines compared at zero tolerance. All enforced in CI.
+  frontend, Vitest with a coverage gate, Playwright end-to-end and axe accessibility specs,
+  screenshot baselines compared at zero tolerance, a performance budget, and an integration
+  suite driving the real stack. All enforced in CI, alongside CodeQL analysis of this
+  repository's own code and dependency audits on both ecosystems.
 
 ---
 
@@ -128,7 +130,7 @@ flowchart LR
 | **Frontend**     | Vite · React 19 · TypeScript · React Router · TanStack Query                        |
 | **Infra**        | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age                  |
 | **Styling**      | vanilla-extract (typed, zero-runtime CSS-in-TS)                                     |
-| **Quality / CI** | GitHub Actions · ruff · mypy · pytest · Vitest · Playwright + axe · Sentry          |
+| **Quality / CI** | GitHub Actions · CodeQL · ruff · mypy · pytest · Vitest · Playwright + axe · Lighthouse CI · Sentry |
 
 ---
 
@@ -344,7 +346,7 @@ is paginated (`{ items, total, limit, offset }` + `X-Total-Count`). Errors are r
 ## Version
 
 ```text
-v4.8.5
+v4.8.6
 ```
 
 ## License

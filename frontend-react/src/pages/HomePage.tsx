@@ -66,12 +66,12 @@ export function HomePage() {
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Palette v4.8.5 · Update!</p>
+          <p className={ui.eyebrow}>Palette v4.8.6 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. This release loads each page only
-            when you open it, serves its own fonts so nothing leaves this site, and
-            follows the keyboard properly as you move around.
+            Search, filter, save and export palettes. This release is housekeeping: the
+            code is scanned for flaws on every change, every dependency is current, and
+            the screenshots below are generated rather than remembered.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">

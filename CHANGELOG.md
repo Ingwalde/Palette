@@ -1,5 +1,52 @@
 # Changelog
 
+## v4.8.6 — Code scanning, current dependencies, generated screenshots
+
+Housekeeping, and one thing that had been quietly wrong for eight releases.
+
+### Security
+
+- **CodeQL analyses this repository's own code** — JavaScript/TypeScript and Python — on every
+  push, every pull request, and once a week. Dependabot and the audit steps added in v4.8.4
+  cover known vulnerabilities in dependencies we pull in; nothing looked at the code written
+  here. The weekly run matters as much as the per-push one: CodeQL ships new queries, and a
+  pattern published next month can match code committed last year that no push would
+  re-analyse. Started on `security-and-quality` rather than the narrower default.
+
+### Dependencies
+
+Every open Dependabot pull request is applied — four GitHub Actions majors, twelve grouped
+minors across pip and npm, and two development majors held back and examined last:
+
+- **TypeScript 6 → 7** is not a compiler release, it is a different compiler: the Go port.
+  `bin/tsc` is a shim, and the work is done by a platform-specific native binary shipped as an
+  optional dependency, twenty of them in the lockfile. The question worth answering was not
+  whether it type-checks here but whether the right binary resolves where the code is actually
+  built — it does, the production image builds on linux from a lockfile generated on Windows.
+  The bundle keeps its content hashes, so the native compiler emits byte-identical output for
+  this project.
+- **`@vanilla-extract/css` 1.18 → 1.21** was the other one worth watching, since it generates
+  the class names. All nineteen screenshot baselines stayed byte-identical and the stylesheet
+  kept its hash.
+
+Dependabot's version updates now target a long-lived `deps` branch rather than `main`, so
+routine churn collects in one place and arrives as a single deliberate merge. Security updates
+still go straight to the default branch, which is the behaviour worth having.
+
+### Documentation
+
+- **The README screenshots are generated.** They had been captured by hand and then went eight
+  releases untouched: the hero in `home.png` still advertised v4.7.1 and described that
+  release's features, and `export.png`'s footer agreed. `npm run screenshots` brings the
+  Compose stack up, captures against the real backend and seeded database, and tears it down.
+- Fixed two things a knowledge-graph pass over the repository surfaced, both verified against
+  the code first: `docs/database.md` claimed the connection uses `postgresql+psycopg://` when
+  Compose injects `asyncpg` for both the backend and the tests, and the README's project
+  structure still listed the `frontend/` directory deleted at the v4.8.0 cutover — while not
+  listing `frontend-react/` at all.
+- The `DATABASE_URL` validator's error message named the wrong driver too, so a misconfigured
+  deploy would have been pointed at `psycopg` at the moment it was least helpful.
+
 ## v4.8.5 — Accessibility, performance and real end-to-end tests
 
 Backend untouched — this release is the frontend and the pipeline around it.
