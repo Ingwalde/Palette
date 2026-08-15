@@ -2,6 +2,21 @@ version: 2
 
 # Weekly dependency PRs. pip-audit and npm audit in CI catch known CVEs in what is pinned
 # today; this is what actually moves the pins forward.
+#
+# Everything targets the long-lived `deps` branch rather than main, so routine version churn
+# collects there and reaches main as one deliberate merge instead of eight open pull requests
+# competing with feature work.
+#
+# Two things this costs, both worth knowing before touching it:
+#
+#   * `deps` drifts. Dependabot compares manifests against that branch, not main, so a package
+#     bumped by hand on main is invisible to it and the next PR arrives on a stale base. Merge
+#     main into `deps` after any release that touches a manifest.
+#   * `target-branch` applies to version updates only. Dependabot *security* updates always
+#     target the default branch — which is the behaviour you want: an urgent patch should not
+#     wait in a queue.
+target-branch: deps
+
 updates:
   - package-ecosystem: pip
     directory: /backend

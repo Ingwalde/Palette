@@ -58,3 +58,20 @@ Restore a dump:
 ```bash
 gunzip -c backups/palette-YYYYMMDD-HHMMSS.sql.gz | docker compose exec -T db psql -U palette -d palette
 ```
+
+## Dependency updates
+
+Dependabot opens its version-update pull requests against the long-lived `deps` branch, not
+`main`, so routine churn collects in one place and reaches `main` as a single deliberate merge.
+
+```bash
+git checkout deps && git merge main    # after any release that touched a manifest
+```
+
+That merge is not optional housekeeping. Dependabot compares manifests against `deps`, so a
+package bumped by hand on `main` is invisible to it and the next update arrives on a stale
+base.
+
+**Security updates ignore this setting.** Dependabot always raises those against the default
+branch, which is the behaviour you want — an urgent patch should not sit in a queue behind a
+routine minor bump.
