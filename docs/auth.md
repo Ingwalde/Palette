@@ -72,10 +72,33 @@ signs out your other devices but not the tab you are typing in.
 
 `POST /auth/logout` is narrower on purpose: it revokes the refresh token it was given and
 clears the cookies for that browser, leaving other devices alone. Use `logout-all` to end
-everything.
+everything — the profile page exposes it as a confirmed **Log out everywhere** control, so a
+user who suspects someone else has access can act without changing their password.
 
 Refresh tokens are opaque random strings; only their SHA-256 is stored. They are single-use
 and rotated on every `/refresh`, with server-side revocation.
+
+### Reuse detection
+
+Because rotation is single-use, exactly one refresh token is valid per session at a time, and
+the legitimate client always replaces its own after rotating. A token that is already revoked
+but not yet expired coming back therefore means it exists in two copies.
+
+That ends **every** session for the account: all refresh tokens are revoked and `token_version`
+is bumped, so access tokens already issued stop working on their next request rather than at
+expiry.
+
+The bluntness is deliberate, and it follows from what the server can and cannot know. It cannot
+tell the two holders apart — whichever rotated first now has a valid token and looks entirely
+ordinary, and whichever presents the stale copy could be the owner who was raced or the thief
+who lost. Ending both costs the owner one sign-in, which they can complete because they know
+their password, and costs an attacker everything, because they do not.
+
+A token that never existed is *not* treated this way: it is an ordinary `401`, because noise
+must not look like an incident. The distinction is a stored row that is revoked and unexpired.
+
+Reuse is logged at `WARNING` on the `palette.security` logger and reported to Sentry when a DSN
+is configured, so it is visible after the fact rather than only in its effect on the user.
 
 ---
 
