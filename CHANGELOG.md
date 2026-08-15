@@ -1,5 +1,86 @@
 # Changelog
 
+## v4.8.5 — Accessibility, performance and real end-to-end tests
+
+Backend untouched — this release is the frontend and the pipeline around it.
+
+### Accessibility
+
+Two defects the axe suite in v4.8.1 could not reach. It audits a page that has already
+rendered; these are about what happens *between* pages, and what the keyboard can do while a
+dialog is open.
+
+- **Navigating announced nothing and moved nothing.** A full page load tells a screen reader
+  where it landed — the browser resets focus and reads the new document — and React Router does
+  neither, so activating a nav link left focus on the link with no announcement. Focus now moves
+  to the `<main>` landmark and the new page's heading is written into a live region. Both are
+  needed: moving focus to a container announces the container, not what changed. The first
+  render is skipped deliberately, or focus would land past the skip link.
+- **Dialogs had `aria-modal="true"` and no focus management.** That attribute tells assistive
+  technology the page behind is inert; the browser still walks Tab into the buttons under the
+  overlay. `autoFocus` sat only on the prompt's input, so the destructive **Delete palette**
+  confirmation opened with focus on the list button behind it. Focus now enters the dialog, is
+  trapped, and returns to whatever opened it — landing on **Cancel**, so Enter on a dialog that
+  appeared unexpectedly dismisses rather than deletes.
+
+### Performance
+
+Measured with Lighthouse in a container, three runs, against the previous release:
+
+| | v4.8.4 | v4.8.5 |
+| --- | --- | --- |
+| Entry chunk | 336.3 kB | 248.8 kB |
+| Entry CSS | 29.4 kB | 13.7 kB |
+| Scripts transferred | 101.9 kB | 96.3 kB |
+| First contentful paint | 736.9 ms | 559.9 ms |
+| Speed Index | 736.9 | 620.5 |
+
+- **Every route except home is code-split.** A visitor who only browses palettes no longer
+  downloads the admin editor, the export page's canvas renderer and the whole changelog. Home
+  stays eager: deferring it would trade a smaller download for a slower paint on the route that
+  matters most.
+- **Poppins is served from this origin** — four weights, 31 kB of woff2, preloaded. That removes
+  a render-blocking request to a third party and lets the Content-Security-Policy drop
+  `fonts.googleapis.com` and `fonts.gstatic.com`. **No request from the page now leaves this
+  origin**, verified in a browser against the running stack.
+- **A performance budget runs on every pull request.** Asset sizes fail the build; timings only
+  warn, because lab numbers on a shared runner move between runs on identical code and a gate a
+  re-run turns green teaches people to re-run instead of to look.
+
+### Testing
+
+- **A second end-to-end suite runs against the real stack** — nginx, FastAPI, PostgreSQL and
+  Redis — and writes real rows. The existing specs stub every response, which is what makes them
+  fast and what stops them noticing when the front end and the API stop agreeing. These assert
+  the seams: the login response is the user with no token in the body and three `Set-Cookie`
+  headers, two httpOnly and the CSRF half deliberately not; a cookie-authenticated mutation
+  without `X-CSRF-Token` is refused; a favourite survives a round trip through the database; an
+  admin's new palette is findable by search, which exercises the server-side slug.
+- The login assertion is the one that would have caught the dead `Token` schema removed in
+  v4.8.4 — it described a body containing `access_token`, the documentation repeated it, and
+  nothing tested it.
+
+### Observability
+
+- **Source maps are uploaded to Sentry and the build is tagged with its commit**, so a stack
+  trace resolves against the exact bundle that produced it. Maps are still deleted before they
+  reach nginx. The auth token is a BuildKit secret rather than a build arg, since build args are
+  recorded in image history. All of it is optional: with no token the plugin is never added, and
+  local and pull-request builds are unchanged.
+- The plugin's build telemetry is off. The page was just made to reach no third party; the build
+  should not quietly be the exception.
+
+### Notes
+
+- **Cumulative Layout Shift is not asserted.** The static audit reported 0.218 against a 0.1
+  target, and it is an artefact of that environment: a real browser instrumented with a
+  `layout-shift` observer records no shifts at all on the same build. Field CLS already arrives
+  from real users through the Web Vitals reporting added in v4.8.3.
+- Lighthouse is fetched at a pinned version when it runs rather than being a dependency. Its
+  tree reaches `extract-zip`, whose high-severity advisory has no fixed version, and committing
+  it would have meant either a permanently red `npm audit` or narrowing that audit for every dev
+  dependency to hide one finding.
+
 ## v4.8.4 — Code review remediation
 
 An external code review found twelve defects; all twelve are fixed here, along with five
