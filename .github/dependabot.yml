@@ -15,11 +15,10 @@ version: 2
 #   * `target-branch` applies to version updates only. Dependabot *security* updates always
 #     target the default branch — which is the behaviour you want: an urgent patch should not
 #     wait in a queue.
-target-branch: deps
-
 updates:
   - package-ecosystem: pip
     directory: /backend
+    target-branch: deps
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -31,6 +30,7 @@ updates:
 
   - package-ecosystem: npm
     directory: /frontend-react
+    target-branch: deps
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
@@ -40,5 +40,6 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: deps
     schedule:
       interval: weekly
