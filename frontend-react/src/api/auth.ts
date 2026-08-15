@@ -23,6 +23,12 @@ export function logout(): Promise<void> {
   return request<void>("/auth/logout", { method: "POST" });
 }
 
+export function logoutEverywhere(): Promise<void> {
+  // Ends every session on every device: revokes all refresh tokens and bumps the user's
+  // token_version, which retires access tokens already issued rather than waiting for expiry.
+  return request<void>("/auth/logout-all", { method: "POST" });
+}
+
 export function getCurrentUser(): Promise<User> {
   // Auth rides on the httpOnly cookie; a 401 means no valid session.
   return request<User>("/auth/me");

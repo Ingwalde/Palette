@@ -20,6 +20,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(() => Promise.resolve(admin)),
   register: vi.fn(),
   logout: vi.fn(() => Promise.resolve()),
+  logoutEverywhere: vi.fn(() => Promise.resolve()),
 }));
 
 function Probe() {

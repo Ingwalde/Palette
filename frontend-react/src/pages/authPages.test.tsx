@@ -24,6 +24,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(),
+  logoutEverywhere: vi.fn(),
   forgotPassword: vi.fn(() =>
     Promise.resolve({ message: "If the email exists, a link was sent." }),
   ),

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ProfilePage } from "./ProfilePage";
 import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
+import { ModalProvider } from "../components/modal/ModalProvider";
 import type { User } from "../types/api";
 import * as authApi from "../api/auth";
 
@@ -23,6 +24,7 @@ vi.mock("../api/auth", () => ({
   login: vi.fn(),
   register: vi.fn(),
   logout: vi.fn(() => Promise.resolve()),
+  logoutEverywhere: vi.fn(() => Promise.resolve()),
   changePassword: vi.fn(() => Promise.resolve({ message: "ok" })),
   resendVerification: vi.fn(() => Promise.resolve({ message: "sent" })),
   deleteAccount: vi.fn(() => Promise.resolve()),
@@ -34,12 +36,16 @@ function renderProfile() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter initialEntries={["/profile"]}>
-            <Routes>
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/" element={<p>HOME PAGE</p>} />
-            </Routes>
-          </MemoryRouter>
+          {/* ProfilePage asks for a confirmation before logging out everywhere, so it needs
+              the modal context the way main.tsx provides it. */}
+          <ModalProvider>
+            <MemoryRouter initialEntries={["/profile"]}>
+              <Routes>
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/" element={<p>HOME PAGE</p>} />
+              </Routes>
+            </MemoryRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,
@@ -116,5 +122,32 @@ describe("ProfilePage", () => {
     await screen.findByRole("heading", { name: "demo" });
     await u.click(screen.getByRole("button", { name: "Resend link" }));
     expect(authApi.resendVerification).toHaveBeenCalledWith("demo@x.com");
+  });
+
+  it("asks before logging out everywhere, and does nothing if declined", async () => {
+    const user = userEvent.setup();
+    renderProfile();
+    await screen.findByRole("heading", { name: "demo" });
+
+    await user.click(screen.getByRole("button", { name: "Log out everywhere" }));
+
+    // Not undoable, and it reaches devices the user is not holding — so it is confirmed.
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    expect(authApi.logoutEverywhere).not.toHaveBeenCalled();
+  });
+
+  it("ends every session once confirmed", async () => {
+    const user = userEvent.setup();
+    renderProfile();
+    await screen.findByRole("heading", { name: "demo" });
+
+    await user.click(screen.getByRole("button", { name: "Log out everywhere" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Log out everywhere" }));
+
+    expect(authApi.logoutEverywhere).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("HOME PAGE")).toBeInTheDocument();
   });
 });
