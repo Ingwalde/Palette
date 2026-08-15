@@ -236,11 +236,7 @@ async def rotate_refresh_token(db: AsyncSession, token: str) -> tuple[models.Use
         # Separate a replay from a token that never existed before answering the same 401 to
         # both. Only a row that exists, is revoked and has not expired is a reuse.
         replayed = await crud.get_refresh_token(db, _hash_refresh_token(token))
-        if (
-            replayed is not None
-            and replayed.revoked
-            and replayed.expires_at >= datetime.now(UTC)
-        ):
+        if replayed is not None and replayed.revoked and replayed.expires_at >= datetime.now(UTC):
             await _handle_refresh_reuse(db, replayed)
         return None
     user = await crud.get_user(db, stored.user_id)

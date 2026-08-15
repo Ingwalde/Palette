@@ -1,5 +1,6 @@
 import logging
 
+
 async def _register(client, username="alice", email="alice@test.com", password="strong-password"):
     return await client.post(
         "/api/v1/auth/register",
