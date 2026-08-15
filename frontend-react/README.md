@@ -166,13 +166,18 @@ One caveat about the numbers. The audit runs against the static `dist` with no b
 page passes through an extra cycle of loading and error states that it would not in
 production. Asset sizes are unaffected; the timings are mildly pessimistic.
 
-**Cumulative Layout Shift is deliberately not asserted here.** The static audit reported 0.218
-against a 0.1 target, and it is an artefact of that environment: a real Chromium run against
-the same build, instrumented with a `layout-shift` PerformanceObserver, records no shift
-entries at all. A warning that always fires teaches people to ignore warnings, and reshaping
-the page to satisfy it would be fixing the instrument. Field CLS already arrives from real
-users through the Sentry Web Vitals reporting, which is the number that describes what anyone
-actually experiences.
+**Cumulative Layout Shift is deliberately not asserted here**, and the reason is measured
+rather than argued. The static audit reported 0.218 against a 0.1 target. Against the real
+stack, instrumented with a `layout-shift` PerformanceObserver, the same page records **0.0000**
+— no shift entries at all. Throttled to a slow 3G, so the palette data cannot possibly arrive
+before first paint, it reaches **0.0129**, and the elements that move are `body` and the nav
+indicator, not the palette grid or the footer that the static audit blamed.
+
+So the 0.218 belongs to Lighthouse's environment — a static `dist` with no backend, where the
+page cycles through loading and error states it never reaches in production. Reserving height
+for the grid was considered and rejected on that evidence: it would have cost a round of
+screenshot baselines to move a number no visitor experiences. Field CLS arrives from real users
+through the Sentry Web Vitals reporting, which is the one that describes what anyone sees.
 
 ## API base URL
 
