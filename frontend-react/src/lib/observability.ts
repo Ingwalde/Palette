@@ -39,6 +39,10 @@ async function initSentry(): Promise<void> {
   const mod = await import("@sentry/react");
   mod.init({
     dsn,
+    // `release` is deliberately not set here. When the image is built with an auth token,
+    // @sentry/vite-plugin injects the commit as the release and uploads the matching source
+    // maps under it; passing a value here would override that and detach the traces from the
+    // maps that could symbolicate them.
     environment: import.meta.env.MODE,
     integrations: [mod.browserTracingIntegration()],
     tracesSampleRate: 0.1,
