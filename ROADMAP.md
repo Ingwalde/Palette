@@ -190,7 +190,14 @@ Status: completed.
 
 Planned next:
 
-- v4.8.6 — CodeQL. Dependabot and the `npm audit` / `pip-audit` checks shipped in v4.8.4.
+- v4.8.6 — CodeQL, and clearing the Dependabot backlog. Dependabot itself and the
+  `npm audit` / `pip-audit` checks shipped in v4.8.4; what is left is the eight pull requests
+  it has opened since, which include two major bumps that need reading rather than merging:
+  TypeScript 6 to 7, and `@types/node` 24 to 26.
+- Not scheduled: a separate Sentry project for the browser frontend. The upload and release
+  tagging landed in v4.8.5 and stay inert until `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and
+  `SENTRY_PROJECT` exist — until then the frontend shares the backend's DSN, so JavaScript and
+  Python events land in one project.
 
 ## v4.8.4 — Code Review Remediation
 
