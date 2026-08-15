@@ -1,0 +1,54 @@
+name: CodeQL
+
+# Static analysis for the two languages this repository actually contains. Dependabot and the
+# audit steps in ci.yml cover known vulnerabilities in dependencies we pull in; this covers
+# the code written here, which nothing else looks at.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, because the value is not only in new code: CodeQL ships new queries, and a
+    # pattern published next month can match code committed last year that no push will
+    # re-analyse on its own.
+    - cron: "23 4 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      # Writing results to the Security tab is the whole point; the rest are what the action
+      # needs to read the workflow and the checkout.
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript, python]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # security-and-quality is broader than the default security-extended: it adds
+          # maintainability queries. Starting broad is cheap here because the codebase is
+          # small; narrowing later is easy, discovering a whole category late is not.
+          queries: security-and-quality
+
+      # No build step. Both languages are interpreted here, so CodeQL's own extraction is
+      # enough — a manual build would only add a way for the analysis to fail for reasons
+      # that have nothing to do with the code.
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
