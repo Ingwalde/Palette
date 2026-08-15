@@ -101,7 +101,8 @@ class Settings(BaseSettings):
             )
         if not value.startswith("postgresql"):
             raise ValueError(
-                f"DATABASE_URL must be a PostgreSQL URL (postgresql+psycopg://...); got: {value!r}"
+                "DATABASE_URL must be a PostgreSQL URL (postgresql+asyncpg://... — the "
+                f"request path is async; Alembic derives its own sync URL); got: {value!r}"
             )
         return value
 

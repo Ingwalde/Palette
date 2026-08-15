@@ -6,14 +6,16 @@ refuses to start without a `postgresql://` `DATABASE_URL`.
 The URL is set automatically by Docker Compose:
 
 ```text
-postgresql+psycopg://palette:palette@db:5432/palette
+postgresql+asyncpg://palette:palette@db:5432/palette
 ```
 
 The data lives in the PostgreSQL `db` service and persists in the `pgdata` volume. The
 test suite runs against a separate disposable PostgreSQL (`test-db` service, database
 `palette_test`) via `docker compose --profile test run --rm tests`.
 
-Connectivity uses the psycopg 3 driver (`postgresql+psycopg://`).
+The request path is async end to end, so the URL Compose injects uses the **asyncpg**
+driver. Alembic runs its migrations synchronously against the same database — that split
+is why `database.py` builds a separate synchronous URL for the migration step.
 
 ---
 

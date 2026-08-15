@@ -21,7 +21,8 @@
     "test:visual:docker": "bash scripts/visual.sh",
     "test:visual:docker:update": "bash scripts/visual.sh --update",
     "lighthouse": "bash scripts/lighthouse.sh",
-    "test:integration": "bash scripts/integration.sh"
+    "test:integration": "bash scripts/integration.sh",
+    "screenshots": "bash scripts/screenshots.sh"
   },
   "dependencies": {
     "@sentry/react": "^10.70.0",

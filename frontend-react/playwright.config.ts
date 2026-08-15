@@ -7,8 +7,9 @@ export default defineConfig({
   // config does not provide. Screenshot baselines only mean anything inside the pinned
   // Playwright image (playwright.visual.config.ts); the integration specs need the whole
   // Compose stack rather than the preview server and a stubbed API
-  // (playwright.integration.config.ts, started by scripts/integration.sh).
-  testIgnore: ["visual/**", "integration/**"],
+  // (playwright.integration.config.ts, started by scripts/integration.sh). The third,
+  // screenshots/, is a generator: it writes into docs/assets and would be wrong to run on a PR.
+  testIgnore: ["visual/**", "integration/**", "screenshots/**"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

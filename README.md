@@ -26,7 +26,7 @@ Cloudflare + Caddy, auto-deployed on every green build to `main`. Full release h
 
 | Home — browse & filter                                                       | Admin — colour-row editor                                                           | Export — PNG preview                                                      |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| ![Home page: palette grid with tag filters and search](docs/assets/home.png) | ![Admin panel: dynamic HEX-row colour editor with tag chips](docs/assets/admin.png) | ![Export page: selected palette with PNG preview](docs/assets/export.png) |
+| ![Home page: hero, search field and tag filter chips](docs/assets/home.png) | ![Admin panel: dynamic HEX-row colour editor with tag chips](docs/assets/admin.png) | ![Export page: selected palette with PNG preview](docs/assets/export.png) |
 
 ![Demo: live search filtering the palette grid down to matching palettes](docs/assets/demo.gif)
 
@@ -259,7 +259,11 @@ docker compose run --rm backend alembic revision -m "describe change"
 
 ```text
 Palette/
-├── frontend/                 # HTML pages, css/, js/ (api, pages, components, utils) — no build
+├── frontend-react/
+│   ├── src/                  # api, auth, components, pages, lib, styles (*.css.ts)
+│   ├── e2e/                  # Playwright: flows, a11y, focus · visual/ · integration/ · screenshots/
+│   ├── scripts/              # visual.sh, integration.sh, lighthouse.sh, screenshots.sh
+│   └── Dockerfile            # multi-stage build, served by nginx
 ├── backend/
 │   ├── app/                  # main, config, database, models, schemas, security, routers/, crud
 │   ├── alembic/              # migrations
@@ -267,7 +271,7 @@ Palette/
 │   └── requirements*.txt
 ├── docs/                     # architecture, deploy, ops, secrets, api, auth, database, setup…
 ├── scripts/                  # backup-db.sh, split-secrets.sh
-├── .github/workflows/        # ci.yml, deploy.yml
+├── .github/workflows/        # ci.yml, deploy.yml, codeql.yml
 ├── docker-compose.yml        # + docker-compose.prod.yml, docker-compose.staging.yml
 ├── secrets/                  # SOPS-encrypted prod + staging env (safe to commit)
 ├── CHANGELOG.md · ROADMAP.md
