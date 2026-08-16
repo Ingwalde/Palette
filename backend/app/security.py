@@ -108,6 +108,13 @@ def _pbkdf2_hash(password: str, salt: str, iterations: int = _LEGACY_ITERATIONS)
     ).hex()
 
 
+# A real Argon2 hash of a value nobody can supply, verified against when the account does not
+# exist so a miss costs the same as a wrong password. Computed once at import: hashing per
+# request would cost the same but change the salt each time, and building it lazily would make
+# the very first miss measurably faster than every later one.
+_DUMMY_HASH = _password_hasher.hash(secrets.token_urlsafe(32))
+
+
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> models.User | None:
     login_value = username.strip().lower()
 
@@ -117,6 +124,13 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> m
         user = await crud.get_user_by_username(db, username.strip())
 
     if user is None:
+        # Spend the same time as a real verification. Returning immediately made the response
+        # ~12ms for an unknown account against ~120ms for a known one — a tenfold difference,
+        # measurable across the internet within a handful of requests, which turns login into a
+        # list of who has an account here. /forgot-password and /resend-verification were
+        # already careful about exactly this; login was the one place it mattered most and the
+        # one place it was missing.
+        await verify_password_async(password, _DUMMY_HASH)
         return None
 
     if not await verify_password_async(password, user.password_hash):

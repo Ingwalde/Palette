@@ -102,6 +102,18 @@ is configured, so it is visible after the fact rather than only in its effect on
 
 ---
 
+## Account enumeration
+
+Login answers in the same time whether or not the username exists. When there is no such
+account the password is still verified, against a dummy Argon2 hash generated at import, so the
+miss costs what a wrong password costs.
+
+Without that, a miss returned before any hashing: roughly 12ms against 120ms for a known
+account. A tenfold gap is measurable across the internet within a handful of requests, and it
+turns login into a directory of who is registered here. `/forgot-password` and
+`/resend-verification` already returned identical generic responses for exactly this reason —
+the model was understood, and login was the one place it was not applied.
+
 ## Password hashing
 
 New hashes use **Argon2id**. Legacy `pbkdf2_sha256` hashes are still verified and are
