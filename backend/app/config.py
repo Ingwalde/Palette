@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     database_url: str = ""
 
     # Allowed browser origins for CORS (comma-separated in the env var). Never "*".
+    # Hosts the API will answer for, checked by TrustedHostMiddleware. Without it the API
+    # answers on any Host header, which lets a request forged through another name be
+    # reflected back in absolute URLs and cache keys. "*" disables the check; it is the
+    # default so a local run and the test profile need no extra configuration, and production
+    # sets the real names.
+    allowed_hosts: Annotated[list[str], NoDecode] = ["*"]
+
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5500",
         "http://127.0.0.1:5500",
@@ -71,6 +78,13 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value):
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
+    @field_validator("allowed_hosts", mode="before")
+    @classmethod
+    def _split_allowed_hosts(cls, value):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
