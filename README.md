@@ -147,8 +147,12 @@ flowchart LR
 - Login by username or email; email verification with a verify-link auto-login; password reset by
   email; self-service account deletion.
 - Redis-backed rate limiting (shared across instances) on auth and every mutating endpoint.
-- Strict CSP and security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
-  Permissions-Policy); explicit CORS allowlist; mandatory `SECRET_KEY` (fail-fast at startup).
+- Security headers on **both** halves: nginx sets a strict CSP and the usual family for the
+  SPA, and the API sets `nosniff`, `DENY`, a referrer policy and a `default-src 'none'` CSP on
+  every response, error responses included. HSTS is sent only over https, so it cannot pin a
+  browser during local development.
+- `ALLOWED_HOSTS` rejects requests for a Host the API does not answer for; explicit CORS
+  allowlist; mandatory `SECRET_KEY` (fail-fast at startup).
 - Secrets encrypted in git via SOPS + age.
 
 ### API & data

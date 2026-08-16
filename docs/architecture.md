@@ -78,7 +78,7 @@ flowchart LR
     U["Browser"] -->|HTTPS| CF["Cloudflare"]
     CF --> CA["Caddy (reverse proxy, TLS)"]
     CA -->|"/*"| FE["nginx — static frontend + CSP/security headers"]
-    CA -->|"/api/*"| BE["FastAPI backend (async)"]
+    CA -->|"/api/*"| BE["FastAPI backend (async) — own security headers"]
     BE --> DB[("PostgreSQL")]
     BE --> RD[("Redis — rate limiting")]
     BE -. "errors (if DSN set)" .-> SN["Sentry"]
