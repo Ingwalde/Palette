@@ -1,6 +1,7 @@
 from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
@@ -32,7 +33,15 @@ async def create_tag(
     if await crud.get_tag_by_name(db, tag_data.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Tag already exists")
 
-    tag = await crud.create_tag(db, tag_data)
+    # Same race as registration: the check above is advisory, and the unique constraint is what
+    # actually decides. Losing that race is a conflict, not a server error.
+    try:
+        tag = await crud.create_tag(db, tag_data)
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Tag already exists"
+        ) from exc
     return {"name": tag.name, "kind": tag.kind, "count": 0}
 
 
