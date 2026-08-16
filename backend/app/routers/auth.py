@@ -28,10 +28,10 @@ from ..security import (
     decode_password_reset_token,
     generate_csrf_token,
     get_current_user,
-    hash_password,
+    hash_password_async,
     revoke_refresh_token,
     rotate_refresh_token,
-    verify_password,
+    verify_password_async,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -113,7 +113,7 @@ async def register_user(
     user = await crud.create_user(
         db=db,
         user_data=user_data,
-        password_hash=hash_password(user_data.password),
+        password_hash=await hash_password_async(user_data.password),
         is_admin=False,
     )
 
@@ -203,7 +203,7 @@ async def reset_password(
     if token_version != user.token_version:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=_RESET_LINK_INVALID)
 
-    await crud.update_user_password(db, user, hash_password(payload.new_password))
+    await crud.update_user_password(db, user, await hash_password_async(payload.new_password))
     # Log out any existing sessions once the password changes: refresh tokens server-side,
     # already-issued access tokens via the version bump.
     await crud.revoke_all_refresh_tokens(db, user.id)
@@ -277,7 +277,7 @@ async def delete_account(
     current_user=Depends(get_current_user),
 ):
     # Re-authenticate before an irreversible account deletion.
-    if not verify_password(payload.password, current_user.password_hash):
+    if not await verify_password_async(payload.password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password is incorrect",
@@ -302,7 +302,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    if not verify_password(password_data.current_password, current_user.password_hash):
+    if not await verify_password_async(password_data.current_password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
@@ -311,7 +311,7 @@ async def change_password(
     await crud.update_user_password(
         db=db,
         user=current_user,
-        password_hash=hash_password(password_data.new_password),
+        password_hash=await hash_password_async(password_data.new_password),
     )
     # Changing a password ends every other session, same as resetting one — this endpoint used
     # to leave them all running. The caller keeps working: re-issue their session against the
