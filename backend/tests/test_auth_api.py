@@ -1,6 +1,8 @@
 import logging
 import time
 
+import pytest
+
 
 async def _register(client, username="alice", email="alice@test.com", password="strong-password"):
     return await client.post(
@@ -401,3 +403,38 @@ async def test_losing_a_registration_race_gives_409_not_500(client, db_session, 
         json={"username": "racer", "email": "racer@test.com", "password": "strong-password"},
     )
     assert resp.status_code == 409
+
+
+@pytest.mark.parametrize(
+    "password,reason",
+    [
+        ("short1", "under the length floor"),
+        ("123456789012", "in the common list"),
+        ("alice-secret-123", "contains the username"),
+    ],
+)
+async def test_registration_refuses_weak_passwords(client, password, reason):
+    """min_length was 6, so "123456" was accepted — in a project whose headline feature is auth.
+
+    Twelve characters and a small refusal list, not a composition rule: mandating a symbol and a
+    digit mostly produces "Password1!", while length is what costs an attacker work. The third
+    case is the one a length floor alone misses — a long password containing the account name is
+    guessed immediately.
+    """
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={"username": "alice", "email": "alice@test.com", "password": password},
+    )
+    assert resp.status_code == 422, f"accepted a password {reason}"
+
+
+async def test_registration_accepts_a_reasonable_password(client):
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "username": "alice",
+            "email": "alice@test.com",
+            "password": "correct-horse-battery",
+        },
+    )
+    assert resp.status_code == 201

@@ -4,6 +4,10 @@ from typing import Annotated, Literal
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+# The seeded-admin check and the registration schema must not drift apart, so the floor has
+# one definition. Safe to import at module level: schemas does not import config.
+from .schemas import MIN_PASSWORD_LENGTH as _MIN_SEEDED_PASSWORD_LENGTH
+
 logger = logging.getLogger("palette.config")
 
 # Boot-time guards: these placeholder values must never reach production.
@@ -127,6 +131,17 @@ class Settings(BaseSettings):
             logger.warning(
                 "DEFAULT_ADMIN_PASSWORD is still set to a placeholder value. "
                 "Change it in backend/.env and rotate the seeded admin password."
+            )
+        # Warned about, deliberately not enforced. Seeding does not pass through the request
+        # schema, so this password escapes the policy every user's password must satisfy —
+        # which is worth saying out loud. Refusing to boot over it would mean a config value
+        # taking the site down on deploy, which is a worse failure than an inconsistency.
+        elif len(value) < _MIN_SEEDED_PASSWORD_LENGTH:
+            logger.warning(
+                "DEFAULT_ADMIN_PASSWORD is shorter than the %d characters now required of "
+                "every user password. The seeded admin is exempt because seeding bypasses the "
+                "request schema; consider setting a longer one.",
+                _MIN_SEEDED_PASSWORD_LENGTH,
             )
         return value
 
