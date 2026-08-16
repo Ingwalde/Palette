@@ -1,3 +1,4 @@
+import logging
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
@@ -7,6 +8,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
+
+logger = logging.getLogger("palette.crud")
 
 
 def slugify(value: str) -> str:
@@ -357,6 +360,17 @@ async def get_user_by_username(db: AsyncSession, username: str) -> models.User |
     return (await db.execute(stmt)).scalars().first()
 
 
+async def _get_user_by_username_ci(db: AsyncSession, username: str) -> models.User | None:
+    """Case-insensitive username lookup, used only by the admin seed guard.
+
+    Registration compares exactly, so `Admin` and `admin` are genuinely different accounts.
+    The seed check wants the looser comparison: a near-miss is the case most likely to be an
+    accident, and warning about it is cheaper than promoting the wrong row.
+    """
+    stmt = select(models.User).where(func.lower(models.User.username) == username.lower())
+    return (await db.execute(stmt)).scalars().first()
+
+
 async def get_user_by_email(db: AsyncSession, email: str) -> models.User | None:
     stmt = select(models.User).where(models.User.email == email.lower())
     return (await db.execute(stmt)).scalars().first()
@@ -420,15 +434,25 @@ async def create_admin_if_missing(
             await db.refresh(admin_exists)
         return None
 
-    existing_user = await get_user_by_username(db, username)
+    # A user already holds this name and there is no admin. Promoting them was the previous
+    # behaviour, and it did two things nobody asked for: it granted admin to whoever happened
+    # to register that username, and it overwrote their password hash with
+    # DEFAULT_ADMIN_PASSWORD — locking the real owner out of their own account, silently, at
+    # startup. Both are refused now, loudly, because the alternative to a confusing failure is
+    # not a silent one.
+    #
+    # The lookup is exact, so `Admin` and `admin` are different rows; comparing case-
+    # insensitively means the warning fires for the near-miss too, which is the case most
+    # likely to be an accident.
+    existing_user = await _get_user_by_username_ci(db, username)
     if existing_user:
-        existing_user.is_admin = True
-        existing_user.email = existing_user.email or email
-        existing_user.password_hash = password_hash
-        existing_user.email_verified = True
-        await db.commit()
-        await db.refresh(existing_user)
-        return existing_user
+        logger.error(
+            "Refusing to seed the default admin: user %r already exists and is not an admin. "
+            "Promoting them would have overwritten their password with DEFAULT_ADMIN_PASSWORD. "
+            "Grant admin deliberately, or set DEFAULT_ADMIN_USERNAME to a free name.",
+            existing_user.username,
+        )
+        return None
 
     user = models.User(
         username=username,
