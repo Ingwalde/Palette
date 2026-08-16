@@ -98,8 +98,9 @@ flowchart LR
 ## Highlights
 
 - **Cookie-based auth, done properly** — JWT access + rotating refresh tokens in httpOnly/Secure
-  cookies, double-submit CSRF on mutations, Argon2id hashing, timing-safe comparison, server-side
-  token revocation. Login by username **or** email.
+  cookies, double-submit CSRF on mutations, Argon2id hashing, server-side token revocation,
+  and a login path that costs the same whether or not the account exists. Login by username
+  **or** email.
 - **Async request path** — FastAPI with async SQLAlchemy 2.0 (asyncpg) on PostgreSQL 16; `colors`
   and `tags` stored as JSONB with a GIN index for fast tag filtering.
 - **Hardened by default** — Redis-backed rate limiting on **every** mutating endpoint, strict
@@ -140,7 +141,9 @@ flowchart LR
 
 - JWT access + rotating refresh tokens in **httpOnly cookies** with server-side revocation, plus
   **double-submit CSRF** on mutating requests.
-- Argon2id password hashing (legacy PBKDF2 upgraded on next login); timing-safe comparison.
+- Argon2id password hashing with pinned cost parameters (legacy PBKDF2 upgraded on next
+  login), run off the event loop; timing-safe secret comparison; and a constant-cost login
+  path, so response time does not reveal which accounts exist.
 - Login by username or email; email verification with a verify-link auto-login; password reset by
   email; self-service account deletion.
 - Redis-backed rate limiting (shared across instances) on auth and every mutating endpoint.

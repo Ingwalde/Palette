@@ -18,8 +18,7 @@ def upgrade() -> None:
     # Idempotent so a pre-Alembic database that already added these columns (via the old
     # startup ALTER) can be stamped at the baseline and upgraded without error.
     op.execute(
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS "
-        "email_verified BOOLEAN NOT NULL DEFAULT FALSE"
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE"
     )
     op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ")
 

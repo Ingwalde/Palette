@@ -1,4 +1,5 @@
 import logging
+import time
 
 
 async def _register(client, username="alice", email="alice@test.com", password="strong-password"):
@@ -328,3 +329,40 @@ async def test_unknown_refresh_token_is_not_treated_as_reuse(client, caplog):
         cookies={"refresh_token": good_refresh, "csrf_token": "t"},
     )
     assert still_valid.status_code == 200
+
+
+async def test_login_costs_the_same_whether_the_account_exists(client):
+    """Login must not reveal which usernames are registered by how fast it answers.
+
+    Before this, a miss returned before any hashing: ~12ms against ~120ms for a known account.
+    A tenfold gap is measurable across the internet in a handful of requests, and it turns the
+    login endpoint into a directory of who has an account. The fix verifies against a dummy
+    hash when there is no user, so both paths pay the same Argon2 cost.
+
+    The bound is loose on purpose — this asserts the orders of magnitude match, not that the
+    times are identical, because a shared CI runner cannot promise the latter.
+    """
+    await _register(client)
+
+    async def timed(username: str) -> float:
+        start = time.perf_counter()
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"username": username, "password": "definitely-not-the-password"},
+        )
+        assert resp.status_code == 401
+        return time.perf_counter() - start
+
+    # Warm up: the first call in a process pays import and connection costs that have nothing
+    # to do with hashing.
+    await timed("alice")
+
+    # Explicit loops: `min(await timed(...) for ...)` builds an async generator, which min()
+    # cannot consume.
+    existing = min([await timed("alice") for _ in range(3)])
+    missing = min([await timed("nobody-with-this-name") for _ in range(3)])
+
+    assert missing > existing * 0.5, (
+        f"unknown account answered in {missing:.3f}s against {existing:.3f}s for a known one — "
+        "the miss is still skipping the hash"
+    )

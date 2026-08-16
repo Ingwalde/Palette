@@ -100,7 +100,7 @@ sequenceDiagram
     participant C as Browser
     participant A as FastAPI /auth
     C->>A: POST /login (username or email + password)
-    A->>A: Argon2id verify (timing-safe)
+    A->>A: Argon2id verify (threadpool; dummy hash when no such user)
     A-->>C: Set-Cookie access + refresh (httpOnly, Secure) + csrf (readable)
     Note over C: mutating request
     C->>A: POST /palettes + X-CSRF-Token header
