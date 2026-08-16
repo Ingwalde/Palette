@@ -8,6 +8,7 @@ from fastapi import (
     Response,
     status,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .. import crud, schemas
@@ -110,12 +111,23 @@ async def register_user(
             detail="Email is already registered",
         )
 
-    user = await crud.create_user(
-        db=db,
-        user_data=user_data,
-        password_hash=await hash_password_async(user_data.password),
-        is_admin=False,
-    )
+    # The checks above are advisory: they produce a helpful message for the common case, but
+    # two registrations racing for the same name both pass them and one loses at the unique
+    # constraint. Without this the loser got an unhandled IntegrityError — a 500, and a Sentry
+    # event — for a conflict the non-racing path answers with 409.
+    try:
+        user = await crud.create_user(
+            db=db,
+            user_data=user_data,
+            password_hash=await hash_password_async(user_data.password),
+            is_admin=False,
+        )
+    except IntegrityError as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username or email is already registered",
+        ) from exc
 
     token = create_email_verification_token(user.id)
     background_tasks.add_task(send_verification_email, user.email, user.username, token)

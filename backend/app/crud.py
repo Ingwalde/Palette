@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from sqlalchemy import Select, Text, cast, delete, func, or_, select, true
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import models, schemas
@@ -250,21 +251,37 @@ async def delete_tag_everywhere(db: AsyncSession, name: str) -> int:
 
 
 async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) -> models.Palette:
+    """Create a palette, retrying once if a concurrent create takes the slug first.
+
+    get_unique_slug is check-then-insert and says so: the unique constraint is what actually
+    decides. Rather than widen the window with a lock, the loser recomputes and tries again —
+    by then the winner's row is visible, so the next free suffix is a different one. One retry
+    is enough for the collision this can produce; a second failure is a real problem and is
+    allowed to surface rather than be looped over.
+    """
     desired_slug = palette_data.slug or palette_data.name
-    slug = await get_unique_slug(db, desired_slug)
 
-    palette = models.Palette(
-        slug=slug,
-        name=palette_data.name,
-        description=palette_data.description,
-        colors=palette_data.colors,
-        tags=palette_data.tags,
-    )
+    for attempt in (1, 2):
+        slug = await get_unique_slug(db, desired_slug)
+        palette = models.Palette(
+            slug=slug,
+            name=palette_data.name,
+            description=palette_data.description,
+            colors=palette_data.colors,
+            tags=palette_data.tags,
+        )
+        db.add(palette)
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            if attempt == 2:
+                raise
+            continue
+        await db.refresh(palette)
+        return palette
 
-    db.add(palette)
-    await db.commit()
-    await db.refresh(palette)
-    return palette
+    raise AssertionError("unreachable: the loop either returns or raises")
 
 
 async def update_palette(

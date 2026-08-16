@@ -366,3 +366,38 @@ async def test_login_costs_the_same_whether_the_account_exists(client):
         f"unknown account answered in {missing:.3f}s against {existing:.3f}s for a known one — "
         "the miss is still skipping the hash"
     )
+
+
+async def test_losing_a_registration_race_gives_409_not_500(client, db_session, monkeypatch):
+    """The pre-checks are advisory; the unique constraint is what decides.
+
+    Two registrations racing for one username both pass the lookup, and one loses at the
+    constraint. That window is what is simulated here: the lookups are patched to report the
+    name as free, which is what the loser saw when it checked, so the request runs past the
+    guards and fails at the insert instead.
+
+    Patching is the point. An earlier version of this test simply pre-created the user, which
+    passed with the handler deleted — it was exercising the pre-check and proving nothing.
+    """
+    from app import crud, routers, schemas
+
+    await crud.create_user(
+        db=db_session,
+        user_data=schemas.UserCreate(
+            username="racer", email="racer@test.com", password="strong-password"
+        ),
+        password_hash="x",
+        is_admin=False,
+    )
+
+    async def _looks_free(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr(routers.auth.crud, "get_user_by_username", _looks_free)
+    monkeypatch.setattr(routers.auth.crud, "get_user_by_email", _looks_free)
+
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={"username": "racer", "email": "racer@test.com", "password": "strong-password"},
+    )
+    assert resp.status_code == 409
