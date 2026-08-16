@@ -176,7 +176,15 @@ DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-A placeholder password logs a warning at boot. Seeding happens only when there is no admin at
-all; to reseed you must drop the database volume
+A placeholder password logs a warning at boot.
+
+**Seeding never promotes an existing account.** If no admin exists but somebody already holds
+the configured username, the seed refuses and logs an error rather than granting them admin —
+which it used to do, while also overwriting their password hash with `DEFAULT_ADMIN_PASSWORD`,
+locking the real owner out of their own account during startup. The check is case-insensitive
+even though registration is not, because an operator setting `admin` while a user holds `Admin`
+is the likeliest way to hit this by accident.
+
+Seeding happens only when there is no admin at all; to reseed you must drop the database volume
 (`docker compose down -v && docker compose up --build`), which destroys all data — local
 testing only.
