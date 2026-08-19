@@ -174,6 +174,21 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.8.7 — Stolen Sessions, Detected and Ended
+
+Status: completed.
+
+- A replayed refresh token now revokes every session for that account and bumps
+  `token_version`, so access tokens already issued die with it. Reuse means the token exists in
+  two places and the server cannot tell the owner from the thief — ending both costs the real
+  user one login and costs an attacker everything.
+- A confirmed "log out everywhere" control on the profile page, reaching the endpoint that had
+  existed since v4.8.4 with no interface.
+- `css:orphans` runs in CI, the last guard that was still run by hand.
+- Reserving height for the palette grid was considered and rejected on measurement: real-stack
+  CLS is 0.0000, and 0.0129 throttled to slow 3G. The 0.218 the static audit reports belongs to
+  an environment with no backend.
+
 ## v4.8.6 — Code Scanning, Current Dependencies, Generated Screenshots
 
 Status: completed.

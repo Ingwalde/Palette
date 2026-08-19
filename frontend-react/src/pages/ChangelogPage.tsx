@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.8.7",
+    title: "Stolen sessions, detected and ended",
+    items: [
+      "If a sign-in token is ever used twice — the signature of a copied one — every device signed in to that account is signed out immediately.",
+      "You can now end every session yourself from your account page, without changing your password.",
+    ],
+  },
+  {
     version: "v4.8.6",
     title: "Housekeeping: code scanning and current dependencies",
     items: [

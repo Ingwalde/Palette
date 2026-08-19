@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
+import { useModal } from "../components/modal/ModalProvider";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
 import { queryKeys } from "../api/queryKeys";
@@ -12,7 +13,9 @@ import { buttonClass } from "../styles/ui";
 import * as styles from "./ProfilePage.css";
 
 export function ProfilePage() {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, logoutEverywhere } = useAuth();
+  // Aliased: `confirm` in this component is the password-confirmation field.
+  const { confirm: confirmDialog } = useModal();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -80,6 +83,22 @@ export function ProfilePage() {
   const onLogout = async () => {
     await logout();
     showToast("Logged out");
+    navigate("/");
+  };
+
+  const onLogoutEverywhere = async () => {
+    // Confirmed, because it is not undoable and it reaches devices the user is not holding.
+    const ok = await confirmDialog({
+      title: "Log out everywhere?",
+      message:
+        "Every device signed in to this account will be signed out, including this one. " +
+        "Use this if you think someone else has access.",
+      confirmLabel: "Log out everywhere",
+      danger: true,
+    });
+    if (!ok) return;
+    await logoutEverywhere();
+    showToast("Signed out on all devices");
     navigate("/");
   };
 
@@ -160,13 +179,22 @@ export function ProfilePage() {
                 Change password
               </button>
             </div>
-            <button
-              className={`${buttonClass("danger")} ${styles.logout}`}
-              type="button"
-              onClick={() => void onLogout()}
-            >
-              Logout
-            </button>
+            <div className={styles.logout}>
+              <button
+                className={buttonClass("danger")}
+                type="button"
+                onClick={() => void onLogout()}
+              >
+                Logout
+              </button>
+              <button
+                className={buttonClass("ghost")}
+                type="button"
+                onClick={() => void onLogoutEverywhere()}
+              >
+                Log out everywhere
+              </button>
+            </div>
           </div>
 
           {showForm && (

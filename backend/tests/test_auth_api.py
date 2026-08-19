@@ -1,3 +1,6 @@
+import logging
+
+
 async def _register(client, username="alice", email="alice@test.com", password="strong-password"):
     return await client.post(
         "/api/v1/auth/register",
@@ -246,3 +249,82 @@ async def test_admin_gate_blocks_regular_user(user_client, user_csrf):
         json={"name": "Blocked", "colors": ["#112233"], "tags": []},
     )
     assert resp.status_code == 403
+
+
+async def test_refresh_reuse_ends_every_session_for_that_user(client, caplog):
+    """A replayed refresh token means the token exists in two places, so both are cut off.
+
+    The server cannot tell the victim from the thief: whoever rotated first now holds a valid
+    token and looks normal, and whoever presents the stale copy could be either. Ending the
+    whole session costs the real user one login and costs an attacker everything.
+    """
+    await _register(client)
+    await _login(client)
+    csrf = _csrf(client)
+    old_refresh = client.cookies.get("refresh_token")
+
+    rotated = await client.post("/api/v1/auth/refresh", headers=csrf)
+    assert rotated.status_code == 200
+    current_refresh = client.cookies.get("refresh_token")
+
+    with caplog.at_level(logging.WARNING, logger="palette.security"):
+        replayed = await client.post(
+            "/api/v1/auth/refresh",
+            headers={"X-CSRF-Token": "t"},
+            cookies={"refresh_token": old_refresh, "csrf_token": "t"},
+        )
+
+    assert replayed.status_code == 401
+    assert any("reuse detected" in r.getMessage().lower() for r in caplog.records), caplog.text
+
+    # The token that raced ahead and looked legitimate is dead too — that is the point.
+    after = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": current_refresh, "csrf_token": "t"},
+    )
+    assert after.status_code == 401
+
+
+async def test_refresh_reuse_also_retires_issued_access_tokens(client, db_session):
+    """Revoking refresh tokens alone would leave a stolen access token working for a day."""
+    await _register(client)
+    await _login(client)
+    csrf = _csrf(client)
+    access_before = client.cookies.get("access_token")
+    old_refresh = client.cookies.get("refresh_token")
+
+    await client.post("/api/v1/auth/refresh", headers=csrf)
+    await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": old_refresh, "csrf_token": "t"},
+    )
+
+    me = await client.get("/api/v1/auth/me", cookies={"access_token": access_before})
+    assert me.status_code == 401
+
+
+async def test_unknown_refresh_token_is_not_treated_as_reuse(client, caplog):
+    """Noise must not look like an incident: a token that never existed is just a 401."""
+    await _register(client)
+    await _login(client)
+    good_refresh = client.cookies.get("refresh_token")
+
+    with caplog.at_level(logging.WARNING, logger="palette.security"):
+        resp = await client.post(
+            "/api/v1/auth/refresh",
+            headers={"X-CSRF-Token": "t"},
+            cookies={"refresh_token": "not-a-real-token", "csrf_token": "t"},
+        )
+
+    assert resp.status_code == 401
+    assert not any("reuse detected" in r.getMessage().lower() for r in caplog.records)
+
+    # And the real session is untouched by the noise.
+    still_valid = await client.post(
+        "/api/v1/auth/refresh",
+        headers={"X-CSRF-Token": "t"},
+        cookies={"refresh_token": good_refresh, "csrf_token": "t"},
+    )
+    assert still_valid.status_code == 200

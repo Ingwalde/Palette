@@ -1,4 +1,4 @@
-# Palette v4.8.6 — Full-Stack Color Palette App
+# Palette v4.8.7 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -343,10 +343,25 @@ is paginated (`{ items, total, limit, offset }` + `X-Total-Count`). Errors are r
 
 ---
 
+## Roadmap
+
+Release history is in [`CHANGELOG.md`](CHANGELOG.md); the scope of each release, including what
+was deliberately deferred, is in [`ROADMAP.md`](ROADMAP.md).
+
+Next up is **v5.0 — the palette is the product**. The 4.8.x line went almost entirely into
+infrastructure — security, CI, observability, accessibility — and the interface fell behind it:
+a filtered catalogue cannot be linked to, a single palette has no page of its own even though the
+API has served one since v3.0, and the grid stops at a hundred without saying so. v5.0 closes
+that gap: a shareable page per palette with a full contrast table, filters that live in the
+address bar, real pagination, a dark theme, and colour values in HEX, RGB, HSL or OKLCH.
+
+The plan is twelve ordered steps, each with the files it touches, the interactions it has to
+produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
+
 ## Version
 
 ```text
-v4.8.6
+v4.8.7
 ```
 
 ## License

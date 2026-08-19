@@ -1,5 +1,45 @@
 # Changelog
 
+## v4.8.7 — Stolen sessions, detected and ended
+
+### Security
+
+- **A replayed refresh token now ends every session for that account.** Rotation is single use:
+  each refresh revokes the token presented and issues a new one, so exactly one is valid per
+  session at a time. A revoked-but-unexpired token coming back therefore means it exists in two
+  places — the legitimate client always replaces its own after rotating. Until now that answered
+  `401` and nothing else, indistinguishable from a token that never existed.
+
+  The response is deliberately blunt, because the server cannot tell which side it is talking
+  to: whoever rotated first now holds a valid token and looks entirely normal, and whoever
+  presents the stale copy might be the victim who was raced or the thief who lost. Ending the
+  session costs the real user one login, which they can complete because they know the
+  password, and costs an attacker everything, because they do not. `token_version` is bumped as
+  well as the refresh family being revoked — access tokens are stateless and live for a day, so
+  revoking refresh tokens alone would leave a stolen one working until it expired.
+
+- **You can end every session yourself.** `POST /auth/logout-all` had existed since v4.8.4 with
+  no way to reach it. The profile page now has a confirmed control beside Logout: if the system
+  can detect a stolen session, the person it belongs to should be able to answer.
+
+### CI
+
+- `css:orphans` runs on every pull request. Every style is a build-time hash, so a class name
+  written as a string in markup matches nothing and fails silently — no error, no missing
+  import, just an unstyled element. The check has existed since the vanilla-extract migration
+  and was the last guard still run by hand.
+
+### Notes
+
+- **Reserving height for the palette grid was considered and rejected on evidence.** The static
+  Lighthouse audit has been reporting a Cumulative Layout Shift of 0.218 against a 0.1 target.
+  Measured against the real stack with a `layout-shift` observer, the same page records
+  **0.0000**; throttled to a slow 3G so the data cannot arrive before first paint, **0.0129** —
+  and the elements that move are `body` and the nav indicator, not the palette grid or the
+  footer the static audit blamed. The number belongs to an environment with no backend, and
+  reshaping the page would have cost a round of screenshot baselines to move something no
+  visitor experiences.
+
 ## v4.8.6 — Code scanning, current dependencies, generated screenshots
 
 Housekeeping, and one thing that had been quietly wrong for eight releases.

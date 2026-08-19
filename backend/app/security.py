@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 
@@ -13,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from . import crud, models
 from .config import settings
 from .database import get_db
+
+logger = logging.getLogger("palette.security")
 
 ALGORITHM = "HS256"
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
@@ -187,10 +190,54 @@ async def _active_refresh_token(db: AsyncSession, token: str) -> models.RefreshT
     return stored
 
 
+async def _handle_refresh_reuse(db: AsyncSession, stored: models.RefreshToken) -> None:
+    """Respond to an already-used refresh token being presented again.
+
+    Rotation is single-use, so a revoked-but-unexpired row coming back means the token exists
+    in two places: the legitimate client always replaces its own after rotating. Whoever
+    presents the stale copy, the conclusion is the same — the token was duplicated.
+
+    The server cannot tell which side it is talking to. The one that rotated first now holds a
+    valid token and looks entirely normal; the one presenting the stale copy might be the
+    victim who was raced, or the thief who lost the race. That is precisely why the whole
+    session is ended rather than the presenting party alone: ending both costs the real user
+    one login, which they can complete because they know the password, and costs the attacker
+    everything, because they do not.
+
+    Bumping token_version matters as much as revoking the refresh family. Access tokens are
+    stateless and live for a day; revoking refresh tokens alone would leave anyone holding one
+    working until it expired.
+    """
+    logger.warning(
+        "Refresh token reuse detected for user_id=%s (token id=%s). Revoking every session "
+        "for that user: the token exists in two places and the server cannot tell which is "
+        "the owner.",
+        stored.user_id,
+        stored.id,
+    )
+    if settings.sentry_dsn:
+        try:
+            import sentry_sdk
+
+            sentry_sdk.capture_message("Refresh token reuse detected", level="warning")
+        except Exception:  # pragma: no cover - reporting must never break the request
+            logger.exception("Failed to report refresh token reuse to Sentry")
+
+    await crud.revoke_all_refresh_tokens(db, stored.user_id)
+    user = await crud.get_user(db, stored.user_id)
+    if user is not None:
+        await crud.bump_token_version(db, user)
+
+
 async def rotate_refresh_token(db: AsyncSession, token: str) -> tuple[models.User, str] | None:
     """Validate a refresh token, revoke it (single use) and issue a fresh one."""
     stored = await _active_refresh_token(db, token)
     if stored is None:
+        # Separate a replay from a token that never existed before answering the same 401 to
+        # both. Only a row that exists, is revoked and has not expired is a reuse.
+        replayed = await crud.get_refresh_token(db, _hash_refresh_token(token))
+        if replayed is not None and replayed.revoked and replayed.expires_at >= datetime.now(UTC):
+            await _handle_refresh_reuse(db, replayed)
         return None
     user = await crud.get_user(db, stored.user_id)
     if user is None:
