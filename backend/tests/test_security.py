@@ -98,6 +98,11 @@ async def test_hashing_leaves_the_event_loop_free():
     running = False
     await beat
 
+    # The point of the test: the heartbeat kept ticking while the ~100 ms hash was in flight,
+    # so verify ran off the loop. On the loop it would have blocked every ticks += 1 until it
+    # returned, and this would be 0.
+    assert ticks > 0
+
     # On the loop this would be a handful at most: the coroutine cannot run at all while a
     # blocking call holds the thread. Off the loop it runs thousands of times.
     assert ticks > 100, f"loop only advanced {ticks} times during a verify — still blocking"
