@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ForgotPasswordPage } from "./ForgotPasswordPage";
 import { ResetPasswordPage } from "./ResetPasswordPage";
 import { VerifyPage } from "./VerifyPage";
@@ -69,8 +69,10 @@ describe("ResetPasswordPage", () => {
     const u = userEvent.setup();
     wrap(<ResetPasswordPage />, ["/reset-password?token=abc"]);
     const pwds = document.querySelectorAll<HTMLInputElement>('input[type="password"]');
-    await u.type(pwds[0], "newpass1");
-    await u.type(pwds[1], "newpass1");
+    // Long enough to clear the client-side length check; the subject of this test is that a
+    // valid submission reaches the API, not the policy itself.
+    await u.type(pwds[0], "correct-horse-battery");
+    await u.type(pwds[1], "correct-horse-battery");
     await u.click(screen.getByRole("button", { name: "Reset password" }));
     expect(authApi.resetPassword).toHaveBeenCalledTimes(1);
     expect(
@@ -93,5 +95,32 @@ describe("VerifyPage", () => {
     expect(
       await screen.findByRole("heading", { name: "Verification failed" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("ResetPasswordPage password policy", () => {
+  // Nothing in this file clears mocks between tests, so the call count carries over from the
+  // successful-reset test above; without this the "never called" assertion sees that one.
+  beforeEach(() => {
+    vi.mocked(authApi.resetPassword).mockClear();
+  });
+
+  it("refuses a password under the length floor before calling the API", async () => {
+    const u = userEvent.setup();
+    wrap(<ResetPasswordPage />, ["/reset-password?token=abc"]);
+    const pwds = document.querySelectorAll<HTMLInputElement>('input[type="password"]');
+
+    await u.type(pwds[0], "short");
+    await u.type(pwds[1], "short");
+    await u.click(screen.getByRole("button", { name: "Reset password" }));
+
+    // The server would refuse this too; saying so here saves a round trip and, more to the
+    // point, keeps the form from promising a rule the server does not honour.
+    // "must be at least" matches the error only; the field hint also says "At least 12
+    // characters", and matching both is how this assertion first failed.
+    expect(
+      await screen.findByText(/must be at least 12 characters/i),
+    ).toBeInTheDocument();
+    expect(authApi.resetPassword).not.toHaveBeenCalled();
   });
 });

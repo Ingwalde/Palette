@@ -107,7 +107,11 @@ async def test_reset_token_is_single_use(client, user):
     # Same link, still inside its one-hour window: whoever read the email cannot reuse it.
     second = await client.post(
         "/api/v1/auth/reset-password",
-        json={**body, "new_password": "attacker123", "confirm_password": "attacker123"},
+        json={
+            **body,
+            "new_password": "attacker-chosen-pw",
+            "confirm_password": "attacker-chosen-pw",
+        },
     )
     assert second.status_code == 400
 

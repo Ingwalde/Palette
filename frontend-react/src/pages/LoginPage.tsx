@@ -7,6 +7,7 @@ import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
+import { PASSWORD_HINT } from "../lib/passwordPolicy";
 
 export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
@@ -163,7 +164,7 @@ export function LoginPage() {
             autoComplete="new-password"
             value={regPassword}
             onChange={setRegPassword}
-            hint="Minimum 6 characters."
+            hint={PASSWORD_HINT}
             required
           />
 
