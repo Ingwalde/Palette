@@ -69,9 +69,9 @@ export function HomePage() {
           <p className={ui.eyebrow}>Palette v4.9.0 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. This release hardens the way you sign
-            in: a login that gives nothing away about which accounts exist, a stronger
-            password floor, and a published security policy.
+            Search, filter, save and export palettes. This release hardens the way you
+            sign in: a login that gives nothing away about which accounts exist, a
+            stronger password floor, and a published security policy.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">
