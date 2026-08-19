@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.9.0",
+    title: "Hardened sign-in and a stated password policy",
+    items: [
+      "Signing in now takes the same time whether or not an account exists, so no one can learn which emails are registered by timing the response.",
+      "Passwords must be at least twelve characters, and the rules are shown on the form instead of failing silently on submit.",
+      "The API sends security headers on every response and answers only for hosts it serves; a published security policy explains how to report a vulnerability.",
+    ],
+  },
+  {
     version: "v4.8.7",
     title: "Stolen sessions, detected and ended",
     items: [

@@ -1,5 +1,34 @@
 # Changelog
 
+## v4.9.0 — Hardened sign-in, a stated password policy, stricter types
+
+### Security
+
+- **Login costs the same whether the account exists or not.** The time a failed login takes no
+  longer reveals which usernames and emails are real: verification runs against a dummy hash when
+  the account is missing, so accounts cannot be enumerated by timing.
+- **A twelve-character password floor, stated on the form.** The minimum is enforced server-side
+  and the rules are shown where they apply, instead of failing silently on submit.
+- **The API sends security headers and answers only for known hosts.** Every response — errors
+  included — carries `nosniff`, `DENY`, a referrer policy and a `default-src 'none'` CSP; HSTS is
+  sent only over HTTPS so it cannot pin a browser during local development. `ALLOWED_HOSTS`
+  rejects a request whose Host the API does not serve.
+- **Argon2 runs off the event loop with a pinned cost.** Hashing no longer blocks the async
+  request path, and the cost parameters are fixed rather than left to library defaults.
+- **A published disclosure policy** (`SECURITY.md`): how to report a vulnerability and what to
+  expect in return.
+
+### Fixed
+
+- **A lost write race answers `409`, not `500`.** Two requests creating the same unique row now
+  return a conflict the client can handle, instead of a server error.
+- **Seeding refuses to promote an existing user to admin.** The default-admin seed only creates;
+  it never elevates an account that already exists.
+
+### Changed
+
+- **TypeScript strict mode is on**, so every frontend file is type-checked under `strict`.
+
 ## v4.8.7 — Stolen sessions, detected and ended
 
 ### Security
