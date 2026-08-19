@@ -356,7 +356,7 @@ that gap: a shareable page per palette with a full contrast table, filters that 
 address bar, real pagination, a dark theme, and colour values in HEX, RGB, HSL or OKLCH.
 
 The plan is twelve ordered steps, each with the files it touches, the interactions it has to
-produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md) (written in Ukrainian).
+produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 
 ## Version
 
