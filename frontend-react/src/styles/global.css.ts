@@ -45,6 +45,15 @@ globalStyle("*", {
 
 globalStyle("html", {
   scrollBehavior: "smooth",
+  "@media": {
+    // Every animated component in the app honours this preference — the empty state, the modal,
+    // the palette card, the admin switch — and the one motion nobody opted out of was the
+    // largest: "Random palette" glides the whole document. For a reader who asked their system
+    // to stop moving things, a page that scrolls itself is the worst offender left.
+    "(prefers-reduced-motion: reduce)": {
+      scrollBehavior: "auto",
+    },
+  },
 });
 
 globalStyle("body", {

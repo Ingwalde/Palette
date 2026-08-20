@@ -37,6 +37,11 @@ async function stub(page: Page, loggedIn: boolean) {
       ? r.fulfill({ json: ADMIN })
       : r.fulfill({ status: 401, json: { detail: "no" } }),
   );
+  // The failed branch, deliberately: an expired link is the state a real visitor is most likely
+  // to land on, and it is the one that renders an error the page has to describe accessibly.
+  await page.route("**/api/v1/auth/verify*", (r) =>
+    r.fulfill({ status: 400, json: { detail: "Invalid or expired verification link" } }),
+  );
 }
 
 async function analyze(page: Page) {
@@ -53,6 +58,12 @@ const GUEST_PAGES = [
   "/changelog",
   "/forgot-password",
   "/no-such-page", // the 404 is a real page now, so it gets audited like the rest
+  // The two pages reached from an email link. They were the only routes the audit skipped,
+  // and they are the ones a visitor arrives at cold, often on a phone, with no navigation
+  // behind them: reset-password is a two-field credential form, and verify renders its own
+  // bare shell rather than the app layout, so it is the page most free to drift.
+  "/reset-password?token=audit",
+  "/verify?token=audit",
 ];
 const ADMIN_PAGES = ["/admin", "/profile"];
 

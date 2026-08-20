@@ -67,8 +67,20 @@ A read of the backend against its own stated intentions, and the fixes for what 
   request, including bodyless GETs, where it describes a request that does not exist — and it
   would have overwritten the boundary a form upload has to carry.
 
+### Accessibility
+
+- **A reader who asked their system to stop moving things is no longer scrolled.** Every animated
+  component in the app honours `prefers-reduced-motion` — the empty state, the modal, the palette
+  card, the admin switch — and the one motion nobody opted out of was the largest: "Random
+  palette" glides the whole document, because `scroll-behavior: smooth` sat on `html`
+  unconditionally.
+
 ### Tests
 
+- **The two pages reached from an email link are audited too.** `/reset-password` and `/verify`
+  were the only routes the axe suite skipped, and they are the ones a visitor arrives at cold with
+  no navigation behind them — one a two-field credential form, the other a page that renders its
+  own shell rather than the app layout. Both pass today; now they stay that way.
 - **The favorites endpoints have a test file.** Every other router had one; favorites had two
   incidental calls inside the palettes tests, leaving the 404 branches, the CSRF requirement and
   — the reason this mattered — whether one account can read another's saved palettes entirely
