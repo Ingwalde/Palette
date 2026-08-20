@@ -262,3 +262,28 @@ describe("AdminPage list controls", () => {
     );
   });
 });
+
+describe("AdminPage in-flight guard", () => {
+  it("does not create the palette twice when Save is clicked twice", async () => {
+    // Nothing marked the request as in flight, so a second click while the first was still
+    // travelling sent a second create. The backend resolves the slug collision instead of
+    // refusing it, so this produced two near-identical palettes and no error to say so.
+    const user = userEvent.setup();
+    let release!: (value: Palette) => void;
+    vi.mocked(palettesApi.createPalette).mockImplementationOnce(
+      () => new Promise<Palette>((resolve) => (release = resolve)),
+    );
+
+    renderAdmin();
+    await user.type(await screen.findByPlaceholderText("Nordic Blue"), "Ocean");
+    await user.type(screen.getByPlaceholderText("Short description..."), "Blue.");
+    const save = screen.getByRole("button", { name: "Create palette" });
+    await user.click(save);
+
+    expect(save).toBeDisabled();
+    await user.click(save);
+    expect(palettesApi.createPalette).toHaveBeenCalledTimes(1);
+
+    release(palette);
+  });
+});

@@ -45,6 +45,11 @@ A read of the backend against its own stated intentions, and the fixes for what 
 
 ### Frontend
 
+- **Clicking Save twice in the admin panel created the palette twice.** Nothing marked the
+  request as in flight, so a second click while the first was still travelling sent a second
+  create — and because the backend resolves the slug collision rather than refusing it, the
+  result was two near-identical palettes and no error anywhere to say so. Every other form in
+  the app already guarded this; the admin one was the exception.
 - **Pressing Enter on a confirmation dialog's Cancel button deleted the palette.** The dialog
   focuses Cancel on purpose, so that Enter on a dialog which appeared unexpectedly dismisses it
   — but a document-level Enter handler saw the key first and cancelled the button's own
