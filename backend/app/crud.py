@@ -2,8 +2,10 @@ import logging
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import Any, cast
 
-from sqlalchemy import Select, Text, cast, delete, func, or_, select, true
+from sqlalchemy import CursorResult, Select, Text, delete, func, or_, select, true
+from sqlalchemy import cast as sql_cast
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,7 +86,7 @@ def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
                 models.Palette.slug.ilike(like, escape="\\"),
                 # Matches against the JSONB rendered as text, so a search finds palettes by
                 # tag too. Backed by a trgm expression index on (tags::text) — see 0008.
-                cast(models.Palette.tags, Text).ilike(like, escape="\\"),
+                sql_cast(models.Palette.tags, Text).ilike(like, escape="\\"),
             )
         )
 
@@ -501,7 +503,14 @@ async def add_user_favorite(
 
     favorite = models.Favorite(user_id=user.id, palette_id=palette.id)
     db.add(favorite)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # uq_user_palette_favorite decided it, not the check above — two clicks on the same
+        # heart, or two tabs. Saving something already saved is not an error: the caller asked
+        # for it to be a favorite and it is one, so answer the way the non-racing path does
+        # rather than returning a 500 for a button pressed twice.
+        await db.rollback()
     return palette
 
 
@@ -553,7 +562,10 @@ async def bump_token_version(db: AsyncSession, user: models.User) -> models.User
 
 
 async def delete_user(db: AsyncSession, user: models.User) -> None:
-    # No ON DELETE cascade, so remove dependent rows before deleting the user.
+    # Both foreign keys carry ON DELETE CASCADE (migration 0006), so the database would clear
+    # these rows on its own. They are deleted explicitly anyway: the cascade is a safety net for
+    # whatever bypasses this function, and being able to read what a deletion removes without
+    # opening the migration history is worth two statements.
     await db.execute(delete(models.Favorite).where(models.Favorite.user_id == user.id))
     await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user.id))
     await db.delete(user)
@@ -578,6 +590,31 @@ async def get_refresh_token(db: AsyncSession, token_hash: str) -> models.Refresh
 async def revoke_refresh_token(db: AsyncSession, token: models.RefreshToken) -> None:
     token.revoked = True
     await db.commit()
+
+
+async def purge_expired_refresh_tokens(db: AsyncSession) -> int:
+    """Delete refresh tokens that are past their expiry.
+
+    Every login issues a row and every rotation issues another, while the old one is only
+    flagged revoked — so the table grew for the lifetime of the deployment and nothing ever
+    read the old rows again. Expiry is what makes them safe to remove: _active_refresh_token
+    rejects anything past expires_at before it looks at the row, and reuse detection only
+    reports a replay that is revoked *and* unexpired, so a deleted expired row cannot change
+    an answer.
+
+    Run at startup rather than per request: it is housekeeping, deploys are frequent enough to
+    keep the table small, and a DELETE on the request path would pay for itself on every login.
+    """
+    # Cast because session.execute is typed as returning Result, and rowcount — the only thing
+    # this needs — is declared on the CursorResult a DML statement actually returns.
+    result = cast(
+        "CursorResult[Any]",
+        await db.execute(
+            delete(models.RefreshToken).where(models.RefreshToken.expires_at < datetime.now(UTC))
+        ),
+    )
+    await db.commit()
+    return result.rowcount or 0
 
 
 async def revoke_all_refresh_tokens(db: AsyncSession, user_id: int) -> None:

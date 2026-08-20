@@ -83,3 +83,53 @@ async def test_clear_user_favorites(db_session):
 
     assert await crud.clear_user_favorites(db_session, user) == 2
     assert await crud.get_user_favorite_keys(db_session, user) == []
+
+
+async def test_favorite_add_survives_a_lost_race(db_session):
+    """Two requests saving the same palette at once must not produce a server error.
+
+    add_user_favorite checks before it inserts, so the check can pass in both callers before
+    either commits — a double-clicked heart, or two tabs. uq_user_palette_favorite then decides,
+    and the loser used to surface an IntegrityError as a 500 for a button pressed twice. Raced
+    here on purpose with two sessions rather than asserted through the sequential path, which
+    never reaches the constraint at all.
+    """
+    import asyncio
+
+    from conftest import TestingSessionLocal
+
+    user = await _user(db_session)
+    palette = await crud.create_palette(db_session, _palette("Contested"))
+
+    async def add() -> None:
+        async with TestingSessionLocal() as session:
+            fresh_user = await crud.get_user(session, user.id)
+            fresh_palette = await crud.get_palette(session, palette.id)
+            assert fresh_user is not None and fresh_palette is not None
+            await crud.add_user_favorite(session, fresh_user, fresh_palette)
+
+    await asyncio.gather(add(), add())
+
+    # Whoever won, the caller's intent holds and exactly one row exists.
+    assert await crud.get_user_favorite_keys(db_session, user) == [palette.slug]
+
+
+async def test_purge_expired_refresh_tokens(db_session):
+    """Expired rows are unreachable by every path that reads them, so they are only storage.
+
+    Every login writes one and every rotation writes another while the old row is merely
+    flagged revoked, so without this the table grew for the lifetime of the deployment.
+    """
+    from datetime import UTC, datetime, timedelta
+
+    user = await _user(db_session)
+    now = datetime.now(UTC)
+    await crud.create_refresh_token(db_session, user.id, "live-hash", now + timedelta(days=1))
+    await crud.create_refresh_token(db_session, user.id, "dead-hash", now - timedelta(seconds=1))
+
+    assert await crud.purge_expired_refresh_tokens(db_session) == 1
+    assert await crud.get_refresh_token(db_session, "dead-hash") is None
+    assert await crud.get_refresh_token(db_session, "live-hash") is not None
+
+    # Nothing left to remove, so a second run is a no-op rather than an error.
+    assert await crud.purge_expired_refresh_tokens(db_session) == 0
