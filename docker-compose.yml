@@ -36,7 +36,13 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      # Bound to the loopback interface, not 0.0.0.0. In production Caddy runs on the host and
+      # proxies to localhost:8000, so nothing is lost — but a bare "8000:8000" publishes the API
+      # to every interface, which on the live VM meant http://<public-ip>:8000 answered directly:
+      # around Cloudflare, around Caddy's TLS, and around the rate limiter, because uvicorn runs
+      # with --forwarded-allow-ips=* and anyone reaching it could set their own X-Forwarded-For.
+      # To reach a dev stack from another device, override this in a compose.override.yml.
+      - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/ready').status==200 else 1)"]
       interval: 30s
@@ -58,7 +64,9 @@ services:
       # reverse proxy, so docker-compose.prod.yml blanks this out.
       CONNECT_SRC_EXTRA: "http://localhost:8000 http://127.0.0.1:8000"
     ports:
-      - "5500:80"
+      # Loopback for the same reason as the backend: Caddy fronts this in production, so
+      # publishing it on every interface only offers a way around the proxy and Cloudflare.
+      - "127.0.0.1:5500:80"
     depends_on:
       - backend
 
