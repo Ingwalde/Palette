@@ -67,6 +67,14 @@ A read of the backend against its own stated intentions, and the fixes for what 
   request, including bodyless GETs, where it describes a request that does not exist — and it
   would have overwritten the boundary a form upload has to carry.
 
+### Operations
+
+- **The stack comes back on its own after a reboot.** No service declared a restart policy, so
+  all four containers ran with `restart=no`: a host reboot, or the Docker daemon restarting under
+  them, left the site down until someone logged in and brought it up by hand — which this server
+  has already needed once. They now restart `unless-stopped`, so a deliberate `docker compose
+  down` still means down.
+
 ### Accessibility
 
 - **A reader who asked their system to stop moving things is no longer scrolled.** Every animated
