@@ -73,18 +73,20 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     [close, state, inputValue],
   );
 
+  // Escape only. Enter used to be handled here as well, and it quietly inverted the safety
+  // choice documented below: focus starts on Cancel so that Enter dismisses a dialog that
+  // appeared unexpectedly — but a document-level Enter handler sees the keypress first, calls
+  // preventDefault, and so cancels the button activation it was meant to defer to. Pressing
+  // Enter on a focused Cancel deleted the palette. Enter now does what Enter on a button does,
+  // and submitting a prompt is handled by the input itself.
   useEffect(() => {
     if (!state) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") cancel();
-      else if (e.key === "Enter") {
-        e.preventDefault();
-        accept();
-      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [state, cancel, accept]);
+  }, [state, cancel]);
 
   /**
    * Keeps the keyboard inside the dialog while it is open, and hands focus back afterwards.
@@ -172,6 +174,14 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 aria-label={state.title}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                // Enter submits the prompt, the way it would in a form. Scoped to the input so
+                // it cannot reach the buttons, where Enter belongs to whichever one has focus.
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    accept();
+                  }
+                }}
               />
             )}
             <div className={styles.actions}>

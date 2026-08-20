@@ -25,11 +25,24 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     [favorites, palette.slug],
   );
 
+  // navigator.clipboard.writeText rejects when the write is refused — a permission the user
+  // declined, a page that lost focus, an insecure origin. Both call sites got that wrong in
+  // opposite directions: copying a swatch awaited the promise and so showed nothing at all
+  // while raising an unhandled rejection into the error reporter, and copying the name did not
+  // await it and so announced success either way. Neither told the user the truth.
+  const copy = async (text: string, success: string) => {
+    try {
+      await copyToClipboard(text);
+      showToast(success);
+    } catch {
+      showToast("Could not copy to the clipboard", "error");
+    }
+  };
+
   const copyColor = async (color: string) => {
     setRevealed(color);
     window.setTimeout(() => setRevealed((c) => (c === color ? null : c)), 1800);
-    await copyToClipboard(color);
-    showToast(`${color} copied`);
+    await copy(color, `${color} copied`);
   };
 
   const onToggleFavorite = () => {
@@ -99,10 +112,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
         <button
           type="button"
           className={buttonClass("ghost")}
-          onClick={() => {
-            void copyToClipboard(palette.name);
-            showToast(`Palette name copied: ${palette.name}`);
-          }}
+          onClick={() => void copy(palette.name, `Palette name copied: ${palette.name}`)}
         >
           Copy name
         </button>

@@ -45,6 +45,15 @@ A read of the backend against its own stated intentions, and the fixes for what 
 
 ### Frontend
 
+- **Pressing Enter on a confirmation dialog's Cancel button deleted the palette.** The dialog
+  focuses Cancel on purpose, so that Enter on a dialog which appeared unexpectedly dismisses it
+  — but a document-level Enter handler saw the key first and cancelled the button's own
+  activation, so the safe default did the destructive thing instead. Enter now belongs to
+  whichever button has focus, and submitting a prompt is handled by its input.
+- **A refused clipboard write is reported instead of misreported.** Copying a swatch awaited the
+  write and so showed nothing at all when it failed, while raising an unhandled rejection into
+  the error reporter; copying a palette name did not await it and announced success either way.
+  Both now say when the write did not happen.
 - **A stalled request can no longer hang the interface forever.** `fetch` has no timeout of its
   own and nothing supplied one, so a connection that died mid-flight left the page on its loading
   state with no error and no way out but a reload. Requests now carry a 20-second abort signal —
