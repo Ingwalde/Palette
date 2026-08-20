@@ -182,14 +182,22 @@ function PalettesView() {
     setTagInput("");
   };
 
+  // Nothing marked the save as in flight, so a second click while the first request was still
+  // travelling sent a second create — and the backend resolves the slug collision rather than
+  // refusing it, so the result was two near-identical palettes, `ocean` and `ocean-2`, with no
+  // error anywhere to say what happened.
+  const [saving, setSaving] = useState(false);
+
   const onSave = async (e: FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     const payload = {
       name: name.trim(),
       description: description.trim(),
       colors: colors.map((c) => c.trim()).filter(Boolean),
       tags: paletteTags,
     };
+    setSaving(true);
     try {
       if (editingId !== null) {
         await updatePalette(editingId, payload);
@@ -202,6 +210,8 @@ function PalettesView() {
       invalidateAll();
     } catch (err) {
       showToast(errMsg(err), "error");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -412,7 +422,7 @@ function PalettesView() {
         </div>
 
         <div className={ui.formActions}>
-          <button className={buttonClass("primary")} type="submit">
+          <button className={buttonClass("primary")} type="submit" disabled={saving}>
             {editingId !== null ? "Update palette" : "Create palette"}
           </button>
           {editingId !== null && (
@@ -577,10 +587,16 @@ function TagsView() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.tags });
 
+  // Same in-flight guard as the palette form. A duplicate tag is refused by the unique
+  // constraint rather than silently created, so the second click produced an error toast for
+  // something the user did once — which is its own kind of wrong answer.
+  const [adding, setAdding] = useState(false);
+
   const onAdd = async (e: FormEvent) => {
     e.preventDefault();
     const name = newName.trim();
-    if (!name) return;
+    if (!name || adding) return;
+    setAdding(true);
     try {
       await createTag({ name, kind: newKind });
       showToast("Tag added");
@@ -588,6 +604,8 @@ function TagsView() {
       invalidate();
     } catch (err) {
       showToast(errMsg(err), "error");
+    } finally {
+      setAdding(false);
     }
   };
 
@@ -669,7 +687,7 @@ function TagsView() {
             onChange={(v) => setNewKind(v as TagKind)}
             ariaLabel="Tag kind"
           />
-          <button className={buttonClass("primary")} type="submit">
+          <button className={buttonClass("primary")} type="submit" disabled={adding}>
             Add tag
           </button>
         </div>
