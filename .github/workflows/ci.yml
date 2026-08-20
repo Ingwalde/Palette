@@ -64,6 +64,30 @@ jobs:
       - name: Run backend test suite (test profile)
         run: docker compose --profile test run --build --rm tests
 
+      # The models and the migrations describe the same schema, and nothing checked that they
+      # agreed. They had already drifted: the four pg_trgm search indexes from 0008 existed only
+      # in the migration, so the next `alembic revision --autogenerate` would have written a
+      # migration dropping them — a diff with nothing obviously wrong about it. This fails the
+      # build instead.
+      # Runs against a schema dropped first, for two reasons: the suite above ends by dropping
+      # the model tables while leaving alembic_version behind, so an upgrade here would be a
+      # no-op against a database with nothing in it — and starting from empty also proves the
+      # migrations still apply in order from 0001, which nothing else exercises.
+      - name: Models and migrations agree (alembic check)
+        run: |
+          docker compose --profile test run --rm --entrypoint sh tests -c '
+            cd /app
+            python -c "
+          from sqlalchemy import create_engine, text
+          from app.database import SYNC_DATABASE_URL
+          with create_engine(SYNC_DATABASE_URL).begin() as c:
+              c.execute(text(\"DROP SCHEMA public CASCADE\"))
+              c.execute(text(\"CREATE SCHEMA public\"))
+          "
+            alembic upgrade head
+            alembic check
+          '
+
   e2e:
     name: E2E + a11y (Playwright · axe)
     runs-on: ubuntu-latest
