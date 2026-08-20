@@ -25,7 +25,9 @@ describe("PasswordField", () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<PasswordField label="Password" value="" onChange={onChange} />);
-    await user.type(screen.getByLabelText("Password"), "x");
+    // exact: the toggle button sits inside the same <label>, and its "Show password" accessible
+    // name contains "Password" — a substring match would resolve to two elements.
+    await user.type(screen.getByLabelText("Password", { exact: true }), "x");
     expect(onChange).toHaveBeenCalledWith("x");
   });
 });
