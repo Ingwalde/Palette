@@ -48,19 +48,21 @@ async def test_adding_the_same_palette_twice_is_not_an_error(user_client, user_c
 
 
 async def test_unknown_slug_is_404(user_client, user_csrf):
-    assert (
-        await user_client.post("/api/v1/favorites/no-such-palette", headers=user_csrf)
-    ).status_code == 404
-    assert (
-        await user_client.delete("/api/v1/favorites/no-such-palette", headers=user_csrf)
-    ).status_code == 404
+    # The requests are made before the asserts rather than inside them: an assert is the one
+    # statement Python is allowed to remove (-O), and a test whose requests live there stops
+    # sending them without failing.
+    added = await user_client.post("/api/v1/favorites/no-such-palette", headers=user_csrf)
+    removed = await user_client.delete("/api/v1/favorites/no-such-palette", headers=user_csrf)
+    assert added.status_code == 404
+    assert removed.status_code == 404
 
 
 async def test_mutations_require_the_csrf_header(user_client, palette):
     """The cookie alone must not be enough: that is the whole point of double-submit."""
-    assert (await user_client.post(f"/api/v1/favorites/{palette.slug}")).status_code == 403
-    assert (await user_client.delete(f"/api/v1/favorites/{palette.slug}")).status_code == 403
-    assert (await user_client.delete("/api/v1/favorites")).status_code == 403
+    added = await user_client.post(f"/api/v1/favorites/{palette.slug}")
+    removed = await user_client.delete(f"/api/v1/favorites/{palette.slug}")
+    cleared = await user_client.delete("/api/v1/favorites")
+    assert (added.status_code, removed.status_code, cleared.status_code) == (403, 403, 403)
 
 
 async def test_clear_reports_how_many_it_removed(user_client, user_csrf, db_session):
@@ -83,9 +85,8 @@ async def test_one_account_cannot_see_anothers_favorites(client, db_session, pal
     await _make_user(db_session, "bob", "bob@test.com", "strong-password")
 
     alice_csrf = await login(client, "alice", "strong-password")
-    assert (
-        await client.post(f"/api/v1/favorites/{palette.slug}", headers=alice_csrf)
-    ).status_code == 201
+    saved = await client.post(f"/api/v1/favorites/{palette.slug}", headers=alice_csrf)
+    assert saved.status_code == 201
 
     await login(client, "bob", "strong-password")
     assert (await client.get("/api/v1/favorites")).json() == []
