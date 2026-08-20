@@ -1,6 +1,17 @@
+# Every long-running service restarts unless it was stopped on purpose.
+#
+# Nothing declared a policy, so the containers ran with `restart=no`: a reboot of the host — or
+# the Docker daemon restarting under it — left the site down until someone logged in and ran
+# `docker compose up -d` by hand. This box has already been through that once. `unless-stopped`
+# rather than `always`, so a deliberate `docker compose down` still means down.
+#
+# The test profile below is intentionally excluded: those containers are meant to run once and
+# exit.
+
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-palette}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-palette}
@@ -15,6 +26,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -23,6 +35,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     env_file: backend/.env
     environment:
       # Container-only DB URL (host `db` resolves on the compose network). PostgreSQL is
@@ -55,6 +68,7 @@ services:
     # In production the image is built in CI and pulled from GHCR (the ~1 GB VM must not build it);
     # `build:` is the local-dev fallback (`docker compose build`/`up --build` builds it locally).
     image: ghcr.io/ingwalde/palette-frontend:latest
+    restart: unless-stopped
     build:
       context: ./frontend-react
       dockerfile: Dockerfile
