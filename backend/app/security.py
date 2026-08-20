@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import logging
@@ -23,7 +24,17 @@ PASSWORD_RESET_PURPOSE = "reset_password"
 
 # Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
 # Argon2 on the next successful login (see authenticate_user).
-_password_hasher = PasswordHasher()
+#
+# The cost parameters are pinned rather than left to the library defaults. They are the same
+# values argon2-cffi defaults to today, chosen so nothing rehashes on upgrade: password_needs_
+# rehash compares a stored hash against these numbers, so any change here makes every existing
+# hash "outdated" and rewrites it on the owner's next login. That is a decision to take
+# deliberately, not one to inherit from a dependency bump.
+_password_hasher = PasswordHasher(
+    time_cost=3,
+    memory_cost=65536,  # KiB, so 64 MiB per call
+    parallelism=4,
+)
 _LEGACY_HASH_NAME = "pbkdf2_sha256"
 _LEGACY_ITERATIONS = 210_000
 
@@ -38,16 +49,33 @@ def generate_csrf_token() -> str:
 
 
 def hash_password(password: str) -> str:
+    """Blocking. Call `hash_password_async` from request handlers."""
     return _password_hasher.hash(password)
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
+    """Blocking. Call `verify_password_async` from request handlers."""
     if stored_hash.startswith("$argon2"):
         try:
             return _password_hasher.verify(stored_hash, password)
         except (VerifyMismatchError, InvalidHash):
             return False
     return _verify_legacy_pbkdf2(password, stored_hash)
+
+
+# Argon2 is deliberately expensive: 64 MiB and roughly 150ms to hash, 100ms to verify, measured
+# on the container this runs in. That cost is the whole point of the algorithm, but spending it
+# on the event loop means one login freezes every other request in the process — including the
+# readiness probe. The rate limit is five logins a minute per IP, so a handful of IPs is enough
+# to stall the API without ever looking like an attack.
+#
+# Offloaded to the threadpool instead, where it costs a worker thread rather than the loop.
+async def hash_password_async(password: str) -> str:
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(password: str, stored_hash: str) -> bool:
+    return await asyncio.to_thread(verify_password, password, stored_hash)
 
 
 def password_needs_rehash(stored_hash: str) -> bool:
@@ -80,6 +108,13 @@ def _pbkdf2_hash(password: str, salt: str, iterations: int = _LEGACY_ITERATIONS)
     ).hex()
 
 
+# A real Argon2 hash of a value nobody can supply, verified against when the account does not
+# exist so a miss costs the same as a wrong password. Computed once at import: hashing per
+# request would cost the same but change the salt each time, and building it lazily would make
+# the very first miss measurably faster than every later one.
+_DUMMY_HASH = _password_hasher.hash(secrets.token_urlsafe(32))
+
+
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> models.User | None:
     login_value = username.strip().lower()
 
@@ -89,14 +124,21 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> m
         user = await crud.get_user_by_username(db, username.strip())
 
     if user is None:
+        # Spend the same time as a real verification. Returning immediately made the response
+        # ~12ms for an unknown account against ~120ms for a known one — a tenfold difference,
+        # measurable across the internet within a handful of requests, which turns login into a
+        # list of who has an account here. /forgot-password and /resend-verification were
+        # already careful about exactly this; login was the one place it mattered most and the
+        # one place it was missing.
+        await verify_password_async(password, _DUMMY_HASH)
         return None
 
-    if not verify_password(password, user.password_hash):
+    if not await verify_password_async(password, user.password_hash):
         return None
 
     # Transparently upgrade legacy/outdated hashes to current Argon2id parameters.
     if password_needs_rehash(user.password_hash):
-        await crud.update_user_password(db, user, hash_password(password))
+        await crud.update_user_password(db, user, await hash_password_async(password))
 
     return user
 

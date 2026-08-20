@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -68,8 +69,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.8.7 with auth, favorites, PostgreSQL and Docker.",
-    version="4.8.7",
+    description="Backend API for Palette v4.9.0 with auth, favorites, PostgreSQL and Docker.",
+    version="4.9.0",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -104,14 +105,52 @@ async def csrf_protect(request: Request, call_next):
     return await call_next(request)
 
 
+# Security headers on every API response.
+#
+# These existed only in frontend-react/nginx.conf.template, which serves the SPA — so every
+# /api/v1/** response went out with none of them. A JSON API is a smaller target than a
+# document, but nosniff still matters (a browser sniffing an error body as HTML is how a
+# reflected payload becomes script), and frame-ancestors still matters for anything that
+# renders. The README described these as a backend feature; now they are one.
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    # The API returns JSON and never renders; this is the belt to nosniff's braces, stopping
+    # anything at all from executing if a response is ever loaded as a document.
+    response.headers.setdefault(
+        "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+    )
+    # HSTS only over https. Sent on a plain-http response it would pin a browser to https for
+    # this host for the whole max-age — which is correct in production behind Caddy and breaks
+    # local development, where the API is reached over http on port 8000. The scheme is read
+    # from the request rather than a setting because uvicorn runs with --proxy-headers, so
+    # X-Forwarded-Proto is already reflected here.
+    if request.url.scheme == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    return response
+
+
 # CORS is added last so it is the outermost middleware — it must wrap the CSRF check so even a
 # 403 carries the CORS headers the browser needs to expose the response.
+# Reject requests for a Host this API does not answer for. Default "*" keeps local runs and
+# the test profile working without extra configuration; production sets the real names.
+if settings.allowed_hosts != ["*"]:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # The palette list sets X-Total-Count, and a browser cannot read a response header that is
+    # not exposed — so the header was being sent and silently discarded on arrival.
+    expose_headers=["X-Total-Count"],
 )
 
 app.include_router(auth.router, prefix="/api/v1")
@@ -151,7 +190,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.8.7",
+        "version": "4.9.0",
         "docs": "/api/docs",
         "health": "/health",
     }

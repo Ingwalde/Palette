@@ -7,6 +7,7 @@ import * as auth from "../styles/auth.css";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
+import { MIN_PASSWORD_LENGTH, PASSWORD_HINT } from "../lib/passwordPolicy";
 
 export function ResetPasswordPage() {
   const { showToast } = useToast();
@@ -22,8 +23,8 @@ export function ResetPasswordPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
     }
     if (password !== confirm) {
@@ -107,7 +108,7 @@ export function ResetPasswordPage() {
               autoComplete="new-password"
               value={password}
               onChange={setPassword}
-              hint="Minimum 6 characters."
+              hint={PASSWORD_HINT}
               required
             />
             <PasswordField

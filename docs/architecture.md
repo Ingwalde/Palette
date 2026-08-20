@@ -78,7 +78,7 @@ flowchart LR
     U["Browser"] -->|HTTPS| CF["Cloudflare"]
     CF --> CA["Caddy (reverse proxy, TLS)"]
     CA -->|"/*"| FE["nginx — static frontend + CSP/security headers"]
-    CA -->|"/api/*"| BE["FastAPI backend (async)"]
+    CA -->|"/api/*"| BE["FastAPI backend (async) — own security headers"]
     BE --> DB[("PostgreSQL")]
     BE --> RD[("Redis — rate limiting")]
     BE -. "errors (if DSN set)" .-> SN["Sentry"]
@@ -100,7 +100,7 @@ sequenceDiagram
     participant C as Browser
     participant A as FastAPI /auth
     C->>A: POST /login (username or email + password)
-    A->>A: Argon2id verify (timing-safe)
+    A->>A: Argon2id verify (threadpool; dummy hash when no such user)
     A-->>C: Set-Cookie access + refresh (httpOnly, Secure) + csrf (readable)
     Note over C: mutating request
     C->>A: POST /palettes + X-CSRF-Token header

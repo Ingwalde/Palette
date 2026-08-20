@@ -1,4 +1,4 @@
-# Palette v4.8.7 — Full-Stack Color Palette App
+# Palette v4.9.0 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -98,8 +98,9 @@ flowchart LR
 ## Highlights
 
 - **Cookie-based auth, done properly** — JWT access + rotating refresh tokens in httpOnly/Secure
-  cookies, double-submit CSRF on mutations, Argon2id hashing, timing-safe comparison, server-side
-  token revocation. Login by username **or** email.
+  cookies, double-submit CSRF on mutations, Argon2id hashing, server-side token revocation,
+  and a login path that costs the same whether or not the account exists. Login by username
+  **or** email.
 - **Async request path** — FastAPI with async SQLAlchemy 2.0 (asyncpg) on PostgreSQL 16; `colors`
   and `tags` stored as JSONB with a GIN index for fast tag filtering.
 - **Hardened by default** — Redis-backed rate limiting on **every** mutating endpoint, strict
@@ -140,12 +141,18 @@ flowchart LR
 
 - JWT access + rotating refresh tokens in **httpOnly cookies** with server-side revocation, plus
   **double-submit CSRF** on mutating requests.
-- Argon2id password hashing (legacy PBKDF2 upgraded on next login); timing-safe comparison.
+- Argon2id password hashing with pinned cost parameters (legacy PBKDF2 upgraded on next
+  login), run off the event loop; timing-safe secret comparison; and a constant-cost login
+  path, so response time does not reveal which accounts exist.
 - Login by username or email; email verification with a verify-link auto-login; password reset by
   email; self-service account deletion.
 - Redis-backed rate limiting (shared across instances) on auth and every mutating endpoint.
-- Strict CSP and security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
-  Permissions-Policy); explicit CORS allowlist; mandatory `SECRET_KEY` (fail-fast at startup).
+- Security headers on **both** halves: nginx sets a strict CSP and the usual family for the
+  SPA, and the API sets `nosniff`, `DENY`, a referrer policy and a `default-src 'none'` CSP on
+  every response, error responses included. HSTS is sent only over https, so it cannot pin a
+  browser during local development.
+- `ALLOWED_HOSTS` rejects requests for a Host the API does not answer for; explicit CORS
+  allowlist; mandatory `SECRET_KEY` (fail-fast at startup).
 - Secrets encrypted in git via SOPS + age.
 
 ### API & data
@@ -361,7 +368,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v4.8.7
+v4.9.0
 ```
 
 ## License

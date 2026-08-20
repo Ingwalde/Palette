@@ -102,6 +102,44 @@ is configured, so it is visible after the fact rather than only in its effect on
 
 ---
 
+## Account enumeration
+
+Login answers in the same time whether or not the username exists. When there is no such
+account the password is still verified, against a dummy Argon2 hash generated at import, so the
+miss costs what a wrong password costs.
+
+Without that, a miss returned before any hashing: roughly 12ms against 120ms for a known
+account. A tenfold gap is measurable across the internet within a handful of requests, and it
+turns login into a directory of who is registered here. `/forgot-password` and
+`/resend-verification` already returned identical generic responses for exactly this reason —
+the model was understood, and login was the one place it was not applied.
+
+## Password requirements
+
+A new password must be at least **12 characters**. Two further rules catch what length alone
+does not: a small set of well-known passwords is refused outright, and a password may not
+contain the account's own username or the local part of its email address.
+
+Only length is enforced, not character classes. Composition rules push people toward
+`P@ssw0rd1234` — harder to remember and no harder to guess, because the substitutions are the
+first thing a cracking rule tries. The form hint says as much, since a rule the user does not
+understand gets worked around rather than followed.
+
+The rules apply where a password is **set**: `register`, `PUT /auth/password`,
+`reset-password`. Login does not re-validate, so existing accounts with shorter passwords keep
+working; they are held to the new floor the next time they change it.
+
+The frontend mirrors the length check from a single constant so the form can state the rule
+before the request is made. It deliberately does not reproduce the other two checks — the
+server is the authority, and a client-side list of common passwords is a maintenance burden
+that buys one saved round trip.
+
+`DEFAULT_ADMIN_PASSWORD` is checked against the same floor at boot but only **warns**. Seeding
+does not go through the request schema, and hard-failing there would turn a weak development
+password into a refusal to start on an already-deployed instance.
+
+---
+
 ## Password hashing
 
 New hashes use **Argon2id**. Legacy `pbkdf2_sha256` hashes are still verified and are
@@ -164,7 +202,16 @@ DEFAULT_ADMIN_EMAIL=admin@palette.local
 DEFAULT_ADMIN_PASSWORD=change-this-admin-password
 ```
 
-A placeholder password logs a warning at boot. Seeding happens only when there is no admin at
-all; to reseed you must drop the database volume
+A placeholder password logs a warning at boot, as does one below the length floor described
+under [Password requirements](#password-requirements).
+
+**Seeding never promotes an existing account.** If no admin exists but somebody already holds
+the configured username, the seed refuses and logs an error rather than granting them admin —
+which it used to do, while also overwriting their password hash with `DEFAULT_ADMIN_PASSWORD`,
+locking the real owner out of their own account during startup. The check is case-insensitive
+even though registration is not, because an operator setting `admin` while a user holds `Admin`
+is the likeliest way to hit this by accident.
+
+Seeding happens only when there is no admin at all; to reseed you must drop the database volume
 (`docker compose down -v && docker compose up --build`), which destroys all data — local
 testing only.

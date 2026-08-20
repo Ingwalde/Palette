@@ -174,6 +174,20 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.9.0 — Hardened Sign-In and Password Policy
+
+Status: completed.
+
+- Constant-cost login: a failed sign-in takes the same time whether or not the account exists,
+  so accounts cannot be enumerated by timing.
+- Twelve-character password floor, enforced server-side and stated on the form; a published
+  disclosure policy (`SECURITY.md`).
+- API security headers on every response (`nosniff`, `DENY`, referrer policy, `default-src 'none'`
+  CSP; HSTS over HTTPS) and `ALLOWED_HOSTS` rejection of unknown Hosts.
+- Argon2 moved off the event loop with pinned cost; a lost write race returns `409` not `500`;
+  seeding refuses to promote an existing user to admin.
+- TypeScript strict mode enabled across the frontend.
+
 ## v4.8.7 — Stolen Sessions, Detected and Ended
 
 Status: completed.
