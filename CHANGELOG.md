@@ -43,6 +43,16 @@ A read of the backend against its own stated intentions, and the fixes for what 
   scratch, and the test database gets the same extension and indexes production has instead of a
   schema missing four of them.
 
+### Frontend
+
+- **A stalled request can no longer hang the interface forever.** `fetch` has no timeout of its
+  own and nothing supplied one, so a connection that died mid-flight left the page on its loading
+  state with no error and no way out but a reload. Requests now carry a 20-second abort signal —
+  and a caller's own signal still wins, so nothing loses its cancellation to it.
+- **`Content-Type: application/json` is sent only when there is a body.** It went on every
+  request, including bodyless GETs, where it describes a request that does not exist — and it
+  would have overwritten the boundary a form upload has to carry.
+
 ### Tests
 
 - **The favorites endpoints have a test file.** Every other router had one; favorites had two
