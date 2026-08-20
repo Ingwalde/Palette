@@ -438,3 +438,23 @@ async def test_registration_accepts_a_reasonable_password(client):
         },
     )
     assert resp.status_code == 201
+
+
+async def test_password_change_rejects_a_password_containing_the_username(user_client, user_csrf):
+    """The rule registration enforces must not be optional one endpoint later.
+
+    UserCreate refuses a password containing the account's own name or email. This endpoint
+    takes only passwords, so the schema cannot see an identity to compare against — the check
+    lives in the handler, where the request is authenticated and current_user is in hand.
+    """
+    resp = await user_client.put(
+        "/api/v1/auth/password",
+        headers=user_csrf,
+        json={
+            "current_password": "strong-password",
+            "new_password": "normaluser-secret",
+            "confirm_password": "normaluser-secret",
+        },
+    )
+    assert resp.status_code == 422
+    assert "username or email" in resp.json()["detail"].lower()

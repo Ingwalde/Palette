@@ -16,6 +16,7 @@ from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import settings
+from .crud import purge_expired_refresh_tokens
 from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
 from .routers import auth, favorites, palettes, tags
@@ -63,14 +64,19 @@ async def lifespan(app: FastAPI):
         await seed_default_palettes(db)
         await seed_default_tags(db)
         await seed_default_admin_user(db)
+        # Housekeeping: expired refresh tokens are unreachable by every code path that reads
+        # them, so they are storage and nothing else.
+        removed = await purge_expired_refresh_tokens(db)
+        if removed:
+            logging.getLogger("palette").info("Purged %d expired refresh token(s).", removed)
 
     yield
 
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.9.0 with auth, favorites, PostgreSQL and Docker.",
-    version="4.9.0",
+    description="Backend API for Palette v4.9.1 with auth, favorites, PostgreSQL and Docker.",
+    version="4.9.1",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -190,7 +196,7 @@ def _validation_exception_handler(request, exc: RequestValidationError) -> JSONR
 def root():
     return {
         "name": "Palette API",
-        "version": "4.9.0",
+        "version": "4.9.1",
         "docs": "/api/docs",
         "health": "/health",
     }

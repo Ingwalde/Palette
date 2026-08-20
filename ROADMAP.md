@@ -174,6 +174,20 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.9.1 — Review Remediation
+
+Status: completed.
+
+- Closed a live exposure: Compose published the API and the SPA on every interface, so the
+  backend answered on `http://<public-ip>:8000` around Cloudflare, Caddy and — because uvicorn
+  trusts any forwarder — the rate limiter. Both ports now bind to loopback.
+- Bounded Argon2 concurrency (64 MiB per hash against a ~1 GB VM) with a semaphore.
+- Change-password now refuses a password containing the account's own name or email, matching
+  registration.
+- Saving an already-saved palette concurrently returns success, not 500; a damaged password hash
+  fails verification instead of raising.
+- Expired refresh tokens are purged at startup instead of accumulating forever.
+
 ## v4.9.0 — Hardened Sign-In and Password Policy
 
 Status: completed.

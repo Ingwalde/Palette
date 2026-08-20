@@ -106,3 +106,16 @@ async def test_hashing_leaves_the_event_loop_free():
     # On the loop this would be a handful at most: the coroutine cannot run at all while a
     # blocking call holds the thread. Off the loop it runs thousands of times.
     assert ticks > 100, f"loop only advanced {ticks} times during a verify — still blocking"
+
+
+def test_verify_rejects_a_damaged_argon2_hash():
+    """A hash that cannot be parsed is a failed verification, not a server error.
+
+    A wrong password raises VerifyMismatchError, but a truncated or otherwise damaged stored
+    hash raises the VerificationError base class. Catching only the subclass turned a corrupt
+    row into a 500 — an error report for something no caller can act on.
+    """
+    stored = hash_password("some-password")
+    damaged = stored[: len(stored) // 2]
+
+    assert verify_password("some-password", damaged) is False

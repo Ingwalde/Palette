@@ -16,6 +16,7 @@ from ..config import settings
 from ..database import get_db
 from ..email_service import send_password_reset_email, send_verification_email
 from ..rate_limit import limiter
+from ..schemas import validate_password_strength
 from ..security import (
     ACCESS_COOKIE,
     CSRF_COOKIE,
@@ -319,6 +320,20 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
         )
+
+    # Registration refuses a password containing the account's own name or email; this endpoint
+    # did not, so the rule was one password change away from being optional. The schema cannot
+    # enforce it here — it carries passwords and no identity — but the request is authenticated,
+    # so the identity is right there in current_user.
+    try:
+        validate_password_strength(
+            password_data.new_password,
+            context=(current_user.username, current_user.email),
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
 
     await crud.update_user_password(
         db=db,

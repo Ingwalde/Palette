@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.9.1",
+    title: "What a file-by-file review found",
+    items: [
+      "The API was answering directly on a public port, around the proxy that rate-limits it; both ports are now private to the server.",
+      "Signing in can no longer be used to exhaust the server's memory, and changing a password enforces the same rules as choosing one.",
+      "Saving the same palette twice at once, and a damaged stored password, no longer produce a server error.",
+    ],
+  },
+  {
     version: "v4.9.0",
     title: "Hardened sign-in and a stated password policy",
     items: [
