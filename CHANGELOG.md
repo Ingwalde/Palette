@@ -35,6 +35,20 @@ A read of the backend against its own stated intentions, and the fixes for what 
 - **Expired refresh tokens are purged at startup.** Every login wrote a row and every rotation
   wrote another while the old one was only flagged revoked, so the table grew for the lifetime of
   the deployment and nothing read the old rows again.
+- **The models and the migrations agree again, and CI keeps them that way.** The four pg_trgm
+  search indexes from migration 0008 were never declared on the model, so `alembic check` failed
+  and the next `alembic revision --autogenerate` would have written a migration dropping them —
+  a diff with nothing obviously wrong about it, quietly returning every search to a sequential
+  scan. The indexes are declared now, `alembic check` runs in CI against a schema built from
+  scratch, and the test database gets the same extension and indexes production has instead of a
+  schema missing four of them.
+
+### Tests
+
+- **The favorites endpoints have a test file.** Every other router had one; favorites had two
+  incidental calls inside the palettes tests, leaving the 404 branches, the CSRF requirement and
+  — the reason this mattered — whether one account can read another's saved palettes entirely
+  unasserted. The router goes from 74% to 100%.
 
 ## v4.9.0 — Hardened sign-in, a stated password policy, stricter types
 
