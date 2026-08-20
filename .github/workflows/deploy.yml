@@ -26,7 +26,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@v1.2.5
         env:
           # The commit CI actually validated. `git pull origin main` would take whatever HEAD
           # happens to be at deploy time, so two quick merges shipped an untested commit.
