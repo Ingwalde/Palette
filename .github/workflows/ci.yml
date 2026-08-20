@@ -80,6 +80,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # The Playwright image ships Node but no warm npm cache, so npm ci re-downloads every
+      # dependency each run. Cache ~/.npm, keyed on the lockfile, to serve them from disk — the
+      # host jobs already get this from setup-node's built-in npm cache.
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
+
       - name: Install dependencies
         run: npm ci
 
@@ -112,6 +121,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # The Playwright image ships Node but no warm npm cache, so npm ci re-downloads every
+      # dependency each run. Cache ~/.npm, keyed on the lockfile, to serve them from disk — the
+      # host jobs already get this from setup-node's built-in npm cache.
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
 
       - name: Install dependencies
         run: npm ci
@@ -224,6 +242,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # The Playwright image ships Node but no warm npm cache, so npm ci re-downloads every
+      # dependency each run. Cache ~/.npm, keyed on the lockfile, to serve them from disk — the
+      # host jobs already get this from setup-node's built-in npm cache.
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
 
       - name: Install dependencies
         run: npm ci
