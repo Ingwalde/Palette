@@ -1,5 +1,41 @@
 # Changelog
 
+## v4.9.1 — What a file-by-file review found
+
+A read of the backend against its own stated intentions, and the fixes for what did not hold.
+
+### Security
+
+- **The API was reachable from the public internet, around the proxy.** Compose published port
+  8000 on every interface, so `http://<public-ip>:8000` answered directly: past Cloudflare, past
+  Caddy's TLS, and past the rate limiter — because uvicorn runs with `--forwarded-allow-ips=*`,
+  so anyone reaching it could set their own `X-Forwarded-For` and get a fresh bucket per request,
+  making the five-logins-a-minute limit no limit at all. The Dockerfile already said trusting all
+  forwarders was safe *because* the port was proxy-only; that was the assumption, and Compose
+  broke it. Both ports now bind to loopback, which is where Caddy looks for them anyway.
+- **Argon2 concurrency is bounded.** Moving hashing off the event loop removed the only thing
+  serialising it: `asyncio.to_thread` uses an executor sized for I/O, and every hash asks for
+  64 MiB, so enough concurrent logins could ask for more memory than the ~1 GB VM has. A
+  semaphore makes the surplus wait instead of the machine dying.
+- **Changing a password now enforces the rule registration enforces.** A password containing the
+  account's own name or email is refused at registration; the change-password endpoint did not
+  check, so the rule was one request away from optional.
+
+### Fixed
+
+- **Saving a palette twice at once returned 500.** Two clicks on the same heart both passed the
+  "already a favorite?" check, and the unique constraint failed the loser. The favorites path was
+  missed when this class of race was fixed elsewhere in v4.9.0; saving something already saved is
+  now the success it looks like.
+- **A damaged password hash returned 500 instead of failing to verify.** Only the
+  wrong-password subclass was caught, so a corrupt row raised through the handler.
+
+### Changed
+
+- **Expired refresh tokens are purged at startup.** Every login wrote a row and every rotation
+  wrote another while the old one was only flagged revoked, so the table grew for the lifetime of
+  the deployment and nothing read the old rows again.
+
 ## v4.9.0 — Hardened sign-in, a stated password policy, stricter types
 
 ### Security

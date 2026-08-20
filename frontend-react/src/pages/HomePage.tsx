@@ -66,12 +66,12 @@ export function HomePage() {
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Palette v4.9.0 · Update!</p>
+          <p className={ui.eyebrow}>Palette v4.9.1 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. This release hardens the way you
-            sign in: a login that gives nothing away about which accounts exist, a
-            stronger password floor, and a published security policy.
+            Search, filter, save and export palettes. This release comes out of reading
+            the backend file by file: a port that should never have been public is closed,
+            and three ways to get a server error are gone.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">
