@@ -33,6 +33,7 @@ from app.main import app
 from app.rate_limit import limiter
 from app.security import hash_password
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text as sa_text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
@@ -54,6 +55,11 @@ app.dependency_overrides[get_db] = _override_get_db
 @pytest_asyncio.fixture(autouse=True)
 async def _reset_database():
     async with engine.begin() as conn:
+        # The suite builds its schema from the models rather than by running migrations, so the
+        # extension migration 0008 installs has to be created here too — the palette search
+        # indexes are declared with gin_trgm_ops and create_all fails without it. Tests now
+        # exercise the same index set production has, instead of a schema missing four of them.
+        await conn.execute(sa_text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield

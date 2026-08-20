@@ -9,6 +9,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -24,7 +25,49 @@ def _utcnow() -> datetime:
 class Palette(Base):
     __tablename__ = "palettes"
     # GIN index on the JSONB tags array powers fast containment (tag) filtering.
-    __table_args__ = (Index("ix_palettes_tags", "tags", postgresql_using="gin"),)
+    #
+    # The pg_trgm indexes below serve the leading-wildcard ILIKE that search runs; they were
+    # created by migration 0008 and, until now, existed only there. A model that does not
+    # describe them is a model autogenerate compares against reality and finds four indexes to
+    # drop — so the next `alembic revision --autogenerate` would have written a migration
+    # deleting the search indexes, and nothing about that diff would have looked wrong.
+    # `alembic check` in CI now fails if this list and the migrations disagree again.
+    __table_args__ = (
+        Index("ix_palettes_tags", "tags", postgresql_using="gin"),
+        Index(
+            "ix_palettes_name_trgm",
+            "name",
+            postgresql_using="gin",
+            postgresql_ops={"name": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_palettes_description_trgm",
+            "description",
+            postgresql_using="gin",
+            postgresql_ops={"description": "gin_trgm_ops"},
+        ),
+        Index(
+            "ix_palettes_slug_trgm",
+            "slug",
+            postgresql_using="gin",
+            postgresql_ops={"slug": "gin_trgm_ops"},
+        ),
+        # An expression index over the JSONB rendered as text, matching the cast in
+        # _filtered_palettes_stmt. Declared with text() because the indexed thing is an
+        # expression rather than a column.
+        # The operator class is written into the expression rather than passed as
+        # postgresql_ops. Alembic asks for the latter so it can compare the index, but the ops
+        # key has to match how the expression renders, and for this one it does not: the class
+        # is dropped from the DDL and Postgres refuses `USING gin ((tags::text))` outright,
+        # because text has no default gin operator class. A warning that alembic cannot compare
+        # one expression index is the cheaper problem — it still knows the index exists, which
+        # is what stops autogenerate proposing to drop it.
+        Index(
+            "ix_palettes_tags_text_trgm",
+            text("(tags::text) gin_trgm_ops"),
+            postgresql_using="gin",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     slug: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
