@@ -18,6 +18,7 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       # Writing results to the Security tab is the whole point; the rest are what the action
       # needs to read the workflow and the checkout.

@@ -18,6 +18,7 @@ jobs:
   lint:
     name: Lint & type-check (ruff · mypy)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -47,6 +48,7 @@ jobs:
   backend-tests:
     name: Backend tests (pytest · PostgreSQL)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -65,6 +67,7 @@ jobs:
   e2e:
     name: E2E + a11y (Playwright · axe)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend-react
@@ -81,6 +84,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # Restore the browser binaries so a cache hit skips the Chromium download — the step that
+      # hung a run past ten minutes on a transient network stall. Keyed on the lockfile, which
+      # pins the @playwright/test version the browser build must match.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
@@ -102,6 +114,7 @@ jobs:
   visual:
     name: Visual baselines (Playwright screenshots)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Screenshot diffs are only meaningful when rendering is identical to the machine that
     # recorded the baselines, so this job runs in the same pinned image the local
     # scripts/visual.sh uses. Keep the tag in step with @playwright/test in package.json.
@@ -133,6 +146,7 @@ jobs:
   frontend-react:
     name: Frontend (React) — lint · types · test · build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write # push the frontend image to GHCR on main
@@ -212,6 +226,7 @@ jobs:
   lighthouse:
     name: Performance budget (Lighthouse)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     # Same pinned image as the screenshots, for the same reason and one more: it ships the
     # Chromium that Lighthouse drives, so the browser version is fixed rather than whatever the
     # runner image happens to carry this month.
@@ -252,6 +267,7 @@ jobs:
   integration:
     name: Integration E2E (real stack)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -266,6 +282,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
         working-directory: frontend-react
+
+      # Same browser-binary cache as the e2e job; the download here is what actually stalled.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
 
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
