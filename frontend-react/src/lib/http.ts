@@ -61,6 +61,9 @@ async function requestNewAccessToken(): Promise<boolean> {
     }
     return true;
   } catch {
+    // Deliberately without onUnauthorized: the refresh never reached the server, so nothing was
+    // learned about the session. A dropped connection or a timeout is not a signed-out user, and
+    // treating it as one would clear the cached account every time a train went into a tunnel.
     return false;
   }
 }
@@ -75,12 +78,22 @@ function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight;
 }
 
+// A request that never answers used to wait forever: fetch has no timeout of its own and
+// nothing here supplied one, so a connection that stalls mid-flight left the UI on its loading
+// state with no error and no way back except a reload. Twenty seconds is far longer than any
+// call this API makes and short enough that a dead connection becomes a message.
+const REQUEST_TIMEOUT_MS = 20_000;
+
 function sendRequest(endpoint: string, options: RequestInit): Promise<Response> {
   const method = (options.method ?? "GET").toUpperCase();
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
   };
+  // Only when something is actually being sent. Declaring a body type on a GET describes a
+  // request that does not exist, and it would override the boundary a FormData body needs.
+  if (options.body !== undefined && headers["Content-Type"] === undefined) {
+    headers["Content-Type"] = "application/json";
+  }
   if (!SAFE_METHODS.has(method)) {
     headers["X-CSRF-Token"] = getCsrfToken();
   }
@@ -88,6 +101,9 @@ function sendRequest(endpoint: string, options: RequestInit): Promise<Response> 
     ...options,
     credentials: "include",
     headers,
+    // A caller's own signal wins — nothing passes one today, but a cancellable caller should
+    // not silently lose its cancellation to the timeout.
+    signal: options.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
 }
 

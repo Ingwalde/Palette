@@ -98,3 +98,32 @@ describe("http.request", () => {
     expect(err.message).toBe("Palette not found");
   });
 });
+
+describe("http.request request shaping", () => {
+  it("declares a JSON body type only when there is a body", async () => {
+    // A Content-Type on a bodyless GET describes a request that does not exist, and sending it
+    // unconditionally would also overwrite the boundary a FormData body has to carry.
+    fetchMock.mockResolvedValueOnce(res({ ok: true }));
+    await request("/palettes");
+    expect(fetchMock.mock.calls[0][1].headers["Content-Type"]).toBeUndefined();
+
+    fetchMock.mockResolvedValueOnce(res({ ok: true }));
+    await request("/palettes", { method: "POST", body: JSON.stringify({ name: "x" }) });
+    expect(fetchMock.mock.calls[1][1].headers["Content-Type"]).toBe("application/json");
+  });
+
+  it("attaches an abort signal so a stalled connection cannot hang forever", async () => {
+    fetchMock.mockResolvedValueOnce(res({ ok: true }));
+    await request("/palettes");
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("lets a caller's own signal win over the timeout", async () => {
+    // Nothing passes one today, but a cancellable caller must not silently lose its
+    // cancellation to the timeout that was added for everyone else.
+    const controller = new AbortController();
+    fetchMock.mockResolvedValueOnce(res({ ok: true }));
+    await request("/palettes", { signal: controller.signal });
+    expect(fetchMock.mock.calls[0][1].signal).toBe(controller.signal);
+  });
+});
