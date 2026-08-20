@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 from argon2 import PasswordHasher
-from argon2.exceptions import InvalidHash, VerifyMismatchError
+from argon2.exceptions import InvalidHash, VerificationError
 from fastapi import Cookie, Depends, HTTPException, status
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +58,12 @@ def verify_password(password: str, stored_hash: str) -> bool:
     if stored_hash.startswith("$argon2"):
         try:
             return _password_hasher.verify(stored_hash, password)
-        except (VerifyMismatchError, InvalidHash):
+        # VerificationError rather than its VerifyMismatchError subclass: a wrong password is
+        # only one way this fails. A truncated or otherwise damaged hash raises the base class,
+        # and catching only the subclass turned "this row is corrupt" into a 500 — an error
+        # report for something the caller can do nothing about, when the honest answer to a
+        # credential that cannot be verified is that it did not verify.
+        except (VerificationError, InvalidHash):
             return False
     return _verify_legacy_pbkdf2(password, stored_hash)
 
@@ -70,12 +75,26 @@ def verify_password(password: str, stored_hash: str) -> bool:
 # to stall the API without ever looking like an attack.
 #
 # Offloaded to the threadpool instead, where it costs a worker thread rather than the loop.
+#
+# Bounded, though, because moving the work off the loop removed the only thing that was
+# serialising it. asyncio.to_thread hands work to the default executor, which is sized for I/O
+# — dozens of threads — and each Argon2 call asks for 64 MiB. Nothing then stops a few dozen
+# concurrent logins from asking for more memory than the ~1 GB production VM has, and the rate
+# limit is no defence: it counts per IP, so the requests need only arrive from different ones.
+# The semaphore makes the surplus wait rather than the machine die.
+_hash_concurrency = asyncio.Semaphore(settings.password_hash_concurrency)
+
+
 async def hash_password_async(password: str) -> str:
-    return await asyncio.to_thread(hash_password, password)
+    async with _hash_concurrency:
+        return await asyncio.to_thread(hash_password, password)
 
 
 async def verify_password_async(password: str, stored_hash: str) -> bool:
-    return await asyncio.to_thread(verify_password, password, stored_hash)
+    # The dummy-hash verification for a missing account goes through here too, so waiting for a
+    # slot costs both paths the same and the constant-cost login property survives contention.
+    async with _hash_concurrency:
+        return await asyncio.to_thread(verify_password, password, stored_hash)
 
 
 def password_needs_rehash(stored_hash: str) -> bool:

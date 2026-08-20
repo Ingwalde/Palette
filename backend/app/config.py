@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     enable_api_docs: bool = False
     log_level: str = "INFO"
 
+    # How many Argon2 hashes may run at once. Each costs 64 MiB, and the production VM has
+    # about a gigabyte for the whole stack, so this is a memory ceiling for the auth path
+    # rather than a throughput setting: two concurrent hashes still serve far more logins per
+    # second than this application will ever be asked for. Raise it on a bigger box.
+    password_hash_concurrency: int = 2
+
     # Auth cookies. Tokens live in httpOnly cookies (not JS-readable) with a JS-readable
     # csrf_token for double-submit CSRF protection. cookie_secure must be True in production
     # (https); set it False for plain-http local development or the browser drops the cookies.
