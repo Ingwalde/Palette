@@ -68,6 +68,11 @@ jobs:
     name: E2E + a11y (Playwright · axe)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # The pinned Playwright image ships Chromium and its OS deps, so there is no
+    # `playwright install` step to stall on a slow apt/download — the failure that once held a
+    # PR for ten minutes — and no browser cache to maintain. Same image as the visual job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
     defaults:
       run:
         working-directory: frontend-react
@@ -75,27 +80,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend-react/package-lock.json
-
       - name: Install dependencies
         run: npm ci
-
-      # Restore the browser binaries so a cache hit skips the Chromium download — the step that
-      # hung a run past ten minutes on a transient network stall. Keyed on the lockfile, which
-      # pins the @playwright/test version the browser build must match.
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('frontend-react/package-lock.json') }}
-
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
 
       # The specs stub the API with page.route and playwright.config.ts starts its own preview
       # server, so no backend is needed. This suite is what would have caught the emailed
