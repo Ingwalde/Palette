@@ -65,4 +65,18 @@ describe("PaletteCard", () => {
     await user.click(screen.getByRole("button", { name: /Toggle favorite/i }));
     expect(await screen.findByText(/Log in to save favorites/)).toBeInTheDocument();
   });
+  it("says so when the clipboard refuses the write", async () => {
+    // writeText rejects on a denied permission, an unfocused document or an insecure origin.
+    // The swatch used to award the user silence and an unhandled rejection; the name button
+    // used to announce success regardless. Both now report the failure.
+    const user = userEvent.setup();
+    vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(
+      new Error("Write permission denied."),
+    );
+    renderCard();
+    await user.click(screen.getByRole("button", { name: "Copy name" }));
+    expect(
+      await screen.findByText(/Could not copy to the clipboard/),
+    ).toBeInTheDocument();
+  });
 });
