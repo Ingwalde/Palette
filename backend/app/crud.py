@@ -608,7 +608,7 @@ async def purge_expired_refresh_tokens(db: AsyncSession) -> int:
     # Cast because session.execute is typed as returning Result, and rowcount — the only thing
     # this needs — is declared on the CursorResult a DML statement actually returns.
     result = cast(
-        "CursorResult[Any]",
+        CursorResult[Any],
         await db.execute(
             delete(models.RefreshToken).where(models.RefreshToken.expires_at < datetime.now(UTC))
         ),
