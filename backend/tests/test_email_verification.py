@@ -9,10 +9,14 @@ async def _register(client, username="carol", email="carol@test.com", password="
     )
 
 
-async def test_new_user_is_unverified(client):
+async def test_new_user_is_unverified(client, db_session):
     resp = await _register(client)
-    assert resp.status_code == 201
-    assert resp.json()["email_verified"] is False
+    assert resp.status_code == 202
+    # Registration no longer returns the account — it must read the same for an address that
+    # already has one — so the unverified state is read from the row it created.
+    created = await crud.get_user_by_email(db_session, "carol@test.com")
+    assert created is not None
+    assert created.email_verified is False
 
 
 async def test_verify_marks_user_verified(client, db_session):

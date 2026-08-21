@@ -55,8 +55,10 @@ test("the API is reachable and speaks problem+json", async ({ request }) => {
 test("logging in sets httpOnly cookies and returns no token in the body", async ({
   request,
 }) => {
+  // 202 and a generic message, not 201 and the account: registration has to answer the same way
+  // for an address that is already registered, so it cannot hand back a user that may not exist.
   const created = await request.post(`${API}/api/v1/auth/register`, { data: NEW_USER });
-  expect(created.status()).toBe(201);
+  expect(created.status()).toBe(202);
 
   const res = await request.post(`${API}/api/v1/auth/login`, {
     data: { username: NEW_USER.username, password: NEW_USER.password },

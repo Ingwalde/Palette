@@ -287,3 +287,35 @@ describe("AdminPage in-flight guard", () => {
     release(palette);
   });
 });
+
+describe("AdminPage tabs", () => {
+  it("moves between tabs with the arrow keys and points each at its panel", async () => {
+    // The roles were there before this; the behaviour they promise was not. A reader told
+    // "tab, 1 of 2" reaches for the arrow keys, and nothing named the panel a tab controlled.
+    const user = userEvent.setup();
+    renderAdmin();
+
+    const palettes = await screen.findByRole("tab", { name: "Palettes" });
+    const tags = screen.getByRole("tab", { name: "Tags" });
+
+    expect(palettes).toHaveAttribute("aria-controls", "admin-panel-palettes");
+    expect(tags).toHaveAttribute("aria-controls", "admin-panel-tags");
+    // One tab stop for the group, not one per tab.
+    expect(palettes).toHaveAttribute("tabindex", "0");
+    expect(tags).toHaveAttribute("tabindex", "-1");
+
+    palettes.focus();
+    await user.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("tab", { name: "Tags" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(document.activeElement).toBe(screen.getByRole("tab", { name: "Tags" }));
+    // The panel exists and says which tab named it.
+    expect(screen.getByRole("tabpanel")).toHaveAttribute(
+      "aria-labelledby",
+      "admin-tab-tags",
+    );
+  });
+});

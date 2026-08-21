@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.9.2",
+    title: "The decisions the review left open",
+    items: [
+      "Signing up no longer reveals whether an email address already has an account; if it does, a message goes to that address instead.",
+      "The admin mode switch is a real tabs control — arrow keys, Home and End move between them, and each tab names the panel it opens.",
+      "Every service has a memory limit measured from real usage, so one misbehaving part cannot take the whole server down with it.",
+    ],
+  },
+  {
     version: "v4.9.1",
     title: "What a file-by-file review found",
     items: [

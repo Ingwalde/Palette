@@ -1,5 +1,50 @@
 # Changelog
 
+## v4.9.2 — The decisions the review left open
+
+v4.9.1 ended with five findings that were judgement calls rather than defects: things worth
+changing, but not worth changing without deciding. These are those decisions.
+
+### Security
+
+- **Registering no longer says whether an address is already in use.** A `409 "Email is already
+  registered"` turned a list of addresses into a list of people who use this site — the exact
+  question `/forgot-password` and `/resend-verification` have always refused to answer, and the
+  one login stopped answering in v4.9.0. Registration now replies the same way either way, spends
+  the same time doing it, and sends a message to the address explaining that an account already
+  exists and how to get back into it. A taken **username** is still reported: it is a handle
+  being chosen right then, and hiding that would strand the person with no account and no way to
+  find out.
+
+### Operations
+
+- **Every service has a memory limit**, sized from what they actually use rather than guessed —
+  measured on the live server at 89 MiB for the backend, 21 for Postgres, 3 for Redis and 1.4 for
+  nginx. Without a limit one service can grow until the kernel starts choosing victims for the
+  whole machine, which is the shape of an outage this project has already had. With one, the
+  service that misbehaves is the one that dies, and the restart policy brings it back.
+
+### Accessibility
+
+- **The admin mode switch is a real tabs control now.** It announced itself as a tablist and then
+  behaved like two ordinary buttons: nothing named the panel each tab controlled, nothing claimed
+  to be a panel, and the arrow keys a screen reader tells you to press did nothing. Arrow keys,
+  Home and End now move between the tabs, one tab stop covers the group, and each tab points at
+  the panel it opens.
+
+### Removed
+
+- **`GET /api/v1/favorites/keys`.** It was implemented, rate-limited, documented and tested, and
+  no client called it — a leftover from the vanilla frontend, which used it to decide whether a
+  card was saved. The React app reads that from the favorites list it already has.
+
+### Changed
+
+- **The design tokens use generated custom-property names.** They were pinned to the names the
+  old hand-written stylesheets used, with a note saying they could be generated once nothing
+  global was left. Nothing global is left, so a token can now be renamed with the compiler as the
+  only thing that has to agree.
+
 ## v4.9.1 — What a file-by-file review found
 
 A read of the backend against its own stated intentions, and the fixes for what did not hold.

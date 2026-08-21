@@ -2,6 +2,7 @@ import logging
 import time
 
 import pytest
+from app import crud
 
 
 async def _register(client, username="alice", email="alice@test.com", password="strong-password"):
@@ -23,13 +24,10 @@ def _csrf(client):
 
 async def test_register_happy_path(client):
     resp = await _register(client)
-    assert resp.status_code == 201
-    body = resp.json()
-    assert body["username"] == "alice"
-    assert body["email"] == "alice@test.com"
-    assert body["is_admin"] is False
-    assert "password" not in body
-    assert "password_hash" not in body
+    # 202 with a generic message, not 201 with the account: the reply has to read the same for
+    # an address that is already registered, so it cannot describe a user that may not exist.
+    assert resp.status_code == 202
+    assert resp.json() == {"message": "Check your email to finish setting up your account."}
 
 
 async def test_register_duplicate_username(client):
@@ -38,10 +36,25 @@ async def test_register_duplicate_username(client):
     assert resp.status_code == 409
 
 
-async def test_register_duplicate_email(client):
-    await _register(client)
-    resp = await _register(client, username="bob")
-    assert resp.status_code == 409
+async def test_register_does_not_reveal_that_an_email_is_taken(client, db_session):
+    """Registering twice with one address must be indistinguishable from registering once.
+
+    /forgot-password and /resend-verification have always answered generically, and v4.9.0
+    equalised the timing of login, all so that nobody can ask this service whether a given
+    person has an account. Registration was the front door still answering: a 409 saying
+    "Email is already registered" turned a list of addresses into a list of users.
+
+    A taken username is still reported — see the endpoint's docstring — so the second attempt
+    here uses a free one, which is exactly what a probe would do.
+    """
+    first = await _register(client)
+    second = await _register(client, username="bob")
+
+    assert (first.status_code, second.status_code) == (202, 202)
+    assert first.json() == second.json()
+
+    # And no second account was created behind the identical answer.
+    assert await crud.get_user_by_username(db_session, "bob") is None
 
 
 async def test_login_by_username(client):
@@ -437,7 +450,7 @@ async def test_registration_accepts_a_reasonable_password(client):
             "password": "correct-horse-battery",
         },
     )
-    assert resp.status_code == 201
+    assert resp.status_code == 202
 
 
 async def test_password_change_rejects_a_password_containing_the_username(user_client, user_csrf):

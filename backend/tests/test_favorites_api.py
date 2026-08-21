@@ -22,7 +22,6 @@ async def palette(db_session):
 
 async def test_favorites_require_authentication(client):
     assert (await client.get("/api/v1/favorites")).status_code == 401
-    assert (await client.get("/api/v1/favorites/keys")).status_code == 401
 
 
 async def test_add_list_and_remove(user_client, user_csrf, palette):
@@ -30,13 +29,12 @@ async def test_add_list_and_remove(user_client, user_csrf, palette):
     assert added.status_code == 201
     assert added.json()["slug"] == palette.slug
 
-    assert (await user_client.get("/api/v1/favorites/keys")).json() == [palette.slug]
     listed = await user_client.get("/api/v1/favorites")
     assert [p["slug"] for p in listed.json()] == [palette.slug]
 
     removed = await user_client.delete(f"/api/v1/favorites/{palette.slug}", headers=user_csrf)
     assert removed.status_code == 204
-    assert (await user_client.get("/api/v1/favorites/keys")).json() == []
+    assert (await user_client.get("/api/v1/favorites")).json() == []
 
 
 async def test_adding_the_same_palette_twice_is_not_an_error(user_client, user_csrf, palette):
@@ -44,7 +42,8 @@ async def test_adding_the_same_palette_twice_is_not_an_error(user_client, user_c
     first = await user_client.post(f"/api/v1/favorites/{palette.slug}", headers=user_csrf)
     second = await user_client.post(f"/api/v1/favorites/{palette.slug}", headers=user_csrf)
     assert (first.status_code, second.status_code) == (201, 201)
-    assert (await user_client.get("/api/v1/favorites/keys")).json() == [palette.slug]
+    saved = (await user_client.get("/api/v1/favorites")).json()
+    assert [p["slug"] for p in saved] == [palette.slug]
 
 
 async def test_unknown_slug_is_404(user_client, user_csrf):
@@ -90,10 +89,10 @@ async def test_one_account_cannot_see_anothers_favorites(client, db_session, pal
 
     await login(client, "bob", "strong-password")
     assert (await client.get("/api/v1/favorites")).json() == []
-    assert (await client.get("/api/v1/favorites/keys")).json() == []
 
     # Bob clearing his own (empty) favorites must not touch Alice's.
     await client.delete("/api/v1/favorites", headers=csrf_headers(client))
 
     await login(client, "alice", "strong-password")
-    assert (await client.get("/api/v1/favorites/keys")).json() == [palette.slug]
+    saved = (await client.get("/api/v1/favorites")).json()
+    assert [p["slug"] for p in saved] == [palette.slug]

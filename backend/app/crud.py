@@ -479,10 +479,6 @@ async def get_user_favorite_palettes(db: AsyncSession, user: models.User) -> lis
     return list((await db.execute(stmt)).scalars().all())
 
 
-async def get_user_favorite_keys(db: AsyncSession, user: models.User) -> list[str]:
-    return [palette.slug for palette in await get_user_favorite_palettes(db, user)]
-
-
 async def is_user_favorite(db: AsyncSession, user: models.User, palette: models.Palette) -> bool:
     stmt = select(models.Favorite).where(
         models.Favorite.user_id == user.id,

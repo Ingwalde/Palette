@@ -38,7 +38,6 @@ const PALETTES = {
 async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: [] }));
-  await page.route("**/api/v1/favorites/keys", (r) => r.fulfill({ json: [] }));
   await page.route("**/api/v1/auth/me", (r) =>
     loggedIn
       ? r.fulfill({ json: ADMIN })

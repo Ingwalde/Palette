@@ -20,14 +20,6 @@ async def read_favorites(
     return await crud.get_user_favorite_palettes(db, current_user)
 
 
-@router.get("/keys", response_model=list[str])
-async def read_favorite_keys(
-    db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    return await crud.get_user_favorite_keys(db, current_user)
-
-
 @router.post("/{slug}", response_model=schemas.PaletteRead, status_code=status.HTTP_201_CREATED)
 @limiter.limit(_WRITE_LIMIT)
 async def add_favorite(

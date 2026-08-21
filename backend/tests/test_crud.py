@@ -67,7 +67,8 @@ async def test_favorites_add_idempotent_and_remove(db_session):
     await crud.add_user_favorite(db_session, user, palette)  # duplicate is ignored
 
     assert await crud.is_user_favorite(db_session, user, palette) is True
-    assert await crud.get_user_favorite_keys(db_session, user) == [palette.slug]
+    saved = await crud.get_user_favorite_palettes(db_session, user)
+    assert [p.slug for p in saved] == [palette.slug]
 
     assert await crud.remove_user_favorite(db_session, user, palette) is True
     assert await crud.is_user_favorite(db_session, user, palette) is False
@@ -82,7 +83,7 @@ async def test_clear_user_favorites(db_session):
     await crud.add_user_favorite(db_session, user, p2)
 
     assert await crud.clear_user_favorites(db_session, user) == 2
-    assert await crud.get_user_favorite_keys(db_session, user) == []
+    assert await crud.get_user_favorite_palettes(db_session, user) == []
 
 
 async def test_favorite_add_survives_a_lost_race(db_session):
@@ -111,7 +112,8 @@ async def test_favorite_add_survives_a_lost_race(db_session):
     await asyncio.gather(add(), add())
 
     # Whoever won, the caller's intent holds and exactly one row exists.
-    assert await crud.get_user_favorite_keys(db_session, user) == [palette.slug]
+    saved = await crud.get_user_favorite_palettes(db_session, user)
+    assert [p.slug for p in saved] == [palette.slug]
 
 
 async def test_purge_expired_refresh_tokens(db_session):

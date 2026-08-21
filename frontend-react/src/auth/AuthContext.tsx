@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "../api/auth";
 import { queryKeys } from "../api/queryKeys";
 import { ApiError, setUnauthorizedHandler } from "../lib/http";
-import type { LoginPayload, RegisterPayload, User } from "../types/api";
+import type { LoginPayload, MessageResponse, RegisterPayload, User } from "../types/api";
 
 interface AuthContextValue {
   user: User | null;
@@ -11,7 +11,9 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (payload: LoginPayload) => Promise<User>;
-  register: (payload: RegisterPayload) => Promise<User>;
+  // Resolves with the API's generic acknowledgement, not an account: registration answers the
+  // same way for an address that is already taken, so it cannot hand back a user.
+  register: (payload: RegisterPayload) => Promise<MessageResponse>;
   logout: () => Promise<void>;
   logoutEverywhere: () => Promise<void>;
 }

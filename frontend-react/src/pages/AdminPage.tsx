@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
@@ -87,8 +95,32 @@ function AdminHero() {
   );
 }
 
+const MODES = ["palettes", "tags"] as const;
+type Mode = (typeof MODES)[number];
+
 function AdminPanel({ username }: { username: string }) {
-  const [mode, setMode] = useState<"palettes" | "tags">("palettes");
+  const [mode, setMode] = useState<Mode>("palettes");
+  const tabRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({});
+
+  // Arrow keys move between tabs and select as they go, which is the behaviour the tablist
+  // role promises. Home and End jump to the ends, as the pattern specifies.
+  const onTablistKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const index = MODES.indexOf(mode);
+    let next: Mode | null = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      next = MODES[(index + 1) % MODES.length];
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      next = MODES[(index - 1 + MODES.length) % MODES.length];
+    } else if (e.key === "Home") {
+      next = MODES[0];
+    } else if (e.key === "End") {
+      next = MODES[MODES.length - 1];
+    }
+    if (!next) return;
+    e.preventDefault();
+    setMode(next);
+    tabRefs.current[next]?.focus();
+  };
 
   return (
     <>
@@ -99,35 +131,55 @@ function AdminPanel({ username }: { username: string }) {
             <p className={ui.eyebrow}>Admin session · {username}</p>
             <h2>Admin panel</h2>
           </div>
+          {/*
+            A complete tabs pattern, not just the roles. It previously announced itself as a
+            tablist and then behaved like two ordinary buttons: nothing named the panel each tab
+            controlled, no element claimed to be a panel at all, and the arrow keys a screen
+            reader tells the user to press did nothing. axe does not catch that — the markup was
+            not invalid, only unfinished.
+
+            So: aria-controls pointing at a real tabpanel, one tab stop for the whole group with
+            arrow/Home/End moving between the tabs inside it (the roving tabindex the pattern
+            asks for), and focus following selection, because switching tab swaps the panel
+            underneath and the keyboard has to end up somewhere that exists.
+          */}
           <div
             className={styles.mode}
             role="tablist"
             aria-label="Admin mode"
             data-active={mode}
+            onKeyDown={onTablistKeyDown}
           >
             <span className={styles.modePill} aria-hidden="true" />
-            <button
-              className={`${styles.modeButton}${mode === "palettes" ? ` ${styles.modeButtonActive}` : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={mode === "palettes"}
-              onClick={() => setMode("palettes")}
-            >
-              Palettes
-            </button>
-            <button
-              className={`${styles.modeButton}${mode === "tags" ? ` ${styles.modeButtonActive}` : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={mode === "tags"}
-              onClick={() => setMode("tags")}
-            >
-              Tags
-            </button>
+            {MODES.map((value) => (
+              <button
+                key={value}
+                ref={(el) => {
+                  tabRefs.current[value] = el;
+                }}
+                className={`${styles.modeButton}${mode === value ? ` ${styles.modeButtonActive}` : ""}`}
+                type="button"
+                role="tab"
+                id={`admin-tab-${value}`}
+                aria-controls={`admin-panel-${value}`}
+                aria-selected={mode === value}
+                tabIndex={mode === value ? 0 : -1}
+                onClick={() => setMode(value)}
+              >
+                {value === "palettes" ? "Palettes" : "Tags"}
+              </button>
+            ))}
           </div>
         </div>
 
-        {mode === "palettes" ? <PalettesView /> : <TagsView />}
+        <div
+          role="tabpanel"
+          id={`admin-panel-${mode}`}
+          aria-labelledby={`admin-tab-${mode}`}
+          tabIndex={-1}
+        >
+          {mode === "palettes" ? <PalettesView /> : <TagsView />}
+        </div>
       </section>
     </>
   );
