@@ -57,9 +57,6 @@ async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
-  await page.route("**/api/v1/favorites/keys", (r) =>
-    r.fulfill({ json: ["sea-breeze"] }),
-  );
   await page.route("**/api/v1/auth/verify*", (r) =>
     r.fulfill({ status: 400, json: { detail: "Invalid or expired verification link" } }),
   );
