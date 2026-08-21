@@ -131,7 +131,20 @@ Body:
 }
 ```
 
-Returns the created user without the password.
+Returns `202 Accepted` with a generic message:
+
+```json
+{ "message": "Check your email to finish setting up your account." }
+```
+
+The reply is identical whether or not the address already has an account, so the endpoint cannot
+be used to find out who is registered here — the same reason `/forgot-password` and
+`/resend-verification` answer generically. When the address is already taken nothing is created,
+and a message goes to that address explaining the attempt and how to reset the password.
+
+A **username** that is taken is still reported with `409`: it is a handle the person is choosing
+right now, and a silent failure would leave them believing they had registered when they had
+not.
 
 ---
 
@@ -237,20 +250,6 @@ All favorites endpoints require a logged-in user.
 
 ```http
 GET /api/v1/favorites
-```
-
----
-
-### Get current user's favorite keys
-
-```http
-GET /api/v1/favorites/keys
-```
-
-Returns palette slugs:
-
-```json
-["navy-orange", "eco"]
 ```
 
 ---

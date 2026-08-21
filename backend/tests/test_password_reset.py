@@ -5,13 +5,15 @@ from app.security import create_email_verification_token, create_password_reset_
 
 @pytest_asyncio.fixture
 async def user(client, db_session):
-    resp = await client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={"username": "resetuser", "email": "reset@test.com", "password": "oldpassword1"},
     )
-    # The ORM row, not the response body: reset tokens are minted from the user's
-    # token_version, so the token builder needs the model.
-    return await crud.get_user(db_session, resp.json()["id"])
+    # Looked up by address rather than read from the response: registration answers the same
+    # way whether or not the address was already taken, so it no longer returns the account.
+    # The ORM row is what the token builder needs anyway — reset tokens are minted from the
+    # user's token_version.
+    return await crud.get_user_by_email(db_session, "reset@test.com")
 
 
 async def test_forgot_password_generic_for_unknown_email(client):

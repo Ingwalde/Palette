@@ -61,7 +61,10 @@ export function LoginPage() {
       setRegPassword("");
       setLoginUsername(username);
       setLoginPassword("");
-      showToast("Account created. Check your email for a verification link.");
+      // Deliberately not "account created": the API answers the same way whether or not the
+      // address was already registered, so that nobody can use this form to ask who has an
+      // account here. A message claiming an account was made would give that back away.
+      showToast("Check your email to finish setting up your account.");
     } catch (error) {
       showToast(errorMessage(error), "error");
     } finally {

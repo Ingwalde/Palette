@@ -10,8 +10,11 @@ import type {
 
 const json = (body: unknown): RequestInit => ({ body: JSON.stringify(body) });
 
-export function register(payload: RegisterPayload): Promise<User> {
-  return request<User>("/auth/register", { method: "POST", ...json(payload) });
+// Registration answers with a generic message rather than the account, so that the reply reads
+// the same for an address that is already registered as for a new one. Nothing here is told
+// whether a user was created — which is the point.
+export function register(payload: RegisterPayload): Promise<MessageResponse> {
+  return request<MessageResponse>("/auth/register", { method: "POST", ...json(payload) });
 }
 
 export function login(payload: LoginPayload): Promise<User> {

@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .. import crud, schemas
 from ..config import settings
 from ..database import get_db
-from ..email_service import send_password_reset_email, send_verification_email
+from ..email_service import (
+    send_duplicate_registration_email,
+    send_password_reset_email,
+    send_verification_email,
+)
 from ..rate_limit import limiter
 from ..schemas import validate_password_strength
 from ..security import (
@@ -92,7 +96,14 @@ async def _issue_session(db: AsyncSession, user, response: Response):
     return user
 
 
-@router.post("/register", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
+_REGISTER_GENERIC_MESSAGE = "Check your email to finish setting up your account."
+
+
+@router.post(
+    "/register",
+    response_model=schemas.MessageResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 @limiter.limit("10/hour")
 async def register_user(
     request: Request,
@@ -100,17 +111,35 @@ async def register_user(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    """Begin registration.
+
+    The response says the same thing whether or not the address already has an account, because
+    saying otherwise turns this endpoint into a way to ask "does this person use Palette?".
+    /forgot-password and /resend-verification have always been careful about that, and v4.9.0
+    equalised the timing of login for the same reason; registration was the front door still
+    answering the question. Somebody probing a list of addresses now learns nothing from it.
+
+    A taken *username* is still reported, and deliberately so: it is a handle the person is
+    choosing right now, and a silent failure would leave them believing they had registered
+    while no account existed and no password of theirs would ever work. An email address has a
+    way out of that — the message sent below — and a username does not.
+    """
     if await crud.get_user_by_username(db, user_data.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username is already registered",
         )
 
-    if await crud.get_user_by_email(db, user_data.email):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Email is already registered",
+    existing = await crud.get_user_by_email(db, user_data.email)
+    if existing is not None:
+        # Spend the hash anyway. Skipping it would make this branch about 150 ms faster than a
+        # real registration, and a timing difference that reliable is the same disclosure the
+        # message above stopped making.
+        await hash_password_async(user_data.password)
+        background_tasks.add_task(
+            send_duplicate_registration_email, existing.email, existing.username
         )
+        return schemas.MessageResponse(message=_REGISTER_GENERIC_MESSAGE)
 
     # The checks above are advisory: they produce a helpful message for the common case, but
     # two registrations racing for the same name both pass them and one loses at the unique
@@ -125,15 +154,17 @@ async def register_user(
         )
     except IntegrityError as exc:
         await db.rollback()
+        # A lost race on the email must not answer differently from the check above, so this
+        # says only what the username branch already discloses.
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Username or email is already registered",
+            detail="Username is already registered",
         ) from exc
 
     token = create_email_verification_token(user.id)
     background_tasks.add_task(send_verification_email, user.email, user.username, token)
 
-    return user
+    return schemas.MessageResponse(message=_REGISTER_GENERIC_MESSAGE)
 
 
 @router.get("/verify", response_model=schemas.UserRead)

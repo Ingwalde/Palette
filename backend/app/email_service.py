@@ -100,3 +100,37 @@ def send_verification_email(to: str, username: str, token: str) -> None:
     </div>
     """
     send_email(to, subject, html)
+
+
+def send_duplicate_registration_email(to: str, username: str) -> None:
+    """Tell the owner that their address was used in a registration attempt.
+
+    This is what lets /register answer the same way for a known and an unknown address without
+    stranding anyone: the person who genuinely forgot they had signed up is told, in the one
+    channel that proves they own the address, that the account exists and how to get back into
+    it. Somebody probing the endpoint learns nothing, because the reply they see is identical
+    either way and the explanation goes to the address, not to them.
+    """
+    link = f"{settings.public_base_url}/forgot-password"
+    subject = "You already have a Palette account"
+    html = f"""
+    <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto;">
+      <h2>You already have an account</h2>
+      <p>
+        Hi {username}, someone just tried to sign up for Palette with this email address.
+        An account already exists for it, so nothing was created and nothing has changed.
+      </p>
+      <p>If that was you and you cannot get in, reset your password:</p>
+      <p>
+        <a href="{link}"
+           style="display: inline-block; padding: 12px 20px; background: #406eb7;
+                  color: #fff; text-decoration: none; border-radius: 8px;">
+          Reset your password
+        </a>
+      </p>
+      <p style="color: #999; font-size: 12px;">
+        If it was not you, you can ignore this email — your account is untouched.
+      </p>
+    </div>
+    """
+    send_email(to, subject, html)
