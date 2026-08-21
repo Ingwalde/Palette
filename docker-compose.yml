@@ -1,3 +1,17 @@
+# Memory limits, sized from what the services actually use rather than from a guess. Measured on
+# the production box while it was serving: backend 89 MiB, db 21 MiB, redis 3 MiB, nginx 1.4 MiB
+# — about 115 MiB of the 956 the machine has.
+#
+# The headroom above those numbers is where the risk lives. The backend is given the most because
+# Argon2 asks for 64 MiB per hash and two may run at once, so its real ceiling is roughly its
+# baseline plus 128 MiB. Postgres gets room for its buffers and sorts, because a database that
+# gets killed is the worst thing on this list.
+#
+# Why bother, when nothing is close to the limit today: without one, a single service can grow
+# until the kernel starts choosing victims for the whole machine, which is exactly the outage
+# this project has already had. With one, the service that misbehaves is the service that dies —
+# and it comes straight back, because of the restart policy above.
+
 # Every long-running service restarts unless it was stopped on purpose.
 #
 # Nothing declared a policy, so the containers ran with `restart=no`: a reboot of the host — or
@@ -11,6 +25,7 @@
 services:
   db:
     image: postgres:16-alpine
+    mem_limit: 256m
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-palette}
@@ -26,6 +41,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    mem_limit: 64m
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -35,6 +51,7 @@ services:
 
   backend:
     build: ./backend
+    mem_limit: 384m
     restart: unless-stopped
     env_file: backend/.env
     environment:
@@ -68,6 +85,7 @@ services:
     # In production the image is built in CI and pulled from GHCR (the ~1 GB VM must not build it);
     # `build:` is the local-dev fallback (`docker compose build`/`up --build` builds it locally).
     image: ghcr.io/ingwalde/palette-frontend:latest
+    mem_limit: 64m
     restart: unless-stopped
     build:
       context: ./frontend-react
