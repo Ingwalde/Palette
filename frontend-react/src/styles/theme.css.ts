@@ -1,43 +1,45 @@
-import { createGlobalTheme, createGlobalThemeContract } from "@vanilla-extract/css";
+import { createGlobalTheme, createThemeContract } from "@vanilla-extract/css";
 
 /**
  * Design tokens, typed.
  *
- * The custom property names are pinned to the ones the original stylesheets already use
- * (`--color-bg`, `--radius-md`, …) rather than letting vanilla-extract generate hashed ones.
- * That is what makes an incremental migration possible: every rule still living in
- * styles/vanilla/*.css keeps resolving `var(--color-bg)` untouched, while migrated code reads
- * the same value through `vars.color.bg` with autocomplete and a compile error if it is
- * renamed.
+ * The custom property names used to be pinned to the ones the original stylesheets wrote by
+ * hand (`--color-bg`, `--radius-md`, …), so that rules still living in `styles/vanilla/*.css`
+ * kept resolving them while migrated code read the same values through `vars.color.bg`. That
+ * note ended with the condition for finishing the job: once nothing global was left, the pinned
+ * names could go and vanilla-extract could generate its own.
  *
- * Once nothing global is left, the second argument can be dropped and the names hashed.
+ * Nothing global is left — there are no plain stylesheets under `src` any more, and no code
+ * refers to these properties by string. So the names are generated now, which means a token can
+ * be renamed or removed with the compiler as the only thing that has to agree, and two
+ * unrelated `--muted` definitions can never collide in the global custom-property namespace.
  */
-export const vars = createGlobalThemeContract({
+export const vars = createThemeContract({
   color: {
-    bg: "color-bg",
-    surface: "color-surface",
-    surfaceStrong: "color-surface-strong",
-    text: "color-text",
-    muted: "color-muted",
-    border: "color-border",
-    primary: "color-primary",
-    primarySoft: "color-primary-soft",
-    danger: "color-danger",
-    success: "color-success",
+    bg: null,
+    surface: null,
+    surfaceStrong: null,
+    text: null,
+    muted: null,
+    border: null,
+    primary: null,
+    primarySoft: null,
+    danger: null,
+    success: null,
   },
   shadow: {
-    soft: "shadow-soft",
+    soft: null,
   },
   radius: {
-    lg: "radius-lg",
-    md: "radius-md",
-    sm: "radius-sm",
+    lg: null,
+    md: null,
+    sm: null,
   },
   layout: {
-    container: "container",
+    container: null,
   },
   motion: {
-    transition: "transition",
+    transition: null,
   },
 });
 
