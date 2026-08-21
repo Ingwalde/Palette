@@ -22,12 +22,6 @@ describe("generateExportText", () => {
     expect(css).toContain("/* Sea Breeze */");
   });
 
-  it("emits SCSS variables", () => {
-    const scss = generateExportText([palette], "scss");
-    expect(scss).toContain("$sea-breeze-1: #006D77;");
-    expect(scss).toContain("// Sea Breeze");
-  });
-
   it("emits valid JSON round-tripping the palettes", () => {
     const json = generateExportText([palette], "json");
     expect(JSON.parse(json)).toEqual([palette]);

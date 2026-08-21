@@ -1,6 +1,6 @@
 import type { Palette } from "../types/api";
 
-export type ExportFormat = "css" | "scss" | "json" | "png";
+export type ExportFormat = "css" | "json" | "png";
 
 // ---- text generators ----------------------------------------------------------------
 
@@ -15,23 +15,11 @@ function generateCssVariables(palettes: Palette[]): string {
     .join("\n\n");
 }
 
-function generateScssVariables(palettes: Palette[]): string {
-  return palettes
-    .map((palette) => {
-      const variables = palette.colors
-        .map((color, index) => `$${palette.slug}-${index + 1}: ${color};`)
-        .join("\n");
-      return `// ${palette.name}\n${variables}`;
-    })
-    .join("\n\n");
-}
-
 export function generateExportText(
   palettes: Palette[],
   format: Exclude<ExportFormat, "png">,
 ): string {
   if (format === "json") return JSON.stringify(palettes, null, 2);
-  if (format === "scss") return generateScssVariables(palettes);
   return generateCssVariables(palettes);
 }
 

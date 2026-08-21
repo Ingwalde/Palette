@@ -23,13 +23,11 @@ const SOURCE_OPTIONS = [
 ];
 const FORMAT_OPTIONS = [
   { value: "css", label: "CSS variables" },
-  { value: "scss", label: "SCSS variables" },
   { value: "json", label: "JSON" },
   { value: "png", label: "PNG image" },
 ];
 const EXT: Record<Exclude<ExportFormat, "png">, string> = {
   css: "css",
-  scss: "scss",
   json: "json",
 };
 
@@ -137,8 +135,8 @@ export function ExportPage() {
         <p className={ui.eyebrow}>Developer tools</p>
         <h1>Export palettes</h1>
         <p>
-          Generate ready-to-use CSS variables, SCSS variables, JSON or a polished PNG
-          preview from backend data.
+          Generate ready-to-use CSS variables, JSON or a polished PNG preview from backend
+          data.
         </p>
       </section>
 

@@ -186,7 +186,7 @@ flowchart LR
 - Save/remove favorites tied to the logged-in user; account page with password change; admin-only
   navigation hidden from guests.
 - Admin palette manager with a dynamic HEX-row colour editor and chip-based tag editing.
-- Export a selected palette as CSS, SCSS, JSON or a standalone PNG palette card, with live preview.
+- Export a selected palette as CSS, JSON or a standalone PNG palette card, with live preview.
 - Accessible touches: skip-to-content link, visible focus states, ARIA-labelled controls, toggle
   state exposed via `aria-pressed`; audited by axe in CI. Works over the LAN via a dynamic API base.
 - Styling is **vanilla-extract** — every rule scoped to the component or page that owns it, with
