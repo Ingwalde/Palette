@@ -56,12 +56,17 @@ describe("Layout nav", () => {
     );
   });
 
-  it("shows the username, Logout and Admin link for a signed-in admin", async () => {
+  it("shows the account link and Admin link, but no header Logout, for a signed-in admin", async () => {
     vi.mocked(authApi.getCurrentUser).mockResolvedValue(admin);
     renderLayout();
-    expect(await screen.findByRole("link", { name: "admin" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Logout" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "admin" })).toHaveAttribute(
+      "href",
+      "/profile",
+    );
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin");
+    // Logout moved to the account page: no second one in the header, and no "Logout" beside a
+    // username that is itself "admin".
+    expect(screen.queryByRole("button", { name: "Logout" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
   });
 });
