@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Palette } from "../types/api";
 import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
 import { useAuth } from "../auth/AuthContext";
@@ -15,6 +15,10 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   const toggleFavorite = useToggleFavorite();
   const { showToast } = useToast();
   const [revealed, setRevealed] = useState<string | null>(null);
+  // Holds the 1800 ms reveal timer so unmounting mid-reveal clears it instead of leaving a
+  // setState to fire against a component that is gone.
+  const revealTimer = useRef<number>(0);
+  useEffect(() => () => window.clearTimeout(revealTimer.current), []);
 
   const contrast = useMemo(
     () => getPaletteContrastStatus(palette.colors),
@@ -41,7 +45,11 @@ export function PaletteCard({ palette }: { palette: Palette }) {
 
   const copyColor = async (color: string) => {
     setRevealed(color);
-    window.setTimeout(() => setRevealed((c) => (c === color ? null : c)), 1800);
+    window.clearTimeout(revealTimer.current);
+    revealTimer.current = window.setTimeout(
+      () => setRevealed((c) => (c === color ? null : c)),
+      1800,
+    );
     await copy(color, `${color} copied`);
   };
 
@@ -51,7 +59,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       return;
     }
     toggleFavorite.mutate(
-      { slug: palette.slug, saved },
+      { slug: palette.slug, saved, palette },
       {
         onSuccess: () =>
           showToast(saved ? "Removed from favorites" : "Added to favorites"),
