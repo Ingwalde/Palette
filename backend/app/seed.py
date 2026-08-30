@@ -41,12 +41,20 @@ DEFAULT_PURPOSE_TAGS = [
 
 
 async def seed_default_tags(db: AsyncSession) -> int:
-    from .crud import create_tag, get_tag_by_name
+    from sqlalchemy import select
+
+    from .crud import create_tag
+    from .models import Tag
     from .schemas import TagCreate
 
+    # One query for which of the defaults already exist, instead of a SELECT per name every
+    # startup. Only the missing ones are created.
+    existing = set(
+        (await db.execute(select(Tag.name).where(Tag.name.in_(DEFAULT_PURPOSE_TAGS)))).scalars()
+    )
     created = 0
     for name in DEFAULT_PURPOSE_TAGS:
-        if await get_tag_by_name(db, name) is None:
+        if name not in existing:
             await create_tag(db, TagCreate(name=name, kind="purpose"))
             created += 1
     return created

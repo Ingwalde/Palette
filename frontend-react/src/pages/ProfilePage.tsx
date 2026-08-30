@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
@@ -27,10 +27,18 @@ export function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [resending, setResending] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // A logout started from this page turns isAuthenticated false while the page is still mounted,
+  // which would otherwise trip the guard below and send the user to /login — racing the /
+  // the logout handler navigates to. The flag says "this transition is a deliberate sign-out,
+  // let the handler decide where to go", so only an arrival while already logged out redirects.
+  const signingOut = useRef(false);
 
-  // Not signed in → the profile page is not available.
+  // Not signed in → the profile page is not available. Redirect on arrival, not when the user
+  // themselves just signed out from here.
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) navigate("/login", { replace: true });
+    if (!isLoading && !isAuthenticated && !signingOut.current) {
+      navigate("/login", { replace: true });
+    }
   }, [isLoading, isAuthenticated, navigate]);
 
   if (!user) return null;
@@ -81,6 +89,7 @@ export function ProfilePage() {
   };
 
   const onLogout = async () => {
+    signingOut.current = true;
     await logout();
     showToast("Logged out");
     navigate("/");
@@ -97,6 +106,7 @@ export function ProfilePage() {
       danger: true,
     });
     if (!ok) return;
+    signingOut.current = true;
     await logoutEverywhere();
     showToast("Signed out on all devices");
     navigate("/");

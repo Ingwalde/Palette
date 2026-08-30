@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
   type ReactNode,
@@ -41,6 +42,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
   const resolveRef = useRef<((value: boolean | string | null) => void) | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const messageId = useId();
 
   const confirm = useCallback(
     (options: BaseOptions) =>
@@ -163,15 +166,27 @@ export function ModalProvider({ children }: { children: ReactNode }) {
             className={styles.dialog}
             role="dialog"
             aria-modal="true"
-            aria-label={state.title}
+            // Point at the visible heading rather than repeating it in an aria-label, and let the
+            // message describe. With aria-label={title} and the prompt input also carrying
+            // aria-label={title}, a screen reader announced the same words twice on the way in.
+            aria-labelledby={titleId}
+            aria-describedby={state.message ? messageId : undefined}
           >
-            <h2 className={styles.title}>{state.title}</h2>
-            {state.message && <p className={styles.message}>{state.message}</p>}
+            <h2 id={titleId} className={styles.title}>
+              {state.title}
+            </h2>
+            {state.message && (
+              <p id={messageId} className={styles.message}>
+                {state.message}
+              </p>
+            )}
             {state.isPrompt && (
               <input
                 className={`${ui.input} ${styles.input}`}
                 type="text"
-                aria-label={state.title}
+                // Labelled by the instruction if there is one, else the title — the input's own
+                // name, not a second copy of the dialog's.
+                aria-labelledby={state.message ? messageId : titleId}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 // Enter submits the prompt, the way it would in a form. Scoped to the input so

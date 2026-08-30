@@ -5,6 +5,7 @@ verification flow works end to end in local development without an email provide
 """
 
 import logging
+from html import escape
 
 import httpx
 
@@ -52,6 +53,9 @@ def build_reset_link(token: str) -> str:
 
 
 def send_password_reset_email(to: str, username: str, token: str) -> None:
+    # Escape here rather than trusting USERNAME_PATTERN in schemas.py: the guard against
+    # markup in an email belongs where the markup is built.
+    username = escape(username)
     link = build_reset_link(token)
     subject = "Reset your Palette password"
     html = f"""
@@ -78,6 +82,9 @@ def send_password_reset_email(to: str, username: str, token: str) -> None:
 
 
 def send_verification_email(to: str, username: str, token: str) -> None:
+    # Escape here rather than trusting USERNAME_PATTERN in schemas.py: the guard against
+    # markup in an email belongs where the markup is built.
+    username = escape(username)
     link = build_verification_link(token)
     subject = "Verify your Palette email"
     html = f"""
@@ -111,6 +118,9 @@ def send_duplicate_registration_email(to: str, username: str) -> None:
     it. Somebody probing the endpoint learns nothing, because the reply they see is identical
     either way and the explanation goes to the address, not to them.
     """
+    # Escape here rather than trusting USERNAME_PATTERN in schemas.py: the guard against
+    # markup in an email belongs where the markup is built.
+    username = escape(username)
     link = f"{settings.public_base_url}/forgot-password"
     subject = "You already have a Palette account"
     html = f"""

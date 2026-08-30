@@ -10,7 +10,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? `${styles.navLink} ${styles.navLinkActive}` : styles.navLink;
 
 export function Layout() {
-  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const location = useLocation();
 
@@ -63,18 +63,15 @@ export function Layout() {
             </NavLink>
           )}
           {isAuthenticated ? (
-            <>
-              <NavLink to="/profile" className={linkClass}>
-                {user?.username}
-              </NavLink>
-              <button
-                type="button"
-                className={`${styles.navLink} ${styles.navButton}`}
-                onClick={() => void logout()}
-              >
-                Logout
-              </button>
-            </>
+            // Just the account link. Logout used to sit here as well, next to it, which put two
+            // "log out" affordances on the same page whenever /profile was open (the account page
+            // has its own, alongside "log out everywhere") — and, for the default admin whose
+            // username is literally "admin", a second "admin"-reading item beside the Admin link.
+            // Logging out now lives with the rest of the account actions, where it is reached
+            // through this link.
+            <NavLink to="/profile" className={linkClass}>
+              {user?.username}
+            </NavLink>
           ) : (
             <NavLink
               to="/login"
@@ -103,7 +100,7 @@ export function Layout() {
       <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>
           <div className={styles.footerContent}>
-            <p className={styles.footerEyebrow}>Palette v4.9.2</p>
+            <p className={styles.footerEyebrow}>Palette v4.9.3</p>
             <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.

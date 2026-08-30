@@ -2,6 +2,7 @@ import hmac
 import logging
 from contextlib import asynccontextmanager
 from http import HTTPStatus
+from typing import cast
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -9,7 +10,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
@@ -24,16 +24,23 @@ from .security import ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE
 from .seed import seed_default_admin_user, seed_default_palettes, seed_default_tags
 
 # Mutating requests must echo the csrf_token cookie in the X-CSRF-Token header (double-submit
+# The version prefix every router is mounted under. Named once so the CSRF exemptions below and
+# the include_router calls cannot drift: hardcoding "/api/v1/auth/login" in one place and
+# mounting at another prefix would silently make the exemption miss, and the login it protects
+# would start answering 403 with no obvious cause.
+API_PREFIX = "/api/v1"
+
 # CSRF). The auth-bootstrap endpoints run before a session/csrf cookie exists, so they are exempt.
 _CSRF_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 _CSRF_EXEMPT_PATHS = frozenset(
-    {
-        "/api/v1/auth/login",
-        "/api/v1/auth/register",
-        "/api/v1/auth/resend-verification",
-        "/api/v1/auth/forgot-password",
-        "/api/v1/auth/reset-password",
-    }
+    f"{API_PREFIX}{suffix}"
+    for suffix in (
+        "/auth/login",
+        "/auth/register",
+        "/auth/resend-verification",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+    )
 )
 
 # Configure application logging once at import so every module's getLogger(...) shares a
@@ -72,11 +79,15 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    # Close the reused readiness Redis client if one was ever opened.
+    if _readiness_redis is not None:
+        await _readiness_redis.aclose()
+
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.9.2 with auth, favorites, PostgreSQL and Docker.",
-    version="4.9.2",
+    description="Backend API for Palette v4.9.3 with auth, favorites, PostgreSQL and Docker.",
+    version="4.9.3",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -84,8 +95,28 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
+
+
+def _rate_limited_handler(request: Request, exc: Exception) -> JSONResponse:
+    # slowapi's default handler answers with a plain {"error": ...} body — the one place in the
+    # API that did not speak problem+json, so a client parsing errors uniformly hit a shape it
+    # did not know on the response it most needs to read. Same 429 and the Retry-After slowapi
+    # sets, in the format every other error uses.
+    #
+    # Typed `exc: Exception` (and narrowed here) rather than `RateLimitExceeded`: Starlette's
+    # add_exception_handler expects the broad signature, and the two mypy versions in play
+    # disagree about whether the narrow one needs a type-ignore — the broad type satisfies both.
+    limit = cast(RateLimitExceeded, exc)
+    response = _problem(
+        HTTPStatus.TOO_MANY_REQUESTS,
+        f"Rate limit exceeded: {limit.detail}",
+        title="Too Many Requests",
+    )
+    return request.app.state.limiter._inject_headers(response, request.state.view_rate_limit)
+
+
+app.add_exception_handler(RateLimitExceeded, _rate_limited_handler)
 
 
 @app.middleware("http")
@@ -159,10 +190,10 @@ app.add_middleware(
     expose_headers=["X-Total-Count"],
 )
 
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(palettes.router, prefix="/api/v1")
-app.include_router(favorites.router, prefix="/api/v1")
-app.include_router(tags.router, prefix="/api/v1")
+app.include_router(auth.router, prefix=API_PREFIX)
+app.include_router(palettes.router, prefix=API_PREFIX)
+app.include_router(favorites.router, prefix=API_PREFIX)
+app.include_router(tags.router, prefix=API_PREFIX)
 
 
 def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse:
@@ -179,8 +210,11 @@ def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse
     )
 
 
+# async, like every other handler: a plain `def` here is run in the threadpool, so a hot error
+# path (a burst of 401s, a validation storm) borrows worker threads for work that only builds a
+# small JSON body. These do no blocking I/O.
 @app.exception_handler(StarletteHTTPException)
-def _http_exception_handler(request, exc: StarletteHTTPException) -> JSONResponse:
+async def _http_exception_handler(request, exc: StarletteHTTPException) -> JSONResponse:
     response = _problem(exc.status_code, exc.detail)
     if exc.headers:  # preserve e.g. WWW-Authenticate on 401
         response.headers.update(exc.headers)
@@ -188,24 +222,40 @@ def _http_exception_handler(request, exc: StarletteHTTPException) -> JSONRespons
 
 
 @app.exception_handler(RequestValidationError)
-def _validation_exception_handler(request, exc: RequestValidationError) -> JSONResponse:
+async def _validation_exception_handler(request, exc: RequestValidationError) -> JSONResponse:
     return _problem(HTTPStatus.UNPROCESSABLE_ENTITY, exc.errors(), title="Validation Error")
 
 
 @app.get("/")
-def root():
+async def root():
     return {
         "name": "Palette API",
-        "version": "4.9.2",
-        "docs": "/api/docs",
+        "version": "4.9.3",
+        # Only advertise the docs where they exist. With enable_api_docs off — the production
+        # default — /api/docs is a 404, so linking to it sent anyone following the root response
+        # to a dead end.
+        "docs": "/api/docs" if settings.enable_api_docs else None,
         "health": "/health",
     }
 
 
 @app.get("/health")
-def health_check():
+async def health_check():
     # Liveness: the process is up and serving.
     return {"status": "ok"}
+
+
+_readiness_redis = None
+
+
+def _get_readiness_redis():
+    """A lazily-created, reused Redis client for the readiness probe."""
+    global _readiness_redis
+    if _readiness_redis is None:
+        import redis.asyncio as redis_asyncio
+
+        _readiness_redis = redis_asyncio.from_url(settings.redis_url)
+    return _readiness_redis
 
 
 @app.get("/health/ready")
@@ -224,11 +274,11 @@ async def readiness_check():
 
     if settings.redis_url.startswith("redis"):
         try:
-            import redis.asyncio as redis_asyncio
-
-            client = redis_asyncio.from_url(settings.redis_url)
-            await client.ping()
-            await client.aclose()
+            # One pooled client, reused across probes, rather than a fresh connection every
+            # thirty seconds for the container healthcheck. ping() still reconnects and so still
+            # detects a Redis that has gone down — the probe loses nothing, the connection churn
+            # goes away.
+            await _get_readiness_redis().ping()
             checks["redis"] = "ok"
         except Exception:
             checks["redis"] = "error"

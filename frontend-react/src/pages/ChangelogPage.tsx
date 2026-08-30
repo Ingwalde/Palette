@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v4.9.3",
+    title: "A second pass over the review",
+    items: [
+      "Signed in as an admin, the header no longer names the account three times — the redundant Logout button is gone from the navigation (it stays on the profile page).",
+      "Saving a palette fills the heart the instant you click, rolling back only if the request fails; and a dialog now names itself properly to a screen reader.",
+      "Under the hood: emails escape the username before putting it in HTML, and rate-limit rejections speak the same error format as everything else.",
+    ],
+  },
+  {
     version: "v4.9.2",
     title: "The decisions the review left open",
     items: [

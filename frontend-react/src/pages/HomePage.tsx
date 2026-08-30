@@ -66,12 +66,12 @@ export function HomePage() {
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Palette v4.9.2 · Update!</p>
+          <p className={ui.eyebrow}>Palette v4.9.3 · Update!</p>
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. This release settles what the review
-            left open: signing up no longer reveals who already has an account, and the
-            admin tabs answer the arrow keys.
+            Search, filter, save and export palettes. Saving one now fills the heart the
+            instant you click, and the account menu no longer repeats itself in the
+            header.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">
