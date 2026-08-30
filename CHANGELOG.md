@@ -1,5 +1,51 @@
 # Changelog
 
+## v4.9.3 — A second pass over the review
+
+A round of small, deliberate corrections found by reading the code again after v4.9.2 shipped —
+a visible header bug, and a batch of hardening underneath it.
+
+### Fixed
+
+- **The header stopped repeating the account for an admin.** Signed in as the default `admin`,
+  the navigation showed the username, an **Admin** link, and a **Logout** button all at once — the
+  same account named three ways. Logout has always lived on the profile page too, so it is gone
+  from the header; the account link now stands on its own next to the Admin link, and the stutter
+  is gone.
+
+### Frontend
+
+- **Saving a palette fills the heart the instant you click.** The favorite toggle now writes the
+  change to the cache first and reconciles with the server afterwards, rolling back if the request
+  fails — so the card stops waiting on a round trip to admit it was saved.
+- **Signing out no longer races itself off the profile page.** Tearing down a session now clears
+  only the query cache that belonged to the session, leaving the auth check settled, and the
+  profile page knows a deliberate sign-out from a session that simply expired — so a logout lands
+  on the home page rather than being bounced to `/login`.
+- **A dialog names itself to a screen reader.** The confirmation modal now wires its title and
+  message with `aria-labelledby`/`aria-describedby` from a generated id, instead of a duplicated
+  `aria-label`, so the accessible name and description come from the text actually on screen.
+- The palette list holds for a minute before it is considered stale, and a card that unmounts
+  mid-reveal no longer leaves a timer running.
+
+### Security
+
+- **Emails escape the username before putting it in HTML.** The reset, verification and
+  duplicate-registration mails build HTML with the account username in it. The guard against
+  markup now lives where the markup is built, rather than trusting a validation rule in another
+  module to have kept the value clean.
+
+### Backend
+
+- **Rate-limit rejections speak `problem+json` like every other error.** A 429 was the one
+  response in the API that answered with a plain `{"error": ...}` body; it now uses the same
+  RFC 7807 shape, and keeps the `Retry-After` header.
+- The API prefix `/api/v1` is named once and reused by both the router mounts and the CSRF
+  exemptions, so the two cannot drift apart. Seeding the default tags asks one query which already
+  exist instead of one per tag, the migration's sync engine is created and disposed per run rather
+  than held open for the process lifetime, and the readiness probe reuses one pooled Redis client
+  instead of opening a fresh connection every thirty seconds.
+
 ## v4.9.2 — The decisions the review left open
 
 v4.9.1 ended with five findings that were judgement calls rather than defects: things worth

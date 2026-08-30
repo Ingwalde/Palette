@@ -1,4 +1,4 @@
-# Palette v4.9.2 — Full-Stack Color Palette App
+# Palette v4.9.3 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -368,7 +368,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v4.9.2
+v4.9.3
 ```
 
 ## License

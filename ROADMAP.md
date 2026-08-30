@@ -174,6 +174,28 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v4.9.3 — Second Review Pass
+
+Status: completed.
+
+- Header no longer names an admin account three times: the redundant Logout button is gone from
+  the navigation (it stays on the profile page).
+- Favorite toggle is optimistic (instant heart, rollback on failure); sign-out no longer races
+  the profile-page guard to `/login`; the confirmation modal names itself with
+  `aria-labelledby`/`aria-describedby`.
+- Emails HTML-escape the username; rate-limit rejections use `problem+json` with `Retry-After`;
+  the `/api/v1` prefix is named once for router mounts and CSRF exemptions; tag seeding is one
+  query; the migration sync engine and the readiness Redis client are managed rather than leaked.
+
+## v4.9.2 — The Decisions the Review Left Open
+
+Status: completed.
+
+- Registration no longer discloses whether an email is already in use (same reply and timing
+  either way; a "you already have an account" mail is sent instead).
+- Every Compose service has a measured `mem_limit`; the admin mode switch is a real WAI-ARIA
+  tabs control; the unused `GET /api/v1/favorites/keys` endpoint was removed.
+
 ## v4.9.1 — Review Remediation
 
 Status: completed.
