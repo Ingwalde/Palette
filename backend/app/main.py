@@ -2,6 +2,7 @@ import hmac
 import logging
 from contextlib import asynccontextmanager
 from http import HTTPStatus
+from typing import cast
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -97,14 +98,19 @@ app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
 
-def _rate_limited_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+def _rate_limited_handler(request: Request, exc: Exception) -> JSONResponse:
     # slowapi's default handler answers with a plain {"error": ...} body — the one place in the
     # API that did not speak problem+json, so a client parsing errors uniformly hit a shape it
     # did not know on the response it most needs to read. Same 429 and the Retry-After slowapi
     # sets, in the format every other error uses.
+    #
+    # Typed `exc: Exception` (and narrowed here) rather than `RateLimitExceeded`: Starlette's
+    # add_exception_handler expects the broad signature, and the two mypy versions in play
+    # disagree about whether the narrow one needs a type-ignore — the broad type satisfies both.
+    limit = cast(RateLimitExceeded, exc)
     response = _problem(
         HTTPStatus.TOO_MANY_REQUESTS,
-        f"Rate limit exceeded: {exc.detail}",
+        f"Rate limit exceeded: {limit.detail}",
         title="Too Many Requests",
     )
     return request.app.state.limiter._inject_headers(response, request.state.view_rate_limit)

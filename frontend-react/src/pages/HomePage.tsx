@@ -70,7 +70,8 @@ export function HomePage() {
           <h1 id="hero-title">Find a color palette for your next design project.</h1>
           <p className={ui.heroText}>
             Search, filter, save and export palettes. Saving one now fills the heart the
-            instant you click, and the account menu no longer repeats itself in the header.
+            instant you click, and the account menu no longer repeats itself in the
+            header.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">
