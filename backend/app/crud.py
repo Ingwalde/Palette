@@ -614,7 +614,14 @@ async def purge_expired_refresh_tokens(db: AsyncSession) -> int:
 
 
 async def revoke_all_refresh_tokens(db: AsyncSession, user_id: int) -> None:
-    """Invalidate every refresh token for a user — used after a password reset so any
-    existing sessions are logged out."""
+    """Invalidate every refresh token for a user — used after a password reset or a
+    logout-everywhere so all existing sessions are ended.
+
+    This *deletes* the rows, where revoke_refresh_token flags a single one `revoked=True`, and
+    the difference is deliberate. A single logout keeps the revoked row so reuse detection can
+    still recognise the token if it comes back. A wholesale reset already bumps token_version,
+    which is what actually ends the sessions; the rows are then only storage, so they go. The
+    names both say "revoke" because both end the session — the storage choice differs underneath.
+    """
     await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user_id))
     await db.commit()

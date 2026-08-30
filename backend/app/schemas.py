@@ -81,19 +81,28 @@ def normalize_hex_colors(colors: list[str]) -> list[str]:
     return normalized
 
 
+def _clean_tag(tag: str) -> str:
+    return tag.strip().lower().replace("#", "")
+
+
 def normalize_tag(tag: str) -> str:
-    cleaned = tag.strip().lower().replace("#", "")
+    """Clean a single tag, rejecting an empty one.
+
+    Raises rather than returns "" because this is the tag *being named* — creating or renaming a
+    tag to nothing is an error the caller should see, not a silent no-op."""
+    cleaned = _clean_tag(tag)
     if not cleaned:
         raise ValueError("Tag cannot be empty")
     return cleaned
 
 
 def normalize_tags(tags: list[str]) -> list[str]:
-    cleaned = []
-    for tag in tags:
-        cleaned_tag = tag.strip().lower().replace("#", "")
-        if cleaned_tag:
-            cleaned.append(cleaned_tag)
+    """Clean a palette's tag list, dropping blanks and de-duplicating.
+
+    Drops rather than raises, on purpose and unlike normalize_tag: a blank entry in a list is
+    noise to skip, not a request to reject the whole palette. The two share _clean_tag so the
+    cleaning itself cannot drift between them."""
+    cleaned = [c for tag in tags if (c := _clean_tag(tag))]
     return list(dict.fromkeys(cleaned))
 
 
