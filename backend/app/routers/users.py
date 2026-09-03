@@ -8,9 +8,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/{handle}/palettes/{slug}", response_model=schemas.PaletteRead)
-async def read_palette_for_owner(
-    handle: str, slug: str, db: AsyncSession = Depends(get_db)
-):
+async def read_palette_for_owner(handle: str, slug: str, db: AsyncSession = Depends(get_db)):
     """A single palette scoped by its owner's handle — the shape the frontend links to as
     /u/:handle/:slug. A slug that exists under a different owner 404s rather than leaking across
     handles."""

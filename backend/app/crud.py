@@ -64,9 +64,7 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
     return (await db.execute(stmt)).scalars().first()
 
 
-async def get_palette_for_owner(
-    db: AsyncSession, handle: str, slug: str
-) -> models.Palette | None:
+async def get_palette_for_owner(db: AsyncSession, handle: str, slug: str) -> models.Palette | None:
     """Resolve the palette at /u/:handle/:slug. Slugs are globally unique for now, so the lookup
     is by slug; the handle is verified against the owner so a wrong handle 404s rather than
     serving another owner's palette under it."""
