@@ -5,6 +5,12 @@ export function listPalettes(params: PaletteListParams = {}): Promise<PaletteLis
   return request<PaletteList>(`/palettes${toQuery({ ...params })}`);
 }
 
+export function getPalette(handle: string, slug: string): Promise<Palette> {
+  return request<Palette>(
+    `/users/${encodeURIComponent(handle)}/palettes/${encodeURIComponent(slug)}`,
+  );
+}
+
 export interface PalettePayload {
   name: string;
   description: string;

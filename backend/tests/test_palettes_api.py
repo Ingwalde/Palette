@@ -169,3 +169,31 @@ async def test_admin_delete_palette_that_someone_favorited(admin_client, admin_c
 
     await _login(admin_client, "fan")
     assert (await admin_client.get("/api/v1/favorites")).json() == []
+
+
+async def test_list_includes_owner_handle(client, seeded):
+    # Every palette carries the owner handle the frontend builds its /u/:handle/:slug URL from;
+    # a palette with no owner falls back to the curator handle.
+    body = (await client.get("/api/v1/palettes")).json()
+    assert all(p["owner_handle"] == "palette" for p in body["items"])
+
+
+async def test_read_palette_by_owner_handle(client, seeded):
+    slug = (await client.get("/api/v1/palettes")).json()["items"][0]["slug"]
+    resp = await client.get(f"/api/v1/users/palette/palettes/{slug}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["slug"] == slug
+    assert body["owner_handle"] == "palette"
+
+
+async def test_read_palette_wrong_handle_is_404(client, seeded):
+    # A real slug under the wrong handle must not leak across owners.
+    slug = (await client.get("/api/v1/palettes")).json()["items"][0]["slug"]
+    resp = await client.get(f"/api/v1/users/nobody/palettes/{slug}")
+    assert resp.status_code == 404
+
+
+async def test_read_palette_unknown_slug_is_404(client):
+    resp = await client.get("/api/v1/users/palette/palettes/does-not-exist")
+    assert resp.status_code == 404

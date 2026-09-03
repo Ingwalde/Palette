@@ -12,9 +12,16 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+# The reserved account that owns the seed catalogue, so every palette has an owner handle for its
+# /u/:handle/:slug URL — the seed palettes predate user ownership and would otherwise have none.
+# A palette with no owner at all (a just-created admin one before the startup backfill runs) still
+# resolves here, so the URL never breaks.
+CURATOR_HANDLE = "palette"
+CURATOR_EMAIL = "palette@palettes-app.com"
 
 
 def _utcnow() -> datetime:
@@ -75,6 +82,13 @@ class Palette(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     colors: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     tags: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    # Nullable so the column can be added to an existing table without a default row-rewrite; the
+    # startup backfill then assigns every ownerless palette to the curator account. Loaded with
+    # selectin so `owner_handle` works under async without a lazy load on the request path.
+    owner_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    owner: Mapped["User | None"] = relationship("User", lazy="selectin")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -84,6 +98,12 @@ class Palette(Base):
         onupdate=_utcnow,
         nullable=False,
     )
+
+    @property
+    def owner_handle(self) -> str:
+        """The handle for this palette's /u/:handle/:slug URL — the owner's username, or the
+        curator handle when it has no owner yet."""
+        return self.owner.username if self.owner is not None else CURATOR_HANDLE
 
 
 class Tag(Base):

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Link, useLocation } from "react-router-dom";
 import type { Palette } from "../types/api";
+import { palettePath } from "../lib/palettePath";
 import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
@@ -10,6 +12,7 @@ import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
@@ -76,7 +79,15 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     <article className={styles.card} data-palette-id={palette.slug}>
       <div className={styles.header}>
         <div>
-          <h3 className={styles.title}>{palette.name}</h3>
+          <h3 className={styles.title}>
+            <Link
+              to={palettePath(palette)}
+              state={{ from: location.search }}
+              className={styles.titleLink}
+            >
+              {palette.name}
+            </Link>
+          </h3>
           <p className={styles.meta}>{palette.description}</p>
         </div>
         <button

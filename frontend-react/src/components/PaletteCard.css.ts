@@ -49,6 +49,15 @@ export const title = style({
   letterSpacing: "-0.04em",
 });
 
+export const titleLink = style({
+  color: "inherit",
+  textDecoration: "none",
+  transition: vars.motion.transition,
+  ":hover": { color: vars.color.muted },
+  // A visible target for keyboard focus that does not shift layout.
+  ":focus-visible": { textDecoration: "underline" },
+});
+
 export const meta = style({
   margin: 0,
   color: vars.color.muted,

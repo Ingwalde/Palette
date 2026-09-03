@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
@@ -20,6 +21,7 @@ vi.mock("../api/auth", () => ({
 const palette: Palette = {
   id: 1,
   slug: "sea-breeze",
+  owner_handle: "palette",
   name: "Sea Breeze",
   description: "Fresh blue and green.",
   colors: ["#000000", "#FFFFFF"],
@@ -34,7 +36,9 @@ function renderCard() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <PaletteCard palette={palette} />
+          <MemoryRouter>
+            <PaletteCard palette={palette} />
+          </MemoryRouter>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,

@@ -60,6 +60,20 @@ async def seed_default_tags(db: AsyncSession) -> int:
     return created
 
 
+async def seed_curator_and_backfill(db: AsyncSession) -> int:
+    """Ensure the curator account exists and owns every ownerless palette, so each palette has a
+    handle for its /u/:handle/:slug URL. Returns the number of palettes adopted this run."""
+    import secrets
+
+    from .crud import backfill_palette_owner, get_or_create_curator
+    from .security import hash_password
+
+    # A throwaway hash: the curator is a system account no one signs in as, so the password is a
+    # value nobody knows and the hash is only ever written on first creation.
+    curator = await get_or_create_curator(db, hash_password(secrets.token_urlsafe(32)))
+    return await backfill_palette_owner(db, curator.id)
+
+
 async def seed_default_admin_user(db: AsyncSession) -> bool:
     from .config import settings
     from .crud import create_admin_if_missing

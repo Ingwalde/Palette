@@ -25,6 +25,7 @@ const regular: User = { ...admin, id: 2, username: "bob", is_admin: false };
 const palette: Palette = {
   id: 7,
   slug: "nordic-frost",
+  owner_handle: "palette",
   name: "Nordic Frost",
   description: "Clean.",
   colors: ["#26323D", "#F0F3F5"],

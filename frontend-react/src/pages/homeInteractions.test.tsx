@@ -15,6 +15,7 @@ const list = {
     {
       id: 1,
       slug: "sea-breeze",
+      owner_handle: "palette",
       name: "Sea Breeze",
       description: "Fresh.",
       colors: ["#000000", "#FFFFFF"],
@@ -114,12 +115,13 @@ describe("HomePage interactions", () => {
     );
   });
 
-  it("selects a palette name into the search when clicking Random palette", async () => {
+  it("opens a random palette's page when clicking Random palette", async () => {
     const user = userEvent.setup();
     renderHome();
-    await screen.findByRole("heading", { name: "Sea Breeze" });
+    await screen.findByRole("link", { name: "Sea Breeze" });
     await user.click(screen.getByRole("button", { name: "Random palette" }));
-    expect(screen.getByPlaceholderText(/Search by name/i)).toHaveValue("Sea Breeze");
+    // The single fixture palette is owned by the curator, so its page is /u/palette/sea-breeze.
+    expect(screen.getByTestId("loc")).toHaveTextContent("/u/palette/sea-breeze");
   });
 
   it("shows an API-error state when the backend fails", async () => {
