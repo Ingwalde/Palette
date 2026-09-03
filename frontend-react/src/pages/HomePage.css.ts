@@ -108,3 +108,9 @@ export const resultCount = style({
 export const palettesAnchor = style({
   scrollMarginTop: "100px",
 });
+
+export const loadMore = style({
+  display: "flex",
+  justifyContent: "center",
+  marginTop: "28px",
+});

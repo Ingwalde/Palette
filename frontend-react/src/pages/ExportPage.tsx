@@ -31,18 +31,6 @@ const EXT: Record<Exclude<ExportFormat, "png">, string> = {
   json: "json",
 };
 
-function matches(palette: Palette, query: string): boolean {
-  const haystack = [
-    palette.name,
-    palette.slug,
-    palette.description,
-    ...(palette.tags ?? []),
-  ]
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes(query);
-}
-
 export function ExportPage() {
   const [source, setSource] = useState("single");
   const [format, setFormat] = useState<ExportFormat>("css");
@@ -51,26 +39,22 @@ export function ExportPage() {
   const { showToast } = useToast();
 
   const singleMode = source === "single";
-  const query = useDebounce(searchInput.trim().toLowerCase(), 180);
+  const query = useDebounce(searchInput.trim(), 180);
 
-  const { data: paletteList } = usePalettes({ limit: 200 });
-  const allPalettes = useMemo(() => paletteList?.items ?? [], [paletteList]);
+  // Search server-side rather than filtering a first-200 slice on the client: a match that sat
+  // beyond the slice used to report "no palettes found". An empty query shows a small sample.
+  const { data: paletteList } = usePalettes({
+    search: query || undefined,
+    limit: query ? 8 : 3,
+  });
+  const pickerResults = useMemo(() => paletteList?.items ?? [], [paletteList]);
   const { data: favorites } = useFavorites();
-
-  // Stable random sample shown when the picker search is empty.
-  const defaultSample = useMemo(
-    () => [...allPalettes].sort(() => Math.random() - 0.5).slice(0, 3),
-    [allPalettes],
-  );
-  const pickerResults = query
-    ? allPalettes.filter((p) => matches(p, query)).slice(0, 8)
-    : defaultSample;
 
   const selectedPalettes: Palette[] = useMemo(() => {
     if (source === "favorites") return favorites ?? [];
-    const found = allPalettes.find((p) => p.slug === selectedSlug);
+    const found = pickerResults.find((p) => p.slug === selectedSlug);
     return found ? [found] : [];
-  }, [source, favorites, allPalettes, selectedSlug]);
+  }, [source, favorites, pickerResults, selectedSlug]);
 
   const isPng = format === "png";
 
@@ -92,7 +76,7 @@ export function ExportPage() {
     [isPng, selectedPalettes, singleMode],
   );
 
-  const selectedName = allPalettes.find((p) => p.slug === selectedSlug)?.name;
+  const selectedName = pickerResults.find((p) => p.slug === selectedSlug)?.name;
   const pickerStatus = selectedName
     ? `Selected: ${selectedName}`
     : "Choose one palette to export.";

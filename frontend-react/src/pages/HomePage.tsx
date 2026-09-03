@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { usePalettes, useTags } from "../api/hooks";
+import { usePalettesInfinite, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
@@ -119,13 +119,14 @@ export function HomePage() {
     [tags],
   );
 
-  const { data, isLoading, isError } = usePalettes({
-    search: q || undefined,
-    tag: tag === "all" ? undefined : tag,
-    sort,
-    limit: 100,
-  });
-  const palettes = data?.items ?? [];
+  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    usePalettesInfinite({
+      search: q || undefined,
+      tag: tag === "all" ? undefined : tag,
+      sort,
+    });
+  const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
+  const total = data?.pages[0]?.total ?? 0;
 
   // Random opens a random palette's page (it used to write a name into the search box, which was
   // not a random palette but a filter over the already-filtered set). The current query string
@@ -242,7 +243,7 @@ export function HomePage() {
               ? "Loading..."
               : isError
                 ? "API error"
-                : `${palettes.length} palette${palettes.length === 1 ? "" : "s"}`}
+                : `Showing ${palettes.length} of ${total} palette${total === 1 ? "" : "s"}`}
           </p>
         </div>
 
@@ -266,6 +267,19 @@ export function HomePage() {
             palettes.map((palette) => <PaletteCard key={palette.id} palette={palette} />)
           )}
         </div>
+
+        {hasNextPage && (
+          <div className={styles.loadMore}>
+            <button
+              type="button"
+              className={buttonClass("secondary")}
+              onClick={() => void fetchNextPage()}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage ? "Loading…" : "Load more"}
+            </button>
+          </div>
+        )}
       </section>
     </>
   );

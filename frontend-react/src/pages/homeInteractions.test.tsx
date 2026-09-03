@@ -130,4 +130,39 @@ describe("HomePage interactions", () => {
     expect(await screen.findByText("API error")).toBeInTheDocument();
     expect(screen.getByText(/Could not reach the backend/i)).toBeInTheDocument();
   });
+
+  it("loads a second page and then hides the button", async () => {
+    const user = userEvent.setup();
+    const page = (count: number, offset: number) => ({
+      items: Array.from({ length: count }, (_, i) => ({
+        ...list.items[0],
+        id: offset + i,
+        slug: `p-${offset + i}`,
+        name: `Palette ${offset + i}`,
+      })),
+      total: 30,
+      limit: 24,
+      offset,
+    });
+    vi.mocked(palettesApi.listPalettes).mockImplementation((params) =>
+      Promise.resolve((params?.offset ?? 0) === 0 ? page(24, 0) : page(6, 24)),
+    );
+
+    renderHome();
+    const button = await screen.findByRole("button", { name: "Load more" });
+    expect(screen.getByText("Showing 24 of 30 palettes")).toBeInTheDocument();
+
+    await user.click(button);
+    await waitFor(() =>
+      expect(screen.getByText("Showing 30 of 30 palettes")).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole("button", { name: /Load more/i })).not.toBeInTheDocument();
+  });
+
+  it("shows no Load more when the first page covers everything", async () => {
+    renderHome();
+    await screen.findByRole("link", { name: "Sea Breeze" });
+    expect(screen.queryByRole("button", { name: /Load more/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Showing 1 of 1 palette")).toBeInTheDocument();
+  });
 });
