@@ -46,6 +46,9 @@ const VerifyPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
+const PalettePage = lazy(() =>
+  import("./pages/PalettePage").then((m) => ({ default: m.PalettePage })),
+);
 
 export function App() {
   return (
@@ -63,6 +66,7 @@ export function App() {
 
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="u/:handle/:slug" element={<PalettePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="export" element={<ExportPage />} />

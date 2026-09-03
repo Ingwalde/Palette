@@ -9,6 +9,7 @@ const palette: Palette = {
   description: "Fresh.",
   colors: ["#006D77", "#83C5BE"],
   tags: ["cold"],
+  owner_handle: "palette",
   created_at: "",
   updated_at: "",
 };

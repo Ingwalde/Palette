@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, Select, Text, delete, func, or_, select, true
+from sqlalchemy import CursorResult, Select, Text, delete, func, or_, select, true, update
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -62,6 +62,18 @@ async def get_palette(db: AsyncSession, palette_id: int) -> models.Palette | Non
 async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | None:
     stmt = select(models.Palette).where(models.Palette.slug == slug)
     return (await db.execute(stmt)).scalars().first()
+
+
+async def get_palette_for_owner(
+    db: AsyncSession, handle: str, slug: str
+) -> models.Palette | None:
+    """Resolve the palette at /u/:handle/:slug. Slugs are globally unique for now, so the lookup
+    is by slug; the handle is verified against the owner so a wrong handle 404s rather than
+    serving another owner's palette under it."""
+    palette = await get_palette_by_slug(db, slug)
+    if palette is None or palette.owner_handle != handle:
+        return None
+    return palette
 
 
 def _like_pattern(search: str) -> str:
@@ -467,6 +479,41 @@ async def create_admin_if_missing(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def get_or_create_curator(db: AsyncSession, password_hash: str) -> models.User:
+    """The reserved account that owns the seed catalogue, so every palette has an owner handle
+    for its URL. A system account: the password hash is a throwaway random value (nobody signs
+    in as it), it is not an admin, and it is created once."""
+    curator = await get_user_by_username(db, models.CURATOR_HANDLE)
+    if curator is None:
+        curator = models.User(
+            username=models.CURATOR_HANDLE,
+            email=models.CURATOR_EMAIL,
+            password_hash=password_hash,
+            is_admin=False,
+            email_verified=True,
+        )
+        db.add(curator)
+        await db.commit()
+        await db.refresh(curator)
+    return curator
+
+
+async def backfill_palette_owner(db: AsyncSession, owner_id: int) -> int:
+    """Assign every ownerless palette to `owner_id`. Idempotent: once nothing is ownerless it
+    updates zero rows. Run at startup after the curator exists."""
+    result = cast(
+        CursorResult[Any],
+        await db.execute(
+            update(models.Palette)
+            .where(models.Palette.owner_id.is_(None))
+            .values(owner_id=owner_id)
+        ),
+    )
+    if result.rowcount:
+        await db.commit()
+    return result.rowcount or 0
 
 
 async def get_user_favorite_palettes(db: AsyncSession, user: models.User) -> list[models.Palette]:

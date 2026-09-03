@@ -25,6 +25,7 @@ const PALETTES = {
     {
       id: 1,
       slug: "sea-breeze",
+      owner_handle: "palette",
       name: "Sea Breeze",
       description: "Fresh blue and green colors inspired by the sea.",
       colors: ["#006D77", "#0F9199", "#83C5BE", "#EDE7C8"],
@@ -35,6 +36,7 @@ const PALETTES = {
     {
       id: 2,
       slug: "desert-clay",
+      owner_handle: "palette",
       name: "Desert Clay",
       description: "Warm earthy browns fading into soft sand.",
       colors: ["#6A4A32", "#A9744F", "#C89B7B"],
@@ -55,6 +57,9 @@ const TAGS = [
 
 async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
+  await page.route("**/api/v1/users/*/palettes/*", (r) =>
+    r.fulfill({ json: PALETTES.items[0] }),
+  );
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
   await page.route("**/api/v1/auth/verify*", (r) =>
@@ -146,6 +151,7 @@ type Route = { name: string; path: string; fullPage?: boolean };
 
 const GUEST_ROUTES: Route[] = [
   { name: "home", path: "/" },
+  { name: "palette-detail", path: "/u/palette/sea-breeze" },
   { name: "login", path: "/login" },
   { name: "favorites-logged-out", path: "/favorites" },
   { name: "export", path: "/export" },

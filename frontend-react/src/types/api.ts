@@ -8,6 +8,9 @@ export interface Palette {
   description: string;
   colors: string[];
   tags: string[];
+  // The owner's handle — the curator handle ("palette") for a seed palette. The palette's URL,
+  // /u/:owner_handle/:slug, is built from it; see lib/palettePath.
+  owner_handle: string;
   created_at: string;
   updated_at: string;
 }

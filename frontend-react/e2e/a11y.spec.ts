@@ -18,6 +18,7 @@ const PALETTES = {
       description: "Fresh blue and green colors inspired by the sea.",
       colors: ["#006D77", "#0F9199", "#83C5BE", "#EDE7C8"],
       tags: ["cold", "sea"],
+      owner_handle: "palette",
       created_at: "",
       updated_at: "",
     },
@@ -30,6 +31,9 @@ const TAGS = [{ name: "cold", kind: "free", count: 1 }];
 
 async function stub(page: Page, loggedIn: boolean) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
+  await page.route("**/api/v1/users/*/palettes/*", (r) =>
+    r.fulfill({ json: PALETTES.items[0] }),
+  );
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
   await page.route("**/api/v1/auth/me", (r) =>
@@ -52,6 +56,7 @@ async function analyze(page: Page) {
 
 const GUEST_PAGES = [
   "/",
+  "/u/palette/sea-breeze", // the palette page, with its color blocks and contrast table
   "/login",
   "/favorites",
   "/export",

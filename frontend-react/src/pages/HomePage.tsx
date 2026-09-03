@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { usePalettes, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
+import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
 import type { PaletteListParams } from "../types/api";
@@ -39,6 +40,8 @@ export function HomePage() {
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const q = params.get("q") ?? "";
   const tag = params.get("tag") ?? "all";
   const rawSort = params.get("sort");
@@ -124,19 +127,13 @@ export function HomePage() {
   });
   const palettes = data?.items ?? [];
 
+  // Random opens a random palette's page (it used to write a name into the search box, which was
+  // not a random palette but a filter over the already-filtered set). The current query string
+  // rides along as `from`, so the back link returns to this exact catalogue view.
   const randomPalette = () => {
     if (palettes.length === 0) return;
     const pick = palettes[Math.floor(Math.random() * palettes.length)];
-    setDraft(pick.name);
-    setParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("tag");
-      next.delete("sort");
-      return next;
-    });
-    document
-      .getElementById("palettes")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    navigate(palettePath(pick), { state: { from: location.search } });
   };
 
   return (

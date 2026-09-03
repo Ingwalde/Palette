@@ -150,6 +150,9 @@ class PaletteUpdate(BaseModel):
 class PaletteRead(PaletteBase):
     id: int
     slug: str
+    # The owner's handle, read from the Palette.owner_handle property — the curator handle for a
+    # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
+    owner_handle: str
     created_at: datetime
     updated_at: datetime
 
