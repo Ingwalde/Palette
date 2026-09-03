@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HomePage } from "./HomePage";
@@ -42,14 +42,21 @@ vi.mock("../api/tags", () => ({
   listTags: vi.fn(() => Promise.resolve([{ name: "cold", kind: "free", count: 1 }])),
 }));
 
-function renderHome() {
+// Surfaces the current address so a test can assert on what the filters wrote to the URL.
+function LocationProbe() {
+  const loc = useLocation();
+  return <div data-testid="loc">{loc.pathname + loc.search}</div>;
+}
+
+function renderHome(initialEntries: string[] = ["/"]) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter>
+          <MemoryRouter initialEntries={initialEntries}>
             <HomePage />
+            <LocationProbe />
           </MemoryRouter>
         </ToastProvider>
       </AuthProvider>
@@ -76,6 +83,34 @@ describe("HomePage interactions", () => {
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
       "aria-pressed",
       "false",
+    );
+  });
+
+  it("reads search and tag from the URL and applies them", async () => {
+    renderHome(["/?q=sea&tag=cold"]);
+    // The search field mirrors the URL immediately, without waiting on the debounce.
+    expect(screen.getByPlaceholderText(/Search by name/i)).toHaveValue("sea");
+    const chip = await screen.findByRole("button", { name: "#cold" });
+    expect(chip).toHaveAttribute("aria-pressed", "true");
+    // The applied filter, not just the input, reaches the API.
+    await waitFor(() =>
+      expect(palettesApi.listPalettes).toHaveBeenCalledWith(
+        expect.objectContaining({ search: "sea", tag: "cold" }),
+      ),
+    );
+  });
+
+  it("puts the selected tag in the URL as ordinary navigation", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: "#cold" }));
+    expect(screen.getByTestId("loc")).toHaveTextContent("tag=cold");
+  });
+
+  it("strips an invalid sort from the URL", async () => {
+    renderHome(["/?sort=%3Cscript%3E"]);
+    await waitFor(() =>
+      expect(screen.getByTestId("loc").textContent).not.toContain("sort="),
     );
   });
 
