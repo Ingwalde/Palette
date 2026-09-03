@@ -1,10 +1,19 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { getPalette, listPalettes } from "./palettes";
 import { listTags } from "./tags";
 import { listFavorites, addFavorite, removeFavorite, clearFavorites } from "./favorites";
 import { queryKeys } from "./queryKeys";
 import { useAuth } from "../auth/AuthContext";
 import type { Palette, PaletteList, PaletteListParams } from "../types/api";
+
+// The home grid pages in 24 at a time — a multiple of the three-column grid, so the last row is
+// never ragged.
+const PAGE_SIZE = 24;
 
 export function usePalettes(params: PaletteListParams = {}) {
   return useQuery({
@@ -16,16 +25,37 @@ export function usePalettes(params: PaletteListParams = {}) {
   });
 }
 
+export function usePalettesInfinite(params: PaletteListParams = {}) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.palettesInfinite(params),
+    queryFn: ({ pageParam }) =>
+      listPalettes({ ...params, limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    // The next offset, or undefined once the pages cover `total`. Changing a filter changes the
+    // query key, so pagination resets on its own — no separate reset logic.
+    getNextPageParam: (last) =>
+      last.offset + last.items.length < last.total ? last.offset + PAGE_SIZE : undefined,
+    staleTime: 60_000,
+  });
+}
+
+// Palettes cached under the "palettes" prefix come in two shapes — the plain list ({ items }) and
+// the infinite query ({ pages: [{ items }] }). Flatten either to the palettes it holds.
+function itemsOf(data: unknown): Palette[] {
+  if (!data || typeof data !== "object") return [];
+  if (Array.isArray((data as PaletteList).items)) return (data as PaletteList).items;
+  const pages = (data as { pages?: PaletteList[] }).pages;
+  return pages ? pages.flatMap((p) => p.items) : [];
+}
+
 export function usePalette(handle: string, slug: string) {
   const queryClient = useQueryClient();
   // Seed the page from whatever palette list is already cached, so arriving from a card renders
   // instantly and only refreshes in the background. carrying the list's own dataUpdatedAt keeps
   // the freshness honest — a cold arrival straight from a link finds nothing and loads normally.
   const cached = () => {
-    for (const [key, data] of queryClient.getQueriesData<PaletteList>({
-      queryKey: ["palettes"],
-    })) {
-      const hit = data?.items.find((p) => p.slug === slug && p.owner_handle === handle);
+    for (const [key, data] of queryClient.getQueriesData({ queryKey: ["palettes"] })) {
+      const hit = itemsOf(data).find((p) => p.slug === slug && p.owner_handle === handle);
       if (hit) return { hit, updatedAt: queryClient.getQueryState(key)?.dataUpdatedAt };
     }
     return undefined;

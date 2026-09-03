@@ -61,7 +61,7 @@ describe("HomePage", () => {
     expect(
       await screen.findByRole("heading", { name: "Sea Breeze" }),
     ).toBeInTheDocument();
-    expect(await screen.findByText("1 palette")).toBeInTheDocument();
+    expect(await screen.findByText("Showing 1 of 1 palette")).toBeInTheDocument();
   });
 
   it("renders the All tag filter chip", async () => {
