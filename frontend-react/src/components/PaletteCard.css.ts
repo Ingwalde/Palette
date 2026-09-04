@@ -165,4 +165,8 @@ export const contrastBadge = style({
   fontSize: "0.82rem",
   fontWeight: 700,
   whiteSpace: "nowrap",
+  // It links to the contrast table on the palette page now.
+  textDecoration: "none",
+  transition: vars.motion.transition,
+  ":hover": { background: vars.color.surfaceStrong },
 });

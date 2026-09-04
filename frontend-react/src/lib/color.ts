@@ -113,15 +113,26 @@ export function getContrastMatrix(colors: string[]): (ContrastCell | null)[][] {
 export interface ContrastStatus {
   label: string;
   ratio: number;
+  // The pair the ratio compares — the darkest and lightest colours by luminance. The badge shows
+  // which two colours it is talking about instead of an unexplained number.
+  darkest: string;
+  lightest: string;
 }
 
 export function getPaletteContrastStatus(colors: string[]): ContrastStatus {
   const sorted = [...colors].sort(
     (a, b) => getRelativeLuminance(a) - getRelativeLuminance(b),
   );
-  const ratio = getContrastRatio(sorted[0], sorted[sorted.length - 1]);
-  if (ratio >= 7) return { label: "Excellent contrast", ratio };
-  if (ratio >= 4.5) return { label: "Good contrast", ratio };
-  if (ratio >= 3) return { label: "Medium contrast", ratio };
-  return { label: "Low contrast", ratio };
+  const darkest = sorted[0];
+  const lightest = sorted[sorted.length - 1];
+  const ratio = getContrastRatio(darkest, lightest);
+  const label =
+    ratio >= 7
+      ? "Excellent contrast"
+      : ratio >= 4.5
+        ? "Good contrast"
+        : ratio >= 3
+          ? "Medium contrast"
+          : "Low contrast";
+  return { label, ratio, darkest, lightest };
 }

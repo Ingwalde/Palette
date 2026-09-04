@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
 import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
@@ -13,6 +13,7 @@ import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
@@ -58,7 +59,10 @@ export function PaletteCard({ palette }: { palette: Palette }) {
 
   const onToggleFavorite = () => {
     if (!isAuthenticated) {
-      showToast("Log in to save favorites");
+      // Carry the intent to the login page rather than dying in a toast: after signing in the
+      // visitor lands back where they were and presses Save themselves (saving it for them
+      // unasked would be writing to their account without consent).
+      navigate("/login", { state: { from: location } });
       return;
     }
     toggleFavorite.mutate(
@@ -125,15 +129,27 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.contrastBadge}>
+        <Link
+          to={`${palettePath(palette)}#contrast`}
+          className={styles.contrastBadge}
+          title={`Between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors.`}
+        >
           {contrast.label} · {contrast.ratio}:1
-        </span>
+          <span className={ui.visuallyHidden}>
+            {` — between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors`}
+          </span>
+        </Link>
         <button
           type="button"
           className={buttonClass("ghost")}
-          onClick={() => void copy(palette.name, `Palette name copied: ${palette.name}`)}
+          onClick={() =>
+            void copy(
+              palette.colors.join(", "),
+              `${palette.colors.length} color${palette.colors.length === 1 ? "" : "s"} copied`,
+            )
+          }
         >
-          Copy name
+          Copy all
         </button>
       </div>
     </article>
