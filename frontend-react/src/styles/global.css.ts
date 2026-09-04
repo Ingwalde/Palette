@@ -106,7 +106,10 @@ globalStyle("h1, h2, h3, p", {
 globalStyle("h1", {
   maxWidth: "760px",
   marginBottom: "18px",
-  fontSize: "clamp(2.4rem, 6vw, 5rem)",
+  // Was clamp(2.4rem, 6vw, 5rem) — big enough that the home hero ate the whole first screen and
+  // not one palette showed without scrolling, on a site whose point is palettes. Smaller, so the
+  // grid starts above the fold. Global on purpose: every page's h1 was oversized.
+  fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)",
   lineHeight: 1.14,
   letterSpacing: "-0.06em",
 });

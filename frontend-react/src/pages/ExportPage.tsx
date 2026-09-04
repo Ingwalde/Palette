@@ -116,11 +116,11 @@ export function ExportPage() {
   return (
     <>
       <section className={`${ui.section} ${ui.pageHero}`}>
-        <p className={ui.eyebrow}>Developer tools</p>
+        <p className={ui.eyebrow}>Export</p>
         <h1>Export palettes</h1>
         <p>
-          Generate ready-to-use CSS variables, JSON or a polished PNG preview from backend
-          data.
+          Generate ready-to-use CSS variables, JSON or a polished PNG preview from any
+          palette.
         </p>
       </section>
 

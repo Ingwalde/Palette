@@ -22,9 +22,23 @@ export const heroActions = style({
   marginTop: "28px",
 });
 
+export const heroWhatsNew = style({
+  display: "inline-block",
+  marginTop: "16px",
+  color: vars.color.muted,
+  fontSize: "0.9rem",
+  textDecoration: "underline",
+  textUnderlineOffset: "3px",
+  transition: vars.motion.transition,
+  ":hover": { color: vars.color.text },
+});
+
 export const heroPreview = style({
   display: "flex",
   justifyContent: "flex-end",
+  // It is a link to the featured palette now, so reset the anchor styling.
+  textDecoration: "none",
+  color: "inherit",
   "@media": {
     [NARROW]: { justifyContent: "flex-start" },
   },
@@ -53,8 +67,8 @@ export const heroPreviewGrid = style({
   gap: "14px",
 });
 
-// Four decorative swatches, coloured by position. They carry no content, so the colours live
-// here rather than in the markup.
+// The swatches show the featured palette's real colours now, so the colour comes from an inline
+// style in the markup; only the shared shape lives here.
 globalStyle(`${heroPreviewGrid} span`, {
   minHeight: "120px",
   borderRadius: "24px",
@@ -63,10 +77,10 @@ globalStyle(`${heroPreviewGrid} span`, {
   },
 });
 
-globalStyle(`${heroPreviewGrid} span:nth-child(1)`, { background: "#0d1846" });
-globalStyle(`${heroPreviewGrid} span:nth-child(2)`, { background: "#406eb7" });
-globalStyle(`${heroPreviewGrid} span:nth-child(3)`, { background: "#e95623" });
-globalStyle(`${heroPreviewGrid} span:nth-child(4)`, { background: "#e3e3e3" });
+// A neutral fill for the placeholder shown while the list loads, so the layout does not jump.
+export const heroPreviewSwatchPlaceholder = style({
+  background: vars.color.surfaceStrong,
+});
 
 export const toolbarSection = style({
   padding: "16px 0 36px",
