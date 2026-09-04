@@ -99,6 +99,59 @@ export const tagButtonActive = style({
   background: vars.color.primary,
 });
 
+// A "purpose" tag (a standard category) is marked with a leading dot, not colour — colour in this
+// app carries palette data, so it must not double as a category cue.
+export const tagButtonPurpose = style({
+  selectors: {
+    "&::before": {
+      content: '""',
+      width: "6px",
+      height: "6px",
+      marginRight: "6px",
+      borderRadius: "50%",
+      background: "currentColor",
+      opacity: 0.6,
+      flexShrink: 0,
+    },
+  },
+});
+
+export const tagCount = style({
+  // No opacity: fading the count dropped it to ~2.7:1 and failed WCAG AA. A lighter weight carries
+  // the "secondary" cue while the colour stays the chip's own (AA on the surface).
+  fontWeight: 400,
+});
+
+// Same pill shape as a tag but visually secondary — it is a control, not a filter.
+export const moreTags = style({
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: "34px",
+  padding: "0 12px",
+  borderRadius: "999px",
+  fontSize: "0.85rem",
+  fontWeight: 600,
+  border: `1px dashed ${vars.color.border}`,
+  color: vars.color.muted,
+  background: "transparent",
+  selectors: {
+    "&:hover": { color: vars.color.text, borderColor: vars.color.muted },
+  },
+});
+
+// The overflow tags share the wrapping row; as a flex child it flows onto its own line(s).
+export const moreTagsList = style({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "10px",
+  flexBasis: "100%",
+  // An explicit display would otherwise override the `hidden` attribute, leaving the region on
+  // screen while it is meant to be collapsed.
+  selectors: {
+    "&[hidden]": { display: "none" },
+  },
+});
+
 export const resultCount = style({
   color: vars.color.muted,
   fontWeight: 700,

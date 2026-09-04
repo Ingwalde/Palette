@@ -5,11 +5,14 @@ import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
-import type { PaletteListParams } from "../types/api";
+import type { PaletteListParams, Tag } from "../types/api";
 import { EmptyState } from "../components/EmptyState";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
 import * as styles from "./HomePage.css";
+
+// How many tag chips the row shows before "More tags".
+const TAG_LIMIT = 10;
 
 type Sort = NonNullable<PaletteListParams["sort"]>;
 
@@ -23,16 +26,6 @@ const SORT_OPTIONS = [
 // stay the same address. Only these two are real query values.
 function readSort(raw: string | null): Sort {
   return raw === "az" || raw === "za" ? raw : "default";
-}
-
-// Pick up to `count` random items — a lighter, rotating home tag filter.
-function pickRandom<T>(list: T[], count: number): T[] {
-  const shuffled = [...list];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, count);
 }
 
 export function HomePage() {
@@ -110,13 +103,41 @@ export function HomePage() {
   const clearSearch = () => setDraft("");
 
   const { data: tags } = useTags();
-  const chips = useMemo(
+  const [showAllTags, setShowAllTags] = useState(false);
+
+  // Ranked by usage, ties broken alphabetically so the order is stable across renders — the old
+  // random pick reshuffled on every recompute and, worse, could drop the active tag out of view
+  // while it stayed applied. Deterministic, and the active tag is always kept.
+  const sortedTags = useMemo(
     () =>
-      pickRandom(
-        (tags ?? []).map((t) => t.name),
-        10,
-      ),
+      [...(tags ?? [])].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
     [tags],
+  );
+  const visibleTags = useMemo(() => {
+    const top = sortedTags.slice(0, TAG_LIMIT);
+    if (tag === "all" || top.some((t) => t.name === tag)) return top;
+    const active = sortedTags.find((t) => t.name === tag);
+    return active ? [...top, active] : top;
+  }, [sortedTags, tag]);
+  const overflowTags = useMemo(
+    () => sortedTags.filter((t) => !visibleTags.includes(t)),
+    [sortedTags, visibleTags],
+  );
+
+  const tagChip = (t: Tag) => (
+    <button
+      key={t.name}
+      type="button"
+      className={`${styles.tagButton}${tag === t.name ? ` ${styles.tagButtonActive}` : ""}${
+        t.kind === "purpose" ? ` ${styles.tagButtonPurpose}` : ""
+      }`}
+      aria-pressed={tag === t.name}
+      data-tag={t.name}
+      onClick={() => selectTag(t.name)}
+    >
+      #{t.name}
+      <span className={styles.tagCount}> · {t.count}</span>
+    </button>
   );
 
   const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
@@ -212,19 +233,34 @@ export function HomePage() {
           role="group"
           aria-label="Filter palettes by tag"
         >
-          {["all", ...chips].map((name) => (
+          <button
+            type="button"
+            className={`${styles.tagButton}${tag === "all" ? ` ${styles.tagButtonActive}` : ""}`}
+            aria-pressed={tag === "all"}
+            data-tag="all"
+            onClick={() => selectTag("all")}
+          >
+            All
+          </button>
+          {visibleTags.map(tagChip)}
+
+          {overflowTags.length > 0 && (
             <button
-              key={name}
               type="button"
-              className={`${styles.tagButton}${tag === name ? ` ${styles.tagButtonActive}` : ""}`}
-              // Which filter is on was conveyed only by colour until now.
-              aria-pressed={tag === name}
-              data-tag={name}
-              onClick={() => selectTag(name)}
+              className={styles.moreTags}
+              aria-expanded={showAllTags}
+              aria-controls="more-tags"
+              onClick={() => setShowAllTags((v) => !v)}
             >
-              {name === "all" ? "All" : `#${name}`}
+              {showAllTags ? "Fewer tags" : "More tags"}
             </button>
-          ))}
+          )}
+
+          {/* Kept in the DOM and toggled with `hidden` so the More tags button genuinely controls
+              a region a screen reader can find. */}
+          <div id="more-tags" className={styles.moreTagsList} hidden={!showAllTags}>
+            {overflowTags.map(tagChip)}
+          </div>
         </div>
       </section>
 
