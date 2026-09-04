@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import crud, schemas
+from .. import crud, models, schemas
 from ..database import get_db
 from ..rate_limit import limiter
-from ..security import require_admin_user
+from ..security import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/palettes", tags=["palettes"])
 
-# Generous ceiling on admin write operations — enough for real editing, a brake on abuse.
+# Generous ceiling on write operations — enough for real editing, a brake on abuse.
 _WRITE_LIMIT = "60/minute"
+# Creation is the spam vector (each makes a row), so it is capped harder than edits.
+_CREATE_LIMIT = "20/hour"
 
 
 @router.get("", response_model=schemas.PaletteList)
@@ -39,24 +41,41 @@ async def read_tags(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/{slug}", response_model=schemas.PaletteRead)
-async def read_palette(slug: str, db: AsyncSession = Depends(get_db)):
+async def read_palette(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+    viewer: models.User | None = Depends(get_optional_user),
+):
     palette = await crud.get_palette_by_slug(db, slug)
 
-    if palette is None:
+    # A private palette is 404 to anyone but its owner or an admin — a 404, not a 403, so its
+    # existence is not disclosed.
+    if palette is None or not crud.palette_visible_to(palette, viewer):
         raise HTTPException(status_code=404, detail="Palette not found")
 
     return palette
 
 
 @router.post("", response_model=schemas.PaletteRead, status_code=status.HTTP_201_CREATED)
-@limiter.limit(_WRITE_LIMIT)
+@limiter.limit(_CREATE_LIMIT)
 async def create_palette(
     request: Request,
     palette_data: schemas.PaletteCreate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin_user),
+    current_user: models.User = Depends(get_current_user),
 ):
-    return await crud.create_palette(db, palette_data)
+    # Any signed-in user creates palettes now, not only admins; the palette is created private
+    # (the model default) and made public later by publishing.
+    return await crud.create_palette(db, palette_data, owner_id=current_user.id)
+
+
+async def _owned_palette(palette_id: int, db: AsyncSession, user: models.User) -> models.Palette:
+    """The palette, if it exists and the user may edit it — otherwise 404. Editing another user's
+    palette 404s rather than 403s, so its existence is not disclosed."""
+    palette = await crud.get_palette(db, palette_id)
+    if palette is None or not crud.palette_editable_by(palette, user):
+        raise HTTPException(status_code=404, detail="Palette not found")
+    return palette
 
 
 @router.put("/{palette_id}", response_model=schemas.PaletteRead)
@@ -66,13 +85,9 @@ async def update_palette(
     palette_id: int,
     palette_data: schemas.PaletteUpdate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin_user),
+    current_user: models.User = Depends(get_current_user),
 ):
-    palette = await crud.get_palette(db, palette_id)
-
-    if palette is None:
-        raise HTTPException(status_code=404, detail="Palette not found")
-
+    palette = await _owned_palette(palette_id, db, current_user)
     return await crud.update_palette(db, palette, palette_data)
 
 
@@ -82,12 +97,8 @@ async def delete_palette(
     request: Request,
     palette_id: int,
     db: AsyncSession = Depends(get_db),
-    _=Depends(require_admin_user),
+    current_user: models.User = Depends(get_current_user),
 ):
-    palette = await crud.get_palette(db, palette_id)
-
-    if palette is None:
-        raise HTTPException(status_code=404, detail="Palette not found")
-
+    palette = await _owned_palette(palette_id, db, current_user)
     await crud.delete_palette(db, palette)
     return

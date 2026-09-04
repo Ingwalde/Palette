@@ -259,10 +259,12 @@ async def test_login_upgrades_legacy_hash(client, db_session):
 
 
 async def test_admin_gate_blocks_regular_user(user_client, user_csrf):
+    # Creating a palette is open to any signed-in user now; the admin gate still guards the tag
+    # catalogue, so that is what this asserts.
     resp = await user_client.post(
-        "/api/v1/palettes",
+        "/api/v1/tags",
         headers=user_csrf,
-        json={"name": "Blocked", "colors": ["#112233"], "tags": []},
+        json={"name": "blocked-tag", "kind": "free"},
     )
     assert resp.status_code == 403
 

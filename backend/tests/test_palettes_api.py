@@ -1,21 +1,24 @@
+from datetime import UTC, datetime
+
 import pytest_asyncio
 from app import crud, schemas
 
 
+async def _seed_public(db, **fields):
+    """Create a palette and publish it, standing in for the public curated catalogue (create
+    makes a palette private by default)."""
+    palette = await crud.create_palette(db, schemas.PaletteCreate(**fields))
+    palette.visibility = "public"
+    palette.published_at = datetime.now(UTC)
+    await db.commit()
+    return palette
+
+
 @pytest_asyncio.fixture
 async def seeded(db_session):
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Alpha Warm", colors=["#aa1122"], tags=["warm", "bold"]),
-    )
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Beta Cold", colors=["#1122aa"], tags=["cold"]),
-    )
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Gamma Warm", colors=["#aa8811"], tags=["warm"]),
-    )
+    await _seed_public(db_session, name="Alpha Warm", colors=["#aa1122"], tags=["warm", "bold"])
+    await _seed_public(db_session, name="Beta Cold", colors=["#1122aa"], tags=["cold"])
+    await _seed_public(db_session, name="Gamma Warm", colors=["#aa8811"], tags=["warm"])
 
 
 async def test_list_all(client, seeded):

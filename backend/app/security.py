@@ -313,42 +313,58 @@ async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
         await crud.revoke_refresh_token(db, stored)
 
 
-async def get_current_user(
-    access_token: str | None = Cookie(default=None),
-    db: AsyncSession = Depends(get_db),
-) -> models.User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-    )
-
+async def _resolve_user(access_token: str | None, db: AsyncSession) -> models.User | None:
+    """Decode the access cookie to a user, or None if it is absent, malformed, purpose-scoped, or
+    stale. The single source of truth for both the required and the optional dependency below."""
     if not access_token:
-        raise credentials_exception
+        return None
 
     try:
         payload = jwt.decode(access_token, settings.secret_key, algorithms=[ALGORITHM])
         # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
         if payload.get("purpose") is not None:
-            raise credentials_exception
+            return None
         sub = payload.get("sub")
         if sub is None:
-            raise credentials_exception
+            return None
         user_id = int(sub)
         token_version = payload.get("ver")
     except (InvalidTokenError, TypeError, ValueError):
-        raise credentials_exception from None
+        return None
 
     user = await crud.get_user(db, user_id)
     if user is None:
-        raise credentials_exception
+        return None
 
     # Stale version = the session was ended server-side (password change, reset,
     # logout-everywhere). A missing claim means a token minted before this check existed, so it
     # is stale too — that logs everyone out once, on the release that introduces this.
     if token_version is None or token_version != user.token_version:
-        raise credentials_exception
+        return None
 
     return user
+
+
+async def get_current_user(
+    access_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> models.User:
+    user = await _resolve_user(access_token, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    return user
+
+
+async def get_optional_user(
+    access_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> models.User | None:
+    """Like get_current_user but returns None instead of 401 — for endpoints a guest may read
+    (a public palette) while a signed-in owner sees more (their own private one)."""
+    return await _resolve_user(access_token, db)
 
 
 def require_admin_user(current_user: models.User = Depends(get_current_user)) -> models.User:
