@@ -197,3 +197,39 @@ async def test_read_palette_wrong_handle_is_404(client, seeded):
 async def test_read_palette_unknown_slug_is_404(client):
     resp = await client.get("/api/v1/users/palette/palettes/does-not-exist")
     assert resp.status_code == 404
+
+
+async def test_new_palette_is_private_by_default(db_session):
+    from app import crud, schemas
+
+    p = await crud.create_palette(
+        db_session, schemas.PaletteCreate(name="Draft", colors=["#111111"])
+    )
+    assert p.visibility == "private"
+    assert p.status == "active"
+    assert p.is_featured is False
+    assert p.favorites_count == 0
+    assert p.forks_count == 0
+    assert p.published_at is None
+    assert p.forked_from_id is None
+
+
+async def test_seed_palettes_are_public_and_featured(db_session):
+    from app import models
+    from app.crud import create_many_if_empty
+    from app.schemas import PaletteCreate
+    from sqlalchemy import select
+
+    created = await create_many_if_empty(
+        db_session, [PaletteCreate(name="Seed One", colors=["#222222"])]
+    )
+    assert created == 1
+    p = (
+        (await db_session.execute(select(models.Palette).where(models.Palette.name == "Seed One")))
+        .scalars()
+        .first()
+    )
+    assert p is not None
+    assert p.visibility == "public"
+    assert p.is_featured is True
+    assert p.published_at is not None

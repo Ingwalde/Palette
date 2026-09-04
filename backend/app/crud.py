@@ -340,6 +340,10 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
     # The table is empty, so slug collisions can only come from the batch itself — resolve
     # them in memory. create_palette would commit and refresh once per row and run a slug
     # query per row on top; this is one insert and one commit for the whole seed.
+    # The seed catalogue is the public, curated content: created public and featured (dated to
+    # now), not private like a user palette. The migration backfills an already-populated table;
+    # this covers a fresh one, where seeding runs after the migration on an empty table.
+    now = datetime.now(UTC)
     taken: set[str] = set()
     rows: list[models.Palette] = []
     for palette_data in palettes:
@@ -352,6 +356,9 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
                 description=palette_data.description,
                 colors=palette_data.colors,
                 tags=palette_data.tags,
+                visibility="public",
+                is_featured=True,
+                published_at=now,
             )
         )
 
