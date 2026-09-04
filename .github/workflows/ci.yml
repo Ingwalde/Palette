@@ -205,7 +205,14 @@ jobs:
         run: npm run typecheck
 
       - name: Audit npm dependencies
+        # Advisory, not a gate: npm's audit endpoint is deprecated and has been slow/500ing,
+        # which both failed this step outright and — when it merely crawled for ~5 min — starved
+        # the job's 10-minute budget so the real steps (vitest) got cancelled. A short timeout
+        # kills a hung call fast and continue-on-error keeps a broken endpoint from blocking a
+        # green build; vulnerabilities are still surfaced here and caught by Dependabot.
         run: npm audit --audit-level=high
+        timeout-minutes: 3
+        continue-on-error: true
 
       - name: Orphaned class names (css:orphans)
         # Every style is a build-time hash now, so a class name written as a string in markup
