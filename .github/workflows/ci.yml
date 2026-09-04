@@ -174,7 +174,9 @@ jobs:
   frontend-react:
     name: Frontend (React) — lint · types · test · build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 18, not 10: this job installs, builds the app and builds the frontend Docker image, and
+    # during a slow spell on the npm registry / runners the image build ran past 10 min.
+    timeout-minutes: 18
     permissions:
       contents: read
       packages: write # push the frontend image to GHCR on main
@@ -211,7 +213,7 @@ jobs:
         # kills a hung call fast and continue-on-error keeps a broken endpoint from blocking a
         # green build; vulnerabilities are still surfaced here and caught by Dependabot.
         run: npm audit --audit-level=high
-        timeout-minutes: 3
+        timeout-minutes: 1
         continue-on-error: true
 
       - name: Orphaned class names (css:orphans)
@@ -311,7 +313,9 @@ jobs:
   integration:
     name: Integration E2E (real stack)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 18, not 10: it builds the whole stack with Compose and ran past 10 min under the same slow
+    # spell on the runners.
+    timeout-minutes: 18
     steps:
       - name: Checkout
         uses: actions/checkout@v7
