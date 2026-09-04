@@ -130,7 +130,18 @@ describe("HomePage interactions", () => {
     vi.mocked(palettesApi.listPalettes).mockRejectedValue(new ApiError("down", 500));
     renderHome();
     expect(await screen.findByText("API error")).toBeInTheDocument();
-    expect(screen.getByText(/Could not reach the backend/i)).toBeInTheDocument();
+    expect(screen.getByText(/couldn't load the palettes/i)).toBeInTheDocument();
+    // The error offers a retry rather than an instruction the visitor cannot follow.
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  it("retries the load when Try again is clicked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(palettesApi.listPalettes).mockRejectedValueOnce(new ApiError("down", 500));
+    vi.mocked(palettesApi.listPalettes).mockResolvedValue(list);
+    renderHome();
+    await user.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("link", { name: "Sea Breeze" })).toBeInTheDocument();
   });
 
   it("loads a second page and then hides the button", async () => {

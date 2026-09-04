@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { usePalettesInfinite, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
@@ -140,14 +140,23 @@ export function HomePage() {
     </button>
   );
 
-  const { data, isLoading, isError, hasNextPage, fetchNextPage, isFetchingNextPage } =
-    usePalettesInfinite({
-      search: q || undefined,
-      tag: tag === "all" ? undefined : tag,
-      sort,
-    });
+  const {
+    data,
+    isLoading,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = usePalettesInfinite({
+    search: q || undefined,
+    tag: tag === "all" ? undefined : tag,
+    sort,
+  });
   const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const total = data?.pages[0]?.total ?? 0;
+  // The hero preview shows a real palette — the first result — instead of four painted rectangles.
+  const featured = palettes[0];
 
   // Random opens a random palette's page (it used to write a name into the search box, which was
   // not a random palette but a filter over the already-filtered set). The current query string
@@ -162,12 +171,11 @@ export function HomePage() {
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Palette v4.9.3 · Update!</p>
-          <h1 id="hero-title">Find a color palette for your next design project.</h1>
+          <p className={ui.eyebrow}>Curated color palettes</p>
+          <h1 id="hero-title">Find the right colors for your space</h1>
           <p className={ui.heroText}>
-            Search, filter, save and export palettes. Saving one now fills the heart the
-            instant you click, and the account menu no longer repeats itself in the
-            header.
+            Search by name, tag or color. Check contrast before you commit. Export to CSS,
+            JSON or PNG, and save what you like to your account.
           </p>
           <div className={styles.heroActions}>
             <a className={buttonClass("primary")} href="#palettes">
@@ -181,19 +189,39 @@ export function HomePage() {
               Random palette
             </button>
           </div>
+          <Link className={styles.heroWhatsNew} to="/changelog">
+            What's new in v5.0
+          </Link>
         </div>
 
-        <div className={styles.heroPreview} aria-hidden="true">
-          <div className={styles.heroPreviewWindow}>
-            <div className={styles.heroPreviewTop}></div>
-            <div className={styles.heroPreviewGrid}>
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
+        {featured ? (
+          <Link
+            to={palettePath(featured)}
+            state={{ from: location.search }}
+            className={styles.heroPreview}
+            aria-label={`Featured palette: ${featured.name}`}
+          >
+            <div className={styles.heroPreviewWindow}>
+              <div className={styles.heroPreviewTop}></div>
+              <div className={styles.heroPreviewGrid}>
+                {featured.colors.slice(0, 4).map((color, i) => (
+                  <span key={i} style={{ background: color }} />
+                ))}
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className={styles.heroPreview} aria-hidden="true">
+            <div className={styles.heroPreviewWindow}>
+              <div className={styles.heroPreviewTop}></div>
+              <div className={styles.heroPreviewGrid}>
+                {[0, 1, 2, 3].map((i) => (
+                  <span key={i} className={styles.heroPreviewSwatchPlaceholder} />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section
@@ -271,8 +299,8 @@ export function HomePage() {
       >
         <div className={ui.sectionHeading}>
           <div>
-            <p className={ui.eyebrow}>Backend data</p>
-            <h2 id="palettes-title">Available palettes</h2>
+            <p className={ui.eyebrow}>Browse</p>
+            <h2 id="palettes-title">All palettes</h2>
           </div>
           <p className={styles.resultCount} aria-live="polite">
             {isLoading
@@ -286,14 +314,12 @@ export function HomePage() {
         <div className={ui.paletteGrid}>
           {isError ? (
             <EmptyState
-              title="Backend unavailable"
-              text="Could not reach the backend API. Start the stack and try again."
+              title="Couldn't load palettes"
+              text="We couldn't load the palettes just now. Check your connection and try again."
+              action={{ label: "Try again", onClick: () => void refetch() }}
             />
           ) : isLoading ? (
-            <EmptyState
-              title="Loading palettes"
-              text="The frontend is requesting data from the backend API."
-            />
+            <EmptyState title="Loading palettes" text="One moment while we load them." />
           ) : palettes.length === 0 ? (
             <EmptyState
               title="No palettes found"

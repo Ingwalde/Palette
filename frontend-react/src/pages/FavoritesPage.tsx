@@ -53,7 +53,7 @@ export function FavoritesPage() {
       <section className={`${ui.section} ${ui.pageHero}`}>
         <p className={ui.eyebrow}>Saved palettes</p>
         <h1>Your favorite palettes</h1>
-        <p>Favorites are connected to your account and stored in the backend database.</p>
+        <p>Palettes you save stay with your account, so they follow you to any device.</p>
       </section>
 
       <section className={ui.section}>
@@ -76,13 +76,13 @@ export function FavoritesPage() {
           {!isAuthenticated ? (
             <EmptyState
               title="Log in to view favorites"
-              text="Favorites are now connected to your account. Log in to save and view your palettes."
+              text="Log in to save palettes to your account and open them here any time."
               action={{ label: "Log in", to: "/login" }}
             />
           ) : isLoading ? (
             <EmptyState
               title="Loading favorites"
-              text="The app is loading your saved palettes from the backend API."
+              text="One moment while we load your saved palettes."
             />
           ) : authError ? (
             <EmptyState
