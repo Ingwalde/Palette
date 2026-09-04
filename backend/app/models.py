@@ -230,9 +230,7 @@ class Report(Base):
         ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
     )
     reason: Mapped[str] = mapped_column(String(32), nullable=False)
-    detail: Mapped[str] = mapped_column(
-        String(500), default="", server_default="", nullable=False
-    )
+    detail: Mapped[str] = mapped_column(String(500), default="", server_default="", nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), default="open", server_default="open", nullable=False
     )
@@ -276,9 +274,7 @@ class OAuthToken(Base):
     access_token: Mapped[str] = mapped_column(Text, nullable=False)
     refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    scope: Mapped[str] = mapped_column(
-        String(255), default="", server_default="", nullable=False
-    )
+    scope: Mapped[str] = mapped_column(String(255), default="", server_default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
