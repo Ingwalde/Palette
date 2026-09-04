@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
-import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
+import { copyToClipboard, formatColor, getPaletteContrastStatus } from "../lib/color";
+import { useColorFormat } from "./ColorFormatContext";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
 import { useToast } from "./toast/ToastProvider";
@@ -15,6 +16,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
   const { showToast } = useToast();
@@ -54,7 +56,8 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       () => setRevealed((c) => (c === color ? null : c)),
       1800,
     );
-    await copy(color, `${color} copied`);
+    const shown = formatColor(color, format);
+    await copy(shown, `${shown} copied`);
   };
 
   const onToggleFavorite = () => {
@@ -113,8 +116,8 @@ export function PaletteCard({ palette }: { palette: Palette }) {
             type="button"
             className={`${styles.swatch}${revealed === color ? ` ${styles.swatchRevealed}` : ""}`}
             style={{ "--swatch-color": color } as CSSProperties}
-            data-color={color}
-            aria-label={`Copy ${color}`}
+            data-color={formatColor(color, format)}
+            aria-label={`Copy ${formatColor(color, format)}`}
             onClick={() => void copyColor(color)}
           />
         ))}
