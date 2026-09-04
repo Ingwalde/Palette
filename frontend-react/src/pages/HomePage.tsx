@@ -5,6 +5,8 @@ import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
+import { useColorFormat } from "../components/ColorFormatContext";
+import type { ColorFormat } from "../lib/color";
 import type { PaletteListParams, Tag } from "../types/api";
 import { EmptyState } from "../components/EmptyState";
 import * as ui from "../styles/ui.css";
@@ -20,6 +22,13 @@ const SORT_OPTIONS = [
   { value: "default", label: "Default order" },
   { value: "az", label: "Name A-Z" },
   { value: "za", label: "Name Z-A" },
+];
+
+const FORMAT_OPTIONS = [
+  { value: "hex", label: "HEX" },
+  { value: "rgb", label: "RGB" },
+  { value: "hsl", label: "HSL" },
+  { value: "oklch", label: "OKLCH" },
 ];
 
 // "default" is the implicit sort and is never written to the URL, so `/` and `/?sort=default`
@@ -39,6 +48,8 @@ export function HomePage() {
   const tag = params.get("tag") ?? "all";
   const rawSort = params.get("sort");
   const sort = readSort(rawSort);
+
+  const { format, setFormat } = useColorFormat();
 
   const [draft, setDraft] = useState(q);
   const debounced = useDebounce(draft.trim(), 250);
@@ -252,6 +263,12 @@ export function HomePage() {
             value={sort}
             onChange={(v) => selectSort(v as Sort)}
             ariaLabel="Sort palettes"
+          />
+          <CustomSelect
+            options={FORMAT_OPTIONS}
+            value={format}
+            onChange={(v) => setFormat(v as ColorFormat)}
+            ariaLabel="Color format"
           />
         </div>
 

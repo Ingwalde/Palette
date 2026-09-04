@@ -9,11 +9,13 @@ import { ApiError } from "../lib/http";
 import { CURATOR_HANDLE } from "../lib/constants";
 import {
   copyToClipboard,
+  formatColor,
   getContrastMatrix,
   readableTextOn,
   toHslString,
   toRgbString,
 } from "../lib/color";
+import { useColorFormat } from "../components/ColorFormatContext";
 import { generateExportText } from "../lib/exportGenerators";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
@@ -24,6 +26,7 @@ export function PalettePage() {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
+  const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
 
@@ -155,8 +158,11 @@ export function PalettePage() {
                     color: readableTextOn(color),
                   } as CSSProperties
                 }
-                onClick={() => void copyValue(color, `${color} copied`)}
-                aria-label={`Copy ${color}`}
+                onClick={() => {
+                  const shown = formatColor(color, format);
+                  void copyValue(shown, `${shown} copied`);
+                }}
+                aria-label={`Copy ${formatColor(color, format)}`}
               >
                 <span className={styles.colorHex}>{color}</span>
                 <span className={styles.colorAlt}>{toRgbString(color)}</span>

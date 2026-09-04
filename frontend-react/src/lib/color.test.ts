@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatColor,
   getContrastMatrix,
   getPaletteContrastStatus,
   toHslString,
+  toOklchString,
   toRgbString,
 } from "./color";
 
@@ -61,5 +63,27 @@ describe("toRgbString / toHslString", () => {
     expect(toHslString("#FF0000")).toBe("hsl(0, 100%, 50%)");
     expect(toRgbString("#000000")).toBe("rgb(0, 0, 0)");
     expect(toHslString("#FFFFFF")).toBe("hsl(0, 0%, 100%)");
+  });
+});
+
+describe("toOklchString", () => {
+  it("matches known OKLCH values", () => {
+    expect(toOklchString("#000000")).toBe("oklch(0.000 0.000 0.0)");
+    // sRGB red's published OKLCH is ~0.628 / 0.258 / 29.2.
+    expect(toOklchString("#FF0000")).toBe("oklch(0.628 0.258 29.2)");
+  });
+
+  it("gives white lightness 1 and no chroma", () => {
+    const white = toOklchString("#FFFFFF");
+    expect(white.startsWith("oklch(1.000 0.000")).toBe(true);
+  });
+});
+
+describe("formatColor", () => {
+  it("dispatches to each format and normalises hex", () => {
+    expect(formatColor("#ff0000", "hex")).toBe("#FF0000");
+    expect(formatColor("#ff0000", "rgb")).toBe("rgb(255, 0, 0)");
+    expect(formatColor("#ff0000", "hsl")).toBe("hsl(0, 100%, 50%)");
+    expect(formatColor("#ff0000", "oklch")).toBe("oklch(0.628 0.258 29.2)");
   });
 });

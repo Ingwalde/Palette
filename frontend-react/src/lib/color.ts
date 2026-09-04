@@ -58,6 +58,55 @@ export function toHslString(hex: string): string {
   return `hsl(${Math.round(h)}, ${Math.round(s * 100)}%, ${Math.round(l * 100)}%)`;
 }
 
+function srgbToLinear(channel: number): number {
+  const n = channel / 255;
+  return n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4;
+}
+
+// OKLCH, written by hand (sRGB → linear → OKLab → polar) rather than adding a colour library.
+// Coefficients are Björn Ottosson's OKLab matrices. Rounding: L and C to three decimals, H to
+// one — the CSS oklch() form, e.g. oklch(0.628 0.226 29.2).
+export function toOklchString(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+  const lr = srgbToLinear(r);
+  const lg = srgbToLinear(g);
+  const lb = srgbToLinear(b);
+
+  const l = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb;
+  const m = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb;
+  const s = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb;
+
+  const l_ = Math.cbrt(l);
+  const m_ = Math.cbrt(m);
+  const s_ = Math.cbrt(s);
+
+  const okL = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
+  const okA = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
+  const okB = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
+
+  const chroma = Math.sqrt(okA * okA + okB * okB);
+  let hue = (Math.atan2(okB, okA) * 180) / Math.PI;
+  if (hue < 0) hue += 360;
+
+  return `oklch(${okL.toFixed(3)} ${chroma.toFixed(3)} ${hue.toFixed(1)})`;
+}
+
+export type ColorFormat = "hex" | "rgb" | "hsl" | "oklch";
+
+// One colour in whichever format is selected. HEX is normalised to #RRGGBB uppercase.
+export function formatColor(hex: string, format: ColorFormat): string {
+  switch (format) {
+    case "rgb":
+      return toRgbString(hex);
+    case "hsl":
+      return toHslString(hex);
+    case "oklch":
+      return toOklchString(hex);
+    default:
+      return `#${normalizeHex(hex)}`;
+  }
+}
+
 // Black or white text that meets WCAG AA (>= 4.5:1) on `hex` as a background. The threshold is
 // the luminance where black and white give equal contrast (~0.179), not 0.5: at 0.5 a mid-tone
 // swatch gets white text at ~3:1 and fails. Pure #000/#fff (not the near-black/white tokens) keep
