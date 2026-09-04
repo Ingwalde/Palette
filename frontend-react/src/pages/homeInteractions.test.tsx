@@ -8,6 +8,8 @@ import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import * as palettesApi from "../api/palettes";
+import * as tagsApi from "../api/tags";
+import type { Tag } from "../types/api";
 import * as homeStyles from "./HomePage.css";
 
 const list = {
@@ -73,7 +75,7 @@ describe("HomePage interactions", () => {
   it("activates a tag chip on click", async () => {
     const user = userEvent.setup();
     renderHome();
-    const chip = await screen.findByRole("button", { name: "#cold" });
+    const chip = await screen.findByRole("button", { name: /#cold/ });
     expect(chip).toHaveAttribute("aria-pressed", "false");
     await user.click(chip);
 
@@ -91,7 +93,7 @@ describe("HomePage interactions", () => {
     renderHome(["/?q=sea&tag=cold"]);
     // The search field mirrors the URL immediately, without waiting on the debounce.
     expect(screen.getByPlaceholderText(/Search by name/i)).toHaveValue("sea");
-    const chip = await screen.findByRole("button", { name: "#cold" });
+    const chip = await screen.findByRole("button", { name: /#cold/ });
     expect(chip).toHaveAttribute("aria-pressed", "true");
     // The applied filter, not just the input, reaches the API.
     await waitFor(() =>
@@ -104,7 +106,7 @@ describe("HomePage interactions", () => {
   it("puts the selected tag in the URL as ordinary navigation", async () => {
     const user = userEvent.setup();
     renderHome();
-    await user.click(await screen.findByRole("button", { name: "#cold" }));
+    await user.click(await screen.findByRole("button", { name: /#cold/ }));
     expect(screen.getByTestId("loc")).toHaveTextContent("tag=cold");
   });
 
@@ -164,5 +166,39 @@ describe("HomePage interactions", () => {
     await screen.findByRole("link", { name: "Sea Breeze" });
     expect(screen.queryByRole("button", { name: /Load more/i })).not.toBeInTheDocument();
     expect(screen.getByText("Showing 1 of 1 palette")).toBeInTheDocument();
+  });
+});
+
+describe("HomePage tag chips", () => {
+  // twelve tags, count descending, so t01 ranks highest and t11/t12 fall outside the top ten
+  const many: Tag[] = Array.from({ length: 12 }, (_, i) => ({
+    name: `t${String(i + 1).padStart(2, "0")}`,
+    kind: "free",
+    count: 12 - i,
+  }));
+
+  beforeEach(() => {
+    vi.mocked(tagsApi.listTags).mockResolvedValue(many);
+  });
+
+  it("ranks chips by usage and hides the tail behind More tags", async () => {
+    renderHome();
+    await screen.findByRole("button", { name: /#t01/ });
+    // The top ten are shown in order; t11 and t12 are not, until More tags is pressed.
+    expect(screen.getByRole("button", { name: /#t10/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /#t11/ })).not.toBeInTheDocument();
+
+    const more = screen.getByRole("button", { name: "More tags" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    await userEvent.setup().click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /#t11/ })).toBeVisible();
+  });
+
+  it("keeps the active tag visible even when it ranks outside the top ten", async () => {
+    renderHome(["/?tag=t12"]);
+    const active = await screen.findByRole("button", { name: /#t12/ });
+    // t12 is the least-used tag, yet it is present and marked pressed rather than vanishing.
+    expect(active).toHaveAttribute("aria-pressed", "true");
   });
 });
