@@ -117,8 +117,9 @@ export const tagButtonPurpose = style({
 });
 
 export const tagCount = style({
-  opacity: 0.6,
-  fontWeight: 500,
+  // No opacity: fading the count dropped it to ~2.7:1 and failed WCAG AA. A lighter weight carries
+  // the "secondary" cue while the colour stays the chip's own (AA on the surface).
+  fontWeight: 400,
 });
 
 // Same pill shape as a tag but visually secondary — it is a control, not a filter.
