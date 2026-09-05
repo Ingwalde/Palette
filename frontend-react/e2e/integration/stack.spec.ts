@@ -134,6 +134,13 @@ test("an admin can create a palette and a visitor can find it", async ({ page })
   await page.getByLabel(/description/i).fill("Created by the integration suite.");
   await page.getByRole("button", { name: "Create palette" }).click();
 
+  // A new palette is created private, so it must be published before a visitor can see it in the
+  // public feed — the create → publish flow the community model introduced.
+  await page.goto("/palettes/mine");
+  const row = page.locator("article", { hasText: palette });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Publish" }).click();
+
   // Round-trips through PostgreSQL: the slug is derived server-side, so finding it by search
   // proves the write landed and the read path sees it.
   await page.goto("/");
