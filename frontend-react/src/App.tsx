@@ -49,6 +49,9 @@ const NotFoundPage = lazy(() =>
 const PalettePage = lazy(() =>
   import("./pages/PalettePage").then((m) => ({ default: m.PalettePage })),
 );
+const PaletteEditorPage = lazy(() =>
+  import("./pages/PaletteEditorPage").then((m) => ({ default: m.PaletteEditorPage })),
+);
 
 export function App() {
   return (
@@ -66,7 +69,9 @@ export function App() {
 
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="palettes/new" element={<PaletteEditorPage />} />
         <Route path="u/:handle/:slug" element={<PalettePage />} />
+        <Route path="u/:handle/:slug/edit" element={<PaletteEditorPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="export" element={<ExportPage />} />
