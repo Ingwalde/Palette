@@ -26,6 +26,7 @@ const palette: Palette = {
   id: 7,
   slug: "nordic-frost",
   owner_handle: "palette",
+  visibility: "public",
   name: "Nordic Frost",
   description: "Clean.",
   colors: ["#26323D", "#F0F3F5"],

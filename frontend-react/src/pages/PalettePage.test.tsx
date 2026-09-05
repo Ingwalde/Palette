@@ -19,6 +19,7 @@ const palette: Palette = {
   colors: ["#006D77", "#0F9199", "#83C5BE", "#EDE7C8"],
   tags: ["cold", "sea"],
   owner_handle: "palette",
+  visibility: "public",
   created_at: "",
   updated_at: "",
 };

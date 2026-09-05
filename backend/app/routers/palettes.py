@@ -40,6 +40,17 @@ async def read_tags(db: AsyncSession = Depends(get_db)):
     return await crud.get_tags(db)
 
 
+@router.get("/mine", response_model=schemas.PaletteList)
+async def read_my_palettes(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """The signed-in user's own palettes, private ones included — declared before /{slug} so
+    "mine" is not read as a slug."""
+    items = await crud.get_palettes_for_user(db, current_user.id)
+    return {"items": items, "total": len(items), "limit": len(items), "offset": 0}
+
+
 @router.get("/{slug}", response_model=schemas.PaletteRead)
 async def read_palette(
     slug: str,

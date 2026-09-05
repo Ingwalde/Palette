@@ -1,8 +1,17 @@
 import { request, toQuery } from "../lib/http";
-import type { Palette, PaletteList, PaletteListParams } from "../types/api";
+import type {
+  Palette,
+  PaletteList,
+  PaletteListParams,
+  PaletteVisibility,
+} from "../types/api";
 
 export function listPalettes(params: PaletteListParams = {}): Promise<PaletteList> {
   return request<PaletteList>(`/palettes${toQuery({ ...params })}`);
+}
+
+export function listMyPalettes(): Promise<PaletteList> {
+  return request<PaletteList>("/palettes/mine");
 }
 
 export function getPalette(handle: string, slug: string): Promise<Palette> {
@@ -30,4 +39,12 @@ export function updatePalette(id: number, payload: PalettePayload): Promise<Pale
 
 export function deletePalette(id: number): Promise<void> {
   return request<void>(`/palettes/${id}`, { method: "DELETE" });
+}
+
+// Publish ("public") or hide ("private") — the PATCH-on-PUT the backend takes on the same route.
+export function setPaletteVisibility(
+  id: number,
+  visibility: PaletteVisibility,
+): Promise<Palette> {
+  return request<Palette>(`/palettes/${id}`, { method: "PUT", ...json({ visibility }) });
 }

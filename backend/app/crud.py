@@ -349,9 +349,27 @@ async def update_palette(
     if "tags" in data and data["tags"] is not None:
         palette.tags = data["tags"]
 
+    if "visibility" in data and data["visibility"] is not None:
+        palette.visibility = data["visibility"]
+        # Stamp the moment it first goes public; leave the stamp on when hidden again so a
+        # re-publish keeps its original date rather than jumping to the top of the feed each time.
+        if palette.visibility == "public" and palette.published_at is None:
+            palette.published_at = datetime.now(UTC)
+
     await db.commit()
     await db.refresh(palette)
     return palette
+
+
+async def get_palettes_for_user(db: AsyncSession, owner_id: int) -> list[models.Palette]:
+    """Every palette a user owns, newest first — for their "your palettes" page. Includes private
+    ones, which is why it is keyed on the owner rather than the public filter."""
+    stmt = (
+        select(models.Palette)
+        .where(models.Palette.owner_id == owner_id)
+        .order_by(models.Palette.created_at.desc(), models.Palette.id.desc())
+    )
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def delete_palette(db: AsyncSession, palette: models.Palette) -> None:

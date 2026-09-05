@@ -22,6 +22,7 @@ vi.mock("../api/palettes", () => ({
           id: 1,
           slug: "sea-breeze",
           owner_handle: "palette",
+          visibility: "public",
           name: "Sea Breeze",
           description: "Fresh.",
           colors: ["#000000", "#FFFFFF"],
