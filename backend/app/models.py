@@ -242,6 +242,8 @@ class Report(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
+    # The reported palette, for the admin review queue. selectin so it serialises under async.
+    palette: Mapped["Palette"] = relationship("Palette", lazy="selectin")
 
 
 class Notification(Base):

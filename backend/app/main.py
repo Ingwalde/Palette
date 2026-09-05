@@ -19,7 +19,7 @@ from .config import settings
 from .crud import purge_expired_refresh_tokens
 from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
-from .routers import auth, favorites, palettes, tags, users
+from .routers import auth, favorites, palettes, reports, tags, users
 from .security import ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE
 from .seed import (
     seed_curator_and_backfill,
@@ -205,6 +205,7 @@ app.include_router(palettes.router, prefix=API_PREFIX)
 app.include_router(favorites.router, prefix=API_PREFIX)
 app.include_router(tags.router, prefix=API_PREFIX)
 app.include_router(users.router, prefix=API_PREFIX)
+app.include_router(reports.router, prefix=API_PREFIX)
 
 
 def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse:

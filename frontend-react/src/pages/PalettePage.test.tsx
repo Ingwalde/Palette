@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,10 +6,25 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PalettePage } from "./PalettePage";
 import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
+import { ModalProvider } from "../components/modal/ModalProvider";
 import { ApiError } from "../lib/http";
 import type { Palette, User } from "../types/api";
 import * as palettesApi from "../api/palettes";
+import * as reportsApi from "../api/reports";
 import * as colorLib from "../lib/color";
+
+const signedInUser: User = {
+  id: 5,
+  username: "ann",
+  email: "a@x.com",
+  is_admin: false,
+  email_verified: true,
+  created_at: "",
+};
+
+async function signIn() {
+  vi.mocked((await import("../api/auth")).getCurrentUser).mockResolvedValue(signedInUser);
+}
 
 const palette: Palette = {
   id: 1,
@@ -31,6 +46,7 @@ vi.mock("../api/palettes", () => ({
   ),
   forkPalette: vi.fn(),
 }));
+vi.mock("../api/reports", () => ({ reportPalette: vi.fn() }));
 vi.mock("../api/tags", () => ({ listTags: vi.fn(() => Promise.resolve([])) }));
 vi.mock("../api/auth", () => ({
   getCurrentUser: vi.fn(() => Promise.reject(new ApiError("no", 401))),
@@ -62,23 +78,29 @@ function renderPage(state?: { from?: string }) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter initialEntries={[{ pathname: "/u/palette/sea-breeze", state }]}>
-            <Routes>
-              <Route path="/u/:handle/:slug" element={<PalettePage />} />
-              <Route path="/u/:handle/:slug/edit" element={<div>EDITOR</div>} />
-              <Route path="/login" element={<div>LOGIN</div>} />
-            </Routes>
-            <LocationProbe />
-          </MemoryRouter>
+          <ModalProvider>
+            <MemoryRouter initialEntries={[{ pathname: "/u/palette/sea-breeze", state }]}>
+              <Routes>
+                <Route path="/u/:handle/:slug" element={<PalettePage />} />
+                <Route path="/u/:handle/:slug/edit" element={<div>EDITOR</div>} />
+                <Route path="/login" element={<div>LOGIN</div>} />
+              </Routes>
+              <LocationProbe />
+            </MemoryRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,
   );
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.mocked(palettesApi.getPalette).mockResolvedValue(palette);
   vi.mocked(colorLib.copyToClipboard).mockClear();
+  // getCurrentUser is a shared mock; a signed-in test would otherwise leak into the next.
+  vi.mocked((await import("../api/auth")).getCurrentUser).mockRejectedValue(
+    new ApiError("no", 401),
+  );
 });
 
 describe("PalettePage", () => {
@@ -158,5 +180,55 @@ describe("PalettePage", () => {
     expect(await screen.findByText(/Forked from/)).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Original" });
     expect(link).toHaveAttribute("href", "/u/bob/original");
+  });
+
+  it("sends a signed-out visitor to login when reporting", async () => {
+    const u = userEvent.setup();
+    renderPage();
+    await u.click(await screen.findByRole("button", { name: "Report" }));
+    await waitFor(() => expect(screen.getByTestId("loc")).toHaveTextContent("/login"));
+  });
+
+  it("reports a palette after a signed-in user confirms", async () => {
+    await signIn();
+    vi.mocked(reportsApi.reportPalette).mockResolvedValue({
+      id: 1,
+      reason: "other",
+      detail: "",
+      status: "open",
+      created_at: "",
+      palette: { name: palette.name, slug: palette.slug, owner_handle: "palette" },
+    });
+    const u = userEvent.setup();
+    renderPage();
+    await u.click(await screen.findByRole("button", { name: "Report" }));
+    const dialog = await screen.findByRole("dialog");
+    await u.click(within(dialog).getByRole("button", { name: "Report" }));
+    await waitFor(() =>
+      expect(reportsApi.reportPalette).toHaveBeenCalledWith(1, "other"),
+    );
+    expect(await screen.findByText("Reported for review")).toBeInTheDocument();
+  });
+
+  it("hides the Report button from the palette's owner", async () => {
+    await signIn();
+    vi.mocked(palettesApi.getPalette).mockResolvedValue({
+      ...palette,
+      owner_handle: "ann",
+    });
+    renderPage();
+    await screen.findByRole("heading", { name: "Sea Breeze" });
+    expect(screen.queryByRole("button", { name: "Report" })).not.toBeInTheDocument();
+  });
+
+  it("shows a moderation note on a removed palette", async () => {
+    await signIn();
+    vi.mocked(palettesApi.getPalette).mockResolvedValue({
+      ...palette,
+      owner_handle: "ann",
+      status: "removed",
+    });
+    renderPage();
+    expect(await screen.findByText(/removed by moderation/)).toBeInTheDocument();
   });
 });
