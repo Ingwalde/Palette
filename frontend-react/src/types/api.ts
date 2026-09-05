@@ -11,9 +11,13 @@ export interface Palette {
   // The owner's handle — the curator handle ("palette") for a seed palette. The palette's URL,
   // /u/:owner_handle/:slug, is built from it; see lib/palettePath.
   owner_handle: string;
+  // "private" (owner-only) until published, then "public".
+  visibility: PaletteVisibility;
   created_at: string;
   updated_at: string;
 }
+
+export type PaletteVisibility = "private" | "public";
 
 export interface PaletteList {
   items: Palette[];

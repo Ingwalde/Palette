@@ -9,15 +9,16 @@ import { ToastProvider } from "../components/toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import * as palettesApi from "../api/palettes";
 import * as tagsApi from "../api/tags";
-import type { Tag } from "../types/api";
+import type { PaletteList, Tag } from "../types/api";
 import * as homeStyles from "./HomePage.css";
 
-const list = {
+const list: PaletteList = {
   items: [
     {
       id: 1,
       slug: "sea-breeze",
       owner_handle: "palette",
+      visibility: "public",
       name: "Sea Breeze",
       description: "Fresh.",
       colors: ["#000000", "#FFFFFF"],
@@ -146,7 +147,7 @@ describe("HomePage interactions", () => {
 
   it("loads a second page and then hides the button", async () => {
     const user = userEvent.setup();
-    const page = (count: number, offset: number) => ({
+    const page = (count: number, offset: number): PaletteList => ({
       items: Array.from({ length: count }, (_, i) => ({
         ...list.items[0],
         id: offset + i,

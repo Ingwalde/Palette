@@ -120,3 +120,49 @@ async def test_private_palette_hidden_from_others(db_session):
     async with _new_client() as anon:
         assert (await anon.get(f"/api/v1/users/{handle}/palettes/{slug}")).status_code == 404
         assert (await anon.get(f"/api/v1/palettes/{slug}")).status_code == 404
+
+
+async def test_mine_lists_only_your_own(db_session):
+    async with _actor("lister", db_session) as me:
+        await _create(me, "Mine One")
+        await _create(me, "Mine Two")
+        mine = (await me.get("/api/v1/palettes/mine")).json()
+        assert mine["total"] == 2
+        assert {p["name"] for p in mine["items"]} == {"Mine One", "Mine Two"}
+        assert all(p["visibility"] == "private" for p in mine["items"])
+
+    async with _actor("other-lister", db_session) as other:
+        assert (await other.get("/api/v1/palettes/mine")).json()["total"] == 0
+
+
+async def test_mine_requires_auth(client):
+    assert (await client.get("/api/v1/palettes/mine")).status_code == 401
+
+
+async def test_publish_and_unpublish_toggles_visibility(db_session):
+    async with _actor("publisher", db_session) as me:
+        created = await _create(me, "Draft")
+        pid, handle, slug = created["id"], created["owner_handle"], created["slug"]
+
+        published = await me.put(
+            f"/api/v1/palettes/{pid}", headers=_csrf(me), json={"visibility": "public"}
+        )
+        assert published.status_code == 200
+        assert published.json()["visibility"] == "public"
+
+    # Now visible to a guest.
+    async with _new_client() as anon:
+        assert (await anon.get(f"/api/v1/users/{handle}/palettes/{slug}")).status_code == 200
+
+    # Publishing then re-privatising hides it again.
+    async with _actor("republisher", db_session) as owner:
+        c = await _create(owner, "Oncemore")
+        cid, chandle, cslug = c["id"], c["owner_handle"], c["slug"]
+        await owner.put(
+            f"/api/v1/palettes/{cid}", headers=_csrf(owner), json={"visibility": "public"}
+        )
+        await owner.put(
+            f"/api/v1/palettes/{cid}", headers=_csrf(owner), json={"visibility": "private"}
+        )
+    async with _new_client() as anon:
+        assert (await anon.get(f"/api/v1/users/{chandle}/palettes/{cslug}")).status_code == 404

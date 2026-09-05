@@ -23,6 +23,7 @@ const palette: Palette = {
   id: 7,
   slug: "sea-breeze",
   owner_handle: "ann",
+  visibility: "public",
   name: "Sea Breeze",
   description: "Fresh.",
   colors: ["#006D77", "#83C5BE"],
@@ -122,6 +123,7 @@ describe("PaletteEditorPage", () => {
     vi.mocked(palettesApi.getPalette).mockResolvedValue({
       ...palette,
       owner_handle: "someone-else",
+      visibility: "public",
     });
     renderAt("/u/someone-else/sea-breeze/edit");
     expect(await screen.findByText("You can't edit this palette")).toBeInTheDocument();

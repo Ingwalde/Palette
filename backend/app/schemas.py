@@ -130,11 +130,17 @@ class PaletteCreate(PaletteBase):
     slug: str | None = Field(default=None, max_length=120)
 
 
+VISIBILITIES = ("private", "public")
+
+
 class PaletteUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)
     description: str | None = Field(default=None, max_length=1000)
     colors: list[str] | None = Field(default=None, min_length=1, max_length=8)
     tags: list[str] | None = Field(default=None, max_length=12)
+    # Publish/unpublish rides on the same PATCH: "public" makes it visible and stamps published_at,
+    # "private" hides it again.
+    visibility: str | None = Field(default=None)
 
     @field_validator("colors")
     @classmethod
@@ -146,6 +152,15 @@ class PaletteUpdate(BaseModel):
     def _normalize_tags(cls, tags: list[str] | None) -> list[str] | None:
         return None if tags is None else normalize_tags(tags)
 
+    @field_validator("visibility")
+    @classmethod
+    def _validate_visibility(cls, visibility: str | None) -> str | None:
+        if visibility is None:
+            return None
+        if visibility not in VISIBILITIES:
+            raise ValueError(f"visibility must be one of {', '.join(VISIBILITIES)}")
+        return visibility
+
 
 class PaletteRead(PaletteBase):
     id: int
@@ -153,6 +168,7 @@ class PaletteRead(PaletteBase):
     # The owner's handle, read from the Palette.owner_handle property — the curator handle for a
     # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
     owner_handle: str
+    visibility: str
     created_at: datetime
     updated_at: datetime
 
