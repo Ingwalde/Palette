@@ -57,6 +57,11 @@ export function Layout() {
           <NavLink to="/export" className={linkClass}>
             Export
           </NavLink>
+          {isAuthenticated && (
+            <NavLink to="/palettes/new" className={linkClass}>
+              New palette
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/admin" className={linkClass}>
               Admin

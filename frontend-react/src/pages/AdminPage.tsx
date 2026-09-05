@@ -25,18 +25,14 @@ import { queryKeys } from "../api/queryKeys";
 import { ApiError } from "../lib/http";
 import { useDebounce } from "../lib/useDebounce";
 import type { Palette, Tag, TagKind } from "../types/api";
-import * as colorEditor from "./ColorEditor.css";
+import { PaletteForm, type PaletteFormValues } from "../components/PaletteForm";
 import * as styles from "./AdminPage.css";
 import * as ui from "../styles/ui.css";
 import * as home from "./HomePage.css";
 import { buttonClass } from "../styles/ui";
 
-const DEFAULT_COLOR = "#3f4e4f";
-const MAX_COLORS = 8;
-const MAX_TAGS = 12;
 const PAGE_SIZE = 10;
 
-const normalizeTag = (value: string) => value.trim().toLowerCase().replace(/#/g, "");
 const errMsg = (e: unknown) =>
   e instanceof ApiError ? e.message : "Something went wrong";
 
@@ -191,15 +187,11 @@ function PalettesView() {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { confirm } = useModal();
-  const { data: tags } = useQuery({ queryKey: queryKeys.tags, queryFn: listTags });
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [colors, setColors] = useState<string[]>([DEFAULT_COLOR]);
-  const [paletteTags, setPaletteTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
-  const [suggestOpen, setSuggestOpen] = useState(false);
+  // The palette being edited, and a nonce that remounts the form so it re-seeds from `editing`
+  // (its fields live inside PaletteForm now).
+  const [editing, setEditing] = useState<Palette | null>(null);
+  const [formNonce, setFormNonce] = useState(0);
 
   const [searchInput, setSearchInput] = useState("");
   const [offset, setOffset] = useState(0);
@@ -226,12 +218,8 @@ function PalettesView() {
   };
 
   const resetForm = () => {
-    setEditingId(null);
-    setName("");
-    setDescription("");
-    setColors([DEFAULT_COLOR]);
-    setPaletteTags([]);
-    setTagInput("");
+    setEditing(null);
+    setFormNonce((n) => n + 1);
   };
 
   // Nothing marked the save as in flight, so a second click while the first request was still
@@ -240,22 +228,15 @@ function PalettesView() {
   // error anywhere to say what happened.
   const [saving, setSaving] = useState(false);
 
-  const onSave = async (e: FormEvent) => {
-    e.preventDefault();
+  const onSave = async (values: PaletteFormValues) => {
     if (saving) return;
-    const payload = {
-      name: name.trim(),
-      description: description.trim(),
-      colors: colors.map((c) => c.trim()).filter(Boolean),
-      tags: paletteTags,
-    };
     setSaving(true);
     try {
-      if (editingId !== null) {
-        await updatePalette(editingId, payload);
+      if (editing !== null) {
+        await updatePalette(editing.id, values);
         showToast("Palette updated");
       } else {
-        await createPalette(payload);
+        await createPalette(values);
         showToast("Palette created");
       }
       resetForm();
@@ -268,12 +249,8 @@ function PalettesView() {
   };
 
   const onEdit = (palette: Palette) => {
-    setEditingId(palette.id);
-    setName(palette.name);
-    setDescription(palette.description);
-    setColors(palette.colors.length ? palette.colors : [DEFAULT_COLOR]);
-    setPaletteTags(palette.tags);
-    setTagInput("");
+    setEditing(palette);
+    setFormNonce((n) => n + 1);
   };
 
   const onDelete = async (palette: Palette) => {
@@ -293,201 +270,37 @@ function PalettesView() {
     }
   };
 
-  // colour editor
-  const setColorAt = (i: number, value: string) =>
-    setColors((cs) => cs.map((c, idx) => (idx === i ? value : c)));
-  const addColor = () =>
-    setColors((cs) => (cs.length >= MAX_COLORS ? cs : [...cs, DEFAULT_COLOR]));
-  const removeColor = (i: number) =>
-    setColors((cs) => (cs.length > 1 ? cs.filter((_, idx) => idx !== i) : cs));
-
-  // tag chips
-  const addTag = (raw: string) => {
-    const value = normalizeTag(raw);
-    if (!value || paletteTags.includes(value)) return;
-    if (paletteTags.length >= MAX_TAGS) {
-      showToast(`Up to ${MAX_TAGS} tags per palette`, "error");
-      return;
-    }
-    setPaletteTags((t) => [...t, value]);
-  };
-  const suggestions = (tags ?? [])
-    .filter(
-      (t) =>
-        !paletteTags.includes(t.name) && t.name.includes(tagInput.trim().toLowerCase()),
-    )
-    .slice(0, 8);
-
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
     <div className={styles.view}>
-      <form className={styles.form} onSubmit={onSave}>
-        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
-          <div>
-            <p className={ui.eyebrow}>Palette</p>
-            <h2>{editingId !== null ? "Edit palette" : "Add palette"}</h2>
-          </div>
-        </div>
-
-        <label className={ui.field}>
-          <span>Name</span>
-          <input
-            className={ui.input}
-            type="text"
-            placeholder="Nordic Blue"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </label>
-
-        <label className={ui.field}>
-          <span>Description</span>
-          <textarea
-            className={ui.textarea}
-            rows={4}
-            placeholder="Short description..."
-            required
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </label>
-
-        <div className={ui.field}>
-          <span>Colors</span>
-          <div className={colorEditor.editor}>
-            {colors.map((color, i) => (
-              <div className={colorEditor.row} key={i}>
-                <input
-                  className={colorEditor.picker}
-                  type="color"
-                  aria-label={`Colour ${i + 1} picker`}
-                  value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : DEFAULT_COLOR}
-                  onChange={(e) => setColorAt(i, e.target.value.toUpperCase())}
-                />
-                <input
-                  className={`${ui.input} ${colorEditor.hex}`}
-                  type="text"
-                  maxLength={7}
-                  aria-label="HEX color"
-                  value={color.toUpperCase()}
-                  onChange={(e) => setColorAt(i, e.target.value)}
-                />
-                <button
-                  className={`${buttonClass("ghost")} ${colorEditor.remove}`}
-                  type="button"
-                  aria-label="Remove color"
-                  onClick={() => removeColor(i)}
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className={colorEditor.footer}>
-            <button
-              className={buttonClass("ghost")}
-              type="button"
-              onClick={addColor}
-              disabled={colors.length >= MAX_COLORS}
-            >
-              + Add color
-            </button>
-            <small className={ui.hint}>1–8 HEX colors.</small>
-          </div>
-        </div>
-
-        <div className={ui.field}>
-          <span>Tags</span>
-          <div className={styles.tagEditor}>
-            {paletteTags.map((tag) => (
-              <span className={styles.tagChip} key={tag} data-value={tag}>
-                {tag}
-                <button
-                  className={styles.tagChipRemove}
-                  type="button"
-                  aria-label={`Remove ${tag}`}
-                  onClick={() => setPaletteTags((t) => t.filter((x) => x !== tag))}
-                >
-                  ✕
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className={styles.tagSuggest}>
-            <input
-              className={ui.input}
-              type="text"
-              placeholder="Type or pick a tag"
-              autoComplete="off"
-              role="combobox"
-              aria-expanded={suggestOpen && suggestions.length > 0}
-              value={tagInput}
-              onChange={(e) => {
-                setTagInput(e.target.value);
-                setSuggestOpen(true);
-              }}
-              onFocus={() => setSuggestOpen(true)}
-              onBlur={() => window.setTimeout(() => setSuggestOpen(false), 120)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === ",") {
-                  e.preventDefault();
-                  addTag(tagInput);
-                  setTagInput("");
-                } else if (e.key === "Escape") {
-                  setSuggestOpen(false);
-                }
-              }}
-            />
-            <div
-              className={styles.tagSuggestMenu}
-              role="listbox"
-              hidden={!suggestOpen || suggestions.length === 0}
-            >
-              {suggestions.map((tag) => (
-                <button
-                  key={tag.name}
-                  className={styles.tagSuggestOption}
-                  type="button"
-                  role="option"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    addTag(tag.name);
-                    setTagInput("");
-                  }}
-                >
-                  <span className={styles.tagSuggestName}>{tag.name}</span>
-                  {tag.kind === "purpose" && (
-                    <span className={`${styles.tagBadge} ${styles.tagBadgeKind.purpose}`}>
-                      Category
-                    </span>
-                  )}
-                </button>
-              ))}
+      <PaletteForm
+        key={editing ? `edit-${editing.id}` : `new-${formNonce}`}
+        initial={
+          editing
+            ? {
+                name: editing.name,
+                description: editing.description,
+                colors: editing.colors,
+                tags: editing.tags,
+              }
+            : undefined
+        }
+        submitLabel={editing ? "Update palette" : "Create palette"}
+        saving={saving}
+        onSubmit={onSave}
+        onCancel={editing ? resetForm : undefined}
+        cancelLabel="Cancel edit"
+        header={
+          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
+            <div>
+              <p className={ui.eyebrow}>Palette</p>
+              <h2>{editing ? "Edit palette" : "Add palette"}</h2>
             </div>
           </div>
-          <small className={ui.hint}>
-            Press Enter or comma to add, or pick from the list. Up to 12 tags.
-          </small>
-        </div>
-
-        <div className={ui.formActions}>
-          <button className={buttonClass("primary")} type="submit" disabled={saving}>
-            {editingId !== null ? "Update palette" : "Create palette"}
-          </button>
-          {editingId !== null && (
-            <button
-              className={buttonClass("secondary")}
-              type="button"
-              onClick={resetForm}
-            >
-              Cancel edit
-            </button>
-          )}
-        </div>
-      </form>
+        }
+      />
 
       <section className={styles.list} aria-label="Palettes in the database">
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
