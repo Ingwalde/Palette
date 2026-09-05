@@ -1,13 +1,19 @@
+from datetime import UTC, datetime
+
 import pytest_asyncio
 from app import crud, schemas
 
 
 @pytest_asyncio.fixture
 async def palette_with_tags(db_session):
-    await crud.create_palette(
+    palette = await crud.create_palette(
         db_session,
         schemas.PaletteCreate(name="Tagged One", colors=["#112233"], tags=["web", "retro"]),
     )
+    # Published, so it shows in the public list the propagation tests read back through.
+    palette.visibility = "public"
+    palette.published_at = datetime.now(UTC)
+    await db_session.commit()
 
 
 async def test_catalog_starts_empty(client):

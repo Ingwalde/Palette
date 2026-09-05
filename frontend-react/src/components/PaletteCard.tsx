@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
+import { CURATOR_HANDLE } from "../lib/constants";
 import { copyToClipboard, formatColor, getPaletteContrastStatus } from "../lib/color";
 import { useColorFormat } from "./ColorFormatContext";
 import { useAuth } from "../auth/AuthContext";
@@ -95,6 +96,11 @@ export function PaletteCard({ palette }: { palette: Palette }) {
               {palette.name}
             </Link>
           </h3>
+          <p className={styles.byline}>
+            {palette.owner_handle === CURATOR_HANDLE
+              ? "Palette"
+              : `by ${palette.owner_handle}`}
+          </p>
           <p className={styles.meta}>{palette.description}</p>
         </div>
         <button

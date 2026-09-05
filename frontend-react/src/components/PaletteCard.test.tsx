@@ -59,6 +59,8 @@ describe("PaletteCard", () => {
     expect(screen.getByText("Fresh blue and green.")).toBeInTheDocument();
     expect(screen.getByText("#cold")).toBeInTheDocument();
     expect(screen.getByText(/Excellent contrast · 21:1/)).toBeInTheDocument();
+    // A curator-owned palette is bylined with the brand, not "by palette".
+    expect(screen.getByText("Palette")).toBeInTheDocument();
   });
 
   it("names the contrast pair in the badge and links to the table", () => {

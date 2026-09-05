@@ -75,7 +75,8 @@ export interface MessageResponse {
 export interface PaletteListParams {
   search?: string;
   tag?: string;
-  sort?: "default" | "az" | "za";
+  // "az"/"za" are the admin list's; "new"/"popular"/"curated" are the community feed's.
+  sort?: "default" | "az" | "za" | "new" | "popular" | "curated";
   limit?: number;
   offset?: number;
 }
