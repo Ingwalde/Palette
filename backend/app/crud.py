@@ -64,12 +64,33 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
     return (await db.execute(stmt)).scalars().first()
 
 
-async def get_palette_for_owner(db: AsyncSession, handle: str, slug: str) -> models.Palette | None:
-    """Resolve the palette at /u/:handle/:slug. Slugs are globally unique for now, so the lookup
-    is by slug; the handle is verified against the owner so a wrong handle 404s rather than
-    serving another owner's palette under it."""
+def palette_visible_to(palette: models.Palette, viewer: models.User | None) -> bool:
+    """Who may read a palette: anyone for a public one; only its owner or an admin for a private
+    one. (status-based moderation hiding arrives with the moderation step.)"""
+    if palette.visibility == "public":
+        return True
+    return viewer is not None and (viewer.is_admin or palette.owner_id == viewer.id)
+
+
+def palette_editable_by(palette: models.Palette, user: models.User) -> bool:
+    """Who may edit or delete a palette: its owner, or an admin."""
+    return user.is_admin or palette.owner_id == user.id
+
+
+async def get_palette_for_owner(
+    db: AsyncSession,
+    handle: str,
+    slug: str,
+    viewer: models.User | None = None,
+) -> models.Palette | None:
+    """Resolve the palette at /u/:handle/:slug for `viewer`. Slugs are globally unique for now, so
+    the lookup is by slug; the handle is verified against the owner so a wrong handle 404s rather
+    than serving another owner's palette under it, and a private palette 404s for anyone but its
+    owner or an admin (a 404, not a 403, so its existence is not revealed)."""
     palette = await get_palette_by_slug(db, slug)
     if palette is None or palette.owner_handle != handle:
+        return None
+    if not palette_visible_to(palette, viewer):
         return None
     return palette
 
@@ -265,14 +286,19 @@ async def delete_tag_everywhere(db: AsyncSession, name: str) -> int:
     return len(palettes)
 
 
-async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) -> models.Palette:
+async def create_palette(
+    db: AsyncSession,
+    palette_data: schemas.PaletteCreate,
+    owner_id: int | None = None,
+) -> models.Palette:
     """Create a palette, retrying once if a concurrent create takes the slug first.
 
-    get_unique_slug is check-then-insert and says so: the unique constraint is what actually
-    decides. Rather than widen the window with a lock, the loser recomputes and tries again —
-    by then the winner's row is visible, so the next free suffix is a different one. One retry
-    is enough for the collision this can produce; a second failure is a real problem and is
-    allowed to surface rather than be looped over.
+    `owner_id` is the creating user; a palette is created private (the default) and made public
+    later by publishing. get_unique_slug is check-then-insert and says so: the unique constraint
+    is what actually decides. Rather than widen the window with a lock, the loser recomputes and
+    tries again — by then the winner's row is visible, so the next free suffix is a different one.
+    One retry is enough for the collision this can produce; a second failure is a real problem and
+    is allowed to surface rather than be looped over.
     """
     desired_slug = palette_data.slug or palette_data.name
 
@@ -284,6 +310,7 @@ async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) 
             description=palette_data.description,
             colors=palette_data.colors,
             tags=palette_data.tags,
+            owner_id=owner_id,
         )
         db.add(palette)
         try:
