@@ -7,7 +7,7 @@ import { PaletteCard } from "../components/PaletteCard";
 import { CustomSelect } from "../components/CustomSelect";
 import { useColorFormat } from "../components/ColorFormatContext";
 import type { ColorFormat } from "../lib/color";
-import type { PaletteListParams, Tag } from "../types/api";
+import type { Tag } from "../types/api";
 import { EmptyState } from "../components/EmptyState";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
@@ -16,12 +16,14 @@ import * as styles from "./HomePage.css";
 // How many tag chips the row shows before "More tags".
 const TAG_LIMIT = 10;
 
-type Sort = NonNullable<PaletteListParams["sort"]>;
+// The community feed sorts. "new" is the implicit default and is never written to the URL, so `/`
+// and `/?sort=new` are the same address.
+type FeedSort = "new" | "popular" | "curated";
 
 const SORT_OPTIONS = [
-  { value: "default", label: "Default order" },
-  { value: "az", label: "Name A-Z" },
-  { value: "za", label: "Name Z-A" },
+  { value: "new", label: "Newest" },
+  { value: "popular", label: "Most popular" },
+  { value: "curated", label: "Curated" },
 ];
 
 const FORMAT_OPTIONS = [
@@ -31,10 +33,8 @@ const FORMAT_OPTIONS = [
   { value: "oklch", label: "OKLCH" },
 ];
 
-// "default" is the implicit sort and is never written to the URL, so `/` and `/?sort=default`
-// stay the same address. Only these two are real query values.
-function readSort(raw: string | null): Sort {
-  return raw === "az" || raw === "za" ? raw : "default";
+function readSort(raw: string | null): FeedSort {
+  return raw === "popular" || raw === "curated" ? raw : "new";
 }
 
 export function HomePage() {
@@ -78,7 +78,7 @@ export function HomePage() {
   // A sort outside the known set (a hand-edited or stale URL) falls back to the default and is
   // stripped, so `/?sort=%3Cscript%3E` does not linger in the address bar.
   useEffect(() => {
-    if (rawSort !== null && rawSort !== "az" && rawSort !== "za") {
+    if (rawSort !== null && rawSort !== "popular" && rawSort !== "curated") {
       setParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -100,10 +100,10 @@ export function HomePage() {
       return next;
     });
 
-  const selectSort = (value: Sort) =>
+  const selectSort = (value: FeedSort) =>
     setParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (value === "default") next.delete("sort");
+      if (value === "new") next.delete("sort");
       else next.set("sort", value);
       return next;
     });
@@ -261,7 +261,7 @@ export function HomePage() {
           <CustomSelect
             options={SORT_OPTIONS}
             value={sort}
-            onChange={(v) => selectSort(v as Sort)}
+            onChange={(v) => selectSort(v as FeedSort)}
             ariaLabel="Sort palettes"
           />
           <CustomSelect

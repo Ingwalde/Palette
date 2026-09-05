@@ -106,7 +106,13 @@ def _like_pattern(search: str) -> str:
 
 
 def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
-    stmt = select(models.Palette)
+    # The public list is the community feed: only published, un-removed palettes. Private drafts
+    # and moderation-removed palettes never appear here — the owner sees a private one through
+    # "your palettes", and a single palette through its own visibility-checked route.
+    stmt = select(models.Palette).where(
+        models.Palette.visibility == "public",
+        models.Palette.status == "active",
+    )
 
     if search:
         like = _like_pattern(search)
@@ -143,6 +149,25 @@ async def get_palettes(
         stmt = stmt.order_by(func.lower(models.Palette.name).asc())
     elif sort == "za":
         stmt = stmt.order_by(func.lower(models.Palette.name).desc())
+    elif sort == "new":
+        # Most recently published first; the id breaks ties and orders the (seed) rows whose
+        # published_at was backfilled to the same value deterministically.
+        stmt = stmt.order_by(
+            models.Palette.published_at.desc().nullslast(), models.Palette.id.desc()
+        )
+    elif sort == "popular":
+        # Denormalised counters, so this is an index-friendly order rather than a COUNT per row.
+        stmt = stmt.order_by(
+            (models.Palette.favorites_count + models.Palette.forks_count).desc(),
+            models.Palette.published_at.desc().nullslast(),
+            models.Palette.id.desc(),
+        )
+    elif sort == "curated":
+        stmt = stmt.order_by(
+            models.Palette.is_featured.desc(),
+            models.Palette.published_at.desc().nullslast(),
+            models.Palette.id.desc(),
+        )
     else:
         stmt = stmt.order_by(models.Palette.id.asc())
 

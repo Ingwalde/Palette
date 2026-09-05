@@ -58,6 +58,13 @@ export const titleLink = style({
   ":focus-visible": { textDecoration: "underline" },
 });
 
+export const byline = style({
+  margin: "0 0 4px",
+  color: vars.color.muted,
+  fontSize: "0.78rem",
+  fontWeight: 600,
+});
+
 export const meta = style({
   margin: 0,
   color: vars.color.muted,

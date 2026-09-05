@@ -21,7 +21,7 @@ async def read_palettes(
         default=None, description="Search by name, description, slug or tag"
     ),
     tag: str | None = Query(default=None, description="Filter by tag"),
-    sort: str = Query(default="default", pattern="^(default|az|za)$"),
+    sort: str = Query(default="default", pattern="^(default|az|za|new|popular|curated)$"),
     limit: int = Query(default=100, ge=1, le=500, description="Max results to return"),
     offset: int = Query(default=0, ge=0, description="Number of results to skip"),
     db: AsyncSession = Depends(get_db),

@@ -104,6 +104,24 @@ describe("HomePage interactions", () => {
     );
   });
 
+  it("requests the community feed newest-first by default", async () => {
+    renderHome();
+    await waitFor(() =>
+      expect(palettesApi.listPalettes).toHaveBeenCalledWith(
+        expect.objectContaining({ sort: "new" }),
+      ),
+    );
+  });
+
+  it("applies the popular sort from the URL", async () => {
+    renderHome(["/?sort=popular"]);
+    await waitFor(() =>
+      expect(palettesApi.listPalettes).toHaveBeenCalledWith(
+        expect.objectContaining({ sort: "popular" }),
+      ),
+    );
+  });
+
   it("puts the selected tag in the URL as ordinary navigation", async () => {
     const user = userEvent.setup();
     renderHome();

@@ -236,3 +236,35 @@ async def test_seed_palettes_are_public_and_featured(db_session):
     assert p.visibility == "public"
     assert p.is_featured is True
     assert p.published_at is not None
+
+
+async def test_list_excludes_private_palettes(client, seeded, db_session):
+    # A private draft alongside the public catalogue must not appear in the public feed.
+    await crud.create_palette(
+        db_session, schemas.PaletteCreate(name="Secret Draft", colors=["#010203"])
+    )
+    body = (await client.get("/api/v1/palettes")).json()
+    names = {p["name"] for p in body["items"]}
+    assert "Secret Draft" not in names
+    assert body["total"] == 3
+
+
+async def test_feed_sorts_are_accepted(client, seeded):
+    for sort in ("new", "popular", "curated"):
+        resp = await client.get("/api/v1/palettes", params={"sort": sort})
+        assert resp.status_code == 200, sort
+        assert resp.json()["total"] == 3
+
+
+async def test_curated_sort_puts_featured_first(client, db_session):
+    from datetime import UTC, datetime
+
+    plain = await _seed_public(db_session, name="Plain One", colors=["#111111"])
+    plain.is_featured = False
+    featured = await _seed_public(db_session, name="Featured One", colors=["#222222"])
+    featured.is_featured = True
+    featured.published_at = datetime(2020, 1, 1, tzinfo=UTC)  # older, but featured
+    await db_session.commit()
+
+    items = (await client.get("/api/v1/palettes", params={"sort": "curated"})).json()["items"]
+    assert items[0]["name"] == "Featured One"
