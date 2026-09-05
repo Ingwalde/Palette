@@ -13,11 +13,20 @@ export interface Palette {
   owner_handle: string;
   // "private" (owner-only) until published, then "public".
   visibility: PaletteVisibility;
+  // The palette this was forked from, or null/absent. Optional: only the single-palette read
+  // carries it.
+  forked_from?: PaletteLineage | null;
   created_at: string;
   updated_at: string;
 }
 
 export type PaletteVisibility = "private" | "public";
+
+export interface PaletteLineage {
+  name: string;
+  slug: string;
+  owner_handle: string;
+}
 
 export interface PaletteList {
   items: Palette[];

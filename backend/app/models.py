@@ -116,6 +116,11 @@ class Palette(Base):
     forked_from_id: Mapped[int | None] = mapped_column(
         ForeignKey("palettes.id", ondelete="SET NULL"), index=True, nullable=True
     )
+    # The palette this was forked from, for the "Forked from X by Y" lineage line. Self-referential
+    # many-to-one; selectin so the lineage serialises under async without a lazy load.
+    forked_from: Mapped["Palette | None"] = relationship(
+        "Palette", remote_side="Palette.id", lazy="selectin"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

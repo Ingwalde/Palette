@@ -166,3 +166,48 @@ async def test_publish_and_unpublish_toggles_visibility(db_session):
         )
     async with _new_client() as anon:
         assert (await anon.get(f"/api/v1/users/{chandle}/palettes/{cslug}")).status_code == 404
+
+
+async def _publish(client, pid):
+    resp = await client.put(
+        f"/api/v1/palettes/{pid}", headers=_csrf(client), json={"visibility": "public"}
+    )
+    assert resp.status_code == 200, resp.text
+
+
+async def test_fork_copies_a_public_palette_into_your_account(db_session):
+    async with _actor("source-owner", db_session) as owner:
+        src = await _create(owner, "Original")
+        await _publish(owner, src["id"])
+        src_id = src["id"]
+
+    async with _actor("forker", db_session) as forker:
+        forked = await forker.post(f"/api/v1/palettes/{src_id}/fork", headers=_csrf(forker))
+        assert forked.status_code == 201, forked.text
+        body = forked.json()
+        assert body["owner_handle"] == "forker"
+        assert body["visibility"] == "private"
+        assert body["name"] == "Original"
+        assert body["forked_from"]["slug"] == src["slug"]
+        assert body["forked_from"]["owner_handle"] == "source-owner"
+
+    # The source's fork counter went up.
+    src_row = await crud.get_palette(db_session, src_id)
+    assert src_row.forks_count == 1
+
+
+async def test_fork_requires_auth(client, db_session):
+    async with _actor("owner-x", db_session) as owner:
+        src = await _create(owner, "Public One")
+        await _publish(owner, src["id"])
+        src_id = src["id"]
+    assert (await client.post(f"/api/v1/palettes/{src_id}/fork")).status_code == 401
+
+
+async def test_cannot_fork_a_private_palette_you_do_not_own(db_session):
+    async with _actor("private-owner", db_session) as owner:
+        src_id = (await _create(owner, "Secret"))["id"]
+
+    async with _actor("stranger", db_session) as stranger:
+        resp = await stranger.post(f"/api/v1/palettes/{src_id}/fork", headers=_csrf(stranger))
+        assert resp.status_code == 404
