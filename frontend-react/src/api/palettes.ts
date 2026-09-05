@@ -48,3 +48,8 @@ export function setPaletteVisibility(
 ): Promise<Palette> {
   return request<Palette>(`/palettes/${id}`, { method: "PUT", ...json({ visibility }) });
 }
+
+// Copy a palette into your own account as a private draft, with lineage recorded.
+export function forkPalette(id: number): Promise<Palette> {
+  return request<Palette>(`/palettes/${id}/fork`, { method: "POST" });
+}

@@ -80,6 +80,26 @@ async def create_palette(
     return await crud.create_palette(db, palette_data, owner_id=current_user.id)
 
 
+@router.post(
+    "/{palette_id}/fork",
+    response_model=schemas.PaletteRead,
+    status_code=status.HTTP_201_CREATED,
+)
+@limiter.limit(_CREATE_LIMIT)
+async def fork_palette(
+    request: Request,
+    palette_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Copy a palette into your own account as a private draft, with its lineage recorded. Only a
+    palette you can see may be forked — a private one you do not own 404s."""
+    source = await crud.get_palette(db, palette_id)
+    if source is None or not crud.palette_visible_to(source, current_user):
+        raise HTTPException(status_code=404, detail="Palette not found")
+    return await crud.fork_palette(db, source, current_user.id)
+
+
 async def _owned_palette(palette_id: int, db: AsyncSession, user: models.User) -> models.Palette:
     """The palette, if it exists and the user may edit it — otherwise 404. Editing another user's
     palette 404s rather than 403s, so its existence is not disclosed."""

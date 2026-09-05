@@ -162,6 +162,17 @@ class PaletteUpdate(BaseModel):
         return visibility
 
 
+class PaletteLineage(BaseModel):
+    """The compact reference a fork shows for its source — enough to render 'Forked from X by Y'
+    with a link, without a second request."""
+
+    name: str
+    slug: str
+    owner_handle: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PaletteRead(PaletteBase):
     id: int
     slug: str
@@ -169,6 +180,8 @@ class PaletteRead(PaletteBase):
     # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
     owner_handle: str
     visibility: str
+    # Set when this palette was forked from another; null otherwise.
+    forked_from: PaletteLineage | None = None
     created_at: datetime
     updated_at: datetime
 

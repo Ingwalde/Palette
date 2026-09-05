@@ -351,6 +351,36 @@ async def create_palette(
     raise AssertionError("unreachable: the loop either returns or raises")
 
 
+async def fork_palette(db: AsyncSession, source: models.Palette, owner_id: int) -> models.Palette:
+    """Copy `source` into `owner_id`'s account as a private palette, recording the lineage and
+    bumping the source's fork counter. Same one-retry slug handling as create_palette."""
+    for attempt in (1, 2):
+        slug = await get_unique_slug(db, source.name)
+        copy = models.Palette(
+            slug=slug,
+            name=source.name,
+            description=source.description,
+            colors=list(source.colors),
+            tags=list(source.tags),
+            owner_id=owner_id,
+            visibility="private",
+            forked_from_id=source.id,
+        )
+        db.add(copy)
+        source.forks_count += 1
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            if attempt == 2:
+                raise
+            continue
+        await db.refresh(copy)
+        return copy
+
+    raise AssertionError("unreachable: the loop either returns or raises")
+
+
 async def update_palette(
     db: AsyncSession,
     palette: models.Palette,

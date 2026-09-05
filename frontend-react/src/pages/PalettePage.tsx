@@ -1,12 +1,15 @@
-import { useMemo, type CSSProperties } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { useMemo, useState, type CSSProperties } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePalette, usePalettes, useFavorites, useToggleFavorite } from "../api/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PaletteCard } from "../components/PaletteCard";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
 import { CURATOR_HANDLE } from "../lib/constants";
+import { palettePath } from "../lib/palettePath";
+import { forkPalette } from "../api/palettes";
 import {
   copyToClipboard,
   formatColor,
@@ -24,11 +27,14 @@ import * as styles from "./PalettePage.css";
 export function PalettePage() {
   const { handle = "", slug = "" } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
+  const [forking, setForking] = useState(false);
 
   const { data: palette, isLoading, error } = usePalette(handle, slug);
 
@@ -118,6 +124,24 @@ export function PalettePage() {
   const onShare = () =>
     void copyValue(window.location.href, "Link copied to the clipboard");
 
+  const onFork = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    if (forking) return;
+    setForking(true);
+    try {
+      const copy = await forkPalette(palette.id);
+      showToast("Forked to your palettes");
+      queryClient.invalidateQueries({ queryKey: ["palettes"] });
+      navigate(`${palettePath(copy)}/edit`);
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "Something went wrong", "error");
+      setForking(false);
+    }
+  };
+
   return (
     <>
       <section className={`${ui.section} ${styles.head}`}>
@@ -132,6 +156,16 @@ export function PalettePage() {
         <p className={styles.byline}>
           By <span className={styles.owner}>{ownerLabel}</span>
         </p>
+
+        {palette.forked_from && (
+          <p className={styles.byline}>
+            Forked from{" "}
+            <Link className={styles.owner} to={palettePath(palette.forked_from)}>
+              {palette.forked_from.name}
+            </Link>{" "}
+            by {palette.forked_from.owner_handle}
+          </p>
+        )}
 
         {palette.tags.length > 0 && (
           <div className={styles.tags}>
@@ -197,6 +231,14 @@ export function PalettePage() {
             }
           >
             Copy CSS
+          </button>
+          <button
+            type="button"
+            className={buttonClass("secondary")}
+            disabled={forking}
+            onClick={() => void onFork()}
+          >
+            {forking ? "Forking…" : "Fork"}
           </button>
           <button type="button" className={buttonClass("ghost")} onClick={onShare}>
             Share
