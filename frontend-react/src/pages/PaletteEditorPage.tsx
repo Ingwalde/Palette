@@ -22,6 +22,12 @@ export function PaletteEditorPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [saving, setSaving] = useState(false);
 
+  // The image extractor hands off here with colours to seed a new palette (location state, so the
+  // colours never touch the URL). Ignored in edit mode, where the palette's own colours win.
+  const draft = (location.state as { draft?: { colors?: string[] } } | null)?.draft;
+  const draftColors =
+    !isEdit && draft?.colors && draft.colors.length > 0 ? draft.colors : undefined;
+
   // Not signed in → the editor is not available. Carry the intent so login returns here.
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -117,7 +123,9 @@ export function PaletteEditorPage() {
                   colors: palette.colors,
                   tags: palette.tags,
                 }
-              : undefined
+              : draftColors
+                ? { name: "", description: "", colors: draftColors, tags: [] }
+                : undefined
           }
           submitLabel={isEdit ? "Save changes" : "Create palette"}
           saving={saving}

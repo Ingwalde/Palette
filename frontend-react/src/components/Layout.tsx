@@ -62,6 +62,11 @@ export function Layout() {
               New palette
             </NavLink>
           )}
+          {isAuthenticated && (
+            <NavLink to="/import" className={linkClass}>
+              Import
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/admin" className={linkClass}>
               Admin

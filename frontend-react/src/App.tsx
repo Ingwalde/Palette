@@ -55,6 +55,9 @@ const PaletteEditorPage = lazy(() =>
 const YourPalettesPage = lazy(() =>
   import("./pages/YourPalettesPage").then((m) => ({ default: m.YourPalettesPage })),
 );
+const ImportPage = lazy(() =>
+  import("./pages/ImportPage").then((m) => ({ default: m.ImportPage })),
+);
 
 export function App() {
   return (
@@ -73,6 +76,7 @@ export function App() {
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="palettes/new" element={<PaletteEditorPage />} />
+        <Route path="import" element={<ImportPage />} />
         <Route path="palettes/mine" element={<YourPalettesPage />} />
         <Route path="u/:handle/:slug" element={<PalettePage />} />
         <Route path="u/:handle/:slug/edit" element={<PaletteEditorPage />} />
