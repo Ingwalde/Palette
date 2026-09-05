@@ -10,6 +10,8 @@ import { ApiError } from "../lib/http";
 import { CURATOR_HANDLE } from "../lib/constants";
 import { palettePath } from "../lib/palettePath";
 import { forkPalette } from "../api/palettes";
+import { reportPalette } from "../api/reports";
+import { useModal } from "../components/modal/ModalProvider";
 import {
   copyToClipboard,
   formatColor,
@@ -29,8 +31,9 @@ export function PalettePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
+  const { confirm } = useModal();
   const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
@@ -124,6 +127,27 @@ export function PalettePage() {
   const onShare = () =>
     void copyValue(window.location.href, "Link copied to the clipboard");
 
+  const isOwner = user?.username === palette.owner_handle;
+
+  const onReport = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    const ok = await confirm({
+      title: "Report this palette?",
+      message: "Send it to the moderators for review.",
+      confirmLabel: "Report",
+    });
+    if (!ok) return;
+    try {
+      await reportPalette(palette.id, "other");
+      showToast("Reported for review");
+    } catch (e) {
+      showToast(e instanceof ApiError ? e.message : "Something went wrong", "error");
+    }
+  };
+
   const onFork = async () => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: location } });
@@ -156,6 +180,12 @@ export function PalettePage() {
         <p className={styles.byline}>
           By <span className={styles.owner}>{ownerLabel}</span>
         </p>
+
+        {palette.status === "removed" && (
+          <p className={styles.removed} role="status">
+            This palette was removed by moderation. Only you can see it.
+          </p>
+        )}
 
         {palette.forked_from && (
           <p className={styles.byline}>
@@ -243,6 +273,15 @@ export function PalettePage() {
           <button type="button" className={buttonClass("ghost")} onClick={onShare}>
             Share
           </button>
+          {!isOwner && (
+            <button
+              type="button"
+              className={buttonClass("ghost")}
+              onClick={() => void onReport()}
+            >
+              Report
+            </button>
+          )}
         </div>
       </section>
 

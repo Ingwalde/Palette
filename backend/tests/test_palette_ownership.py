@@ -211,3 +211,85 @@ async def test_cannot_fork_a_private_palette_you_do_not_own(db_session):
     async with _actor("stranger", db_session) as stranger:
         resp = await stranger.post(f"/api/v1/palettes/{src_id}/fork", headers=_csrf(stranger))
         assert resp.status_code == 404
+
+
+async def _public(owner, name):
+    p = await _create(owner, name)
+    await _publish(owner, p["id"])
+    return p
+
+
+async def test_report_is_idempotent(db_session):
+    async with _actor("rep-owner", db_session) as owner:
+        pid = (await _public(owner, "Reportable"))["id"]
+    async with _actor("reporter", db_session) as reporter:
+        r1 = await reporter.post(
+            f"/api/v1/palettes/{pid}/report", headers=_csrf(reporter), json={"reason": "spam"}
+        )
+        r2 = await reporter.post(
+            f"/api/v1/palettes/{pid}/report", headers=_csrf(reporter), json={"reason": "spam"}
+        )
+        assert r1.status_code == 201 and r2.status_code == 201
+        assert r1.json()["id"] == r2.json()["id"]
+
+
+async def test_report_requires_auth(client, db_session):
+    async with _actor("rep-owner2", db_session) as owner:
+        pid = (await _public(owner, "Reportable Two"))["id"]
+    resp = await client.post(f"/api/v1/palettes/{pid}/report", json={"reason": "spam"})
+    assert resp.status_code == 401
+
+
+async def test_reports_queue_is_admin_only(db_session):
+    async with _actor("plain-user", db_session) as user:
+        assert (await user.get("/api/v1/reports")).status_code == 403
+
+
+async def test_admin_action_removes_the_palette(db_session):
+    async with _actor("bad-owner", db_session) as owner:
+        p = await _public(owner, "Bad One")
+        pid, handle, slug = p["id"], p["owner_handle"], p["slug"]
+    async with _actor("flagger", db_session) as flagger:
+        await flagger.post(
+            f"/api/v1/palettes/{pid}/report",
+            headers=_csrf(flagger),
+            json={"reason": "offensive"},
+        )
+    async with _actor("mod-admin", db_session, is_admin=True) as admin:
+        queue = (await admin.get("/api/v1/reports")).json()
+        assert len(queue) == 1
+        assert queue[0]["palette"]["slug"] == slug
+        actioned = await admin.post(
+            f"/api/v1/reports/{queue[0]['id']}/action", headers=_csrf(admin)
+        )
+        assert actioned.status_code == 200
+        assert actioned.json()["status"] == "actioned"
+        # The queue is empty once the only open report is closed.
+        assert (await admin.get("/api/v1/reports")).json() == []
+
+    # The palette is soft-removed: gone from the public feed and 404 to a guest, but the row lives.
+    async with _new_client() as anon:
+        feed = (await anon.get("/api/v1/palettes")).json()["items"]
+        assert slug not in {p["slug"] for p in feed}
+        assert (await anon.get(f"/api/v1/users/{handle}/palettes/{slug}")).status_code == 404
+    removed = await crud.get_palette(db_session, pid)
+    assert removed is not None and removed.status == "removed"
+
+
+async def test_admin_dismiss_keeps_the_palette(db_session):
+    async with _actor("ok-owner", db_session) as owner:
+        p = await _public(owner, "Fine One")
+        pid, slug = p["id"], p["slug"]
+    async with _actor("flagger2", db_session) as flagger:
+        await flagger.post(
+            f"/api/v1/palettes/{pid}/report", headers=_csrf(flagger), json={"reason": "other"}
+        )
+    async with _actor("mod-admin2", db_session, is_admin=True) as admin:
+        rid = (await admin.get("/api/v1/reports")).json()[0]["id"]
+        dismissed = await admin.post(f"/api/v1/reports/{rid}/dismiss", headers=_csrf(admin))
+        assert dismissed.json()["status"] == "dismissed"
+        assert (await admin.get("/api/v1/reports")).json() == []
+
+    async with _new_client() as anon:
+        feed = (await anon.get("/api/v1/palettes")).json()["items"]
+        assert slug in {p["slug"] for p in feed}

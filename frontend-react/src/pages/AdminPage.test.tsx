@@ -8,10 +8,11 @@ import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
 import { ModalProvider } from "../components/modal/ModalProvider";
 import { ApiError } from "../lib/http";
-import type { Palette, Tag, User } from "../types/api";
+import type { Palette, Report, Tag, User } from "../types/api";
 import * as authApi from "../api/auth";
 import * as palettesApi from "../api/palettes";
 import * as tagsApi from "../api/tags";
+import * as reportsApi from "../api/reports";
 
 const admin: User = {
   id: 1,
@@ -35,6 +36,14 @@ const palette: Palette = {
   updated_at: "",
 };
 const tag: Tag = { name: "cold", kind: "free", count: 2 };
+const report: Report = {
+  id: 3,
+  reason: "spam",
+  detail: "",
+  status: "open",
+  created_at: "",
+  palette: { name: "Bad Palette", slug: "bad-palette", owner_handle: "bob" },
+};
 
 vi.mock("../api/auth", () => ({
   getCurrentUser: vi.fn(() => Promise.resolve(admin)),
@@ -56,6 +65,11 @@ vi.mock("../api/tags", () => ({
   createTag: vi.fn(() => Promise.resolve(tag)),
   updateTag: vi.fn(() => Promise.resolve(tag)),
   deleteTag: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("../api/reports", () => ({
+  listReports: vi.fn(() => Promise.resolve([report])),
+  actionReport: vi.fn(() => Promise.resolve(report)),
+  dismissReport: vi.fn(() => Promise.resolve(report)),
 }));
 
 function renderAdmin() {
@@ -287,6 +301,50 @@ describe("AdminPage in-flight guard", () => {
     expect(palettesApi.createPalette).toHaveBeenCalledTimes(1);
 
     release(palette);
+  });
+});
+
+describe("AdminPage reports", () => {
+  async function goToReports(user: ReturnType<typeof userEvent.setup>) {
+    renderAdmin();
+    await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("tab", { name: "Reports" }));
+    await screen.findByRole("heading", { name: "Open reports" });
+  }
+
+  it("lists open reports with the reason", async () => {
+    const user = userEvent.setup();
+    await goToReports(user);
+    expect(screen.getByRole("link", { name: "Bad Palette" })).toHaveAttribute(
+      "href",
+      "/u/bob/bad-palette",
+    );
+    expect(screen.getByText(/reason: spam/)).toBeInTheDocument();
+  });
+
+  it("shows an empty state when there are no reports", async () => {
+    vi.mocked(reportsApi.listReports).mockResolvedValueOnce([]);
+    const user = userEvent.setup();
+    await goToReports(user);
+    expect(screen.getByRole("heading", { name: "No open reports" })).toBeInTheDocument();
+  });
+
+  it("dismisses a report", async () => {
+    const user = userEvent.setup();
+    await goToReports(user);
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(reportsApi.dismissReport).toHaveBeenCalledWith(3);
+    expect(await screen.findByText("Report dismissed")).toBeInTheDocument();
+  });
+
+  it("removes a palette after confirming", async () => {
+    const user = userEvent.setup();
+    await goToReports(user);
+    await user.click(screen.getByRole("button", { name: "Remove palette" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Remove" }));
+    expect(reportsApi.actionReport).toHaveBeenCalledWith(3);
+    expect(await screen.findByText("Palette removed")).toBeInTheDocument();
   });
 });
 

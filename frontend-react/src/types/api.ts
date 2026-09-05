@@ -13,6 +13,9 @@ export interface Palette {
   owner_handle: string;
   // "private" (owner-only) until published, then "public".
   visibility: PaletteVisibility;
+  // "active", or "removed" by moderation (the owner still sees a removed palette). Optional so
+  // older fixtures need not set it; the backend always returns it.
+  status?: PaletteStatus;
   // The palette this was forked from, or null/absent. Optional: only the single-palette read
   // carries it.
   forked_from?: PaletteLineage | null;
@@ -21,11 +24,23 @@ export interface Palette {
 }
 
 export type PaletteVisibility = "private" | "public";
+export type PaletteStatus = "active" | "removed";
 
 export interface PaletteLineage {
   name: string;
   slug: string;
   owner_handle: string;
+}
+
+export type ReportReason = "spam" | "offensive" | "copyright" | "other";
+
+export interface Report {
+  id: number;
+  reason: ReportReason;
+  detail: string;
+  status: string;
+  created_at: string;
+  palette: PaletteLineage;
 }
 
 export interface PaletteList {

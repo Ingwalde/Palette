@@ -180,10 +180,40 @@ class PaletteRead(PaletteBase):
     # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
     owner_handle: str
     visibility: str
+    # "active" or "removed" (by moderation). A removed palette is hidden from everyone but its
+    # owner, who sees the state on their own copy.
+    status: str
     # Set when this palette was forked from another; null otherwise.
     forked_from: PaletteLineage | None = None
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+REPORT_REASONS = ("spam", "offensive", "copyright", "other")
+
+
+class ReportCreate(BaseModel):
+    reason: str = Field(default="other")
+    detail: str = Field(default="", max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def _validate_reason(cls, reason: str) -> str:
+        if reason not in REPORT_REASONS:
+            raise ValueError(f"reason must be one of {', '.join(REPORT_REASONS)}")
+        return reason
+
+
+class ReportRead(BaseModel):
+    id: int
+    reason: str
+    detail: str
+    status: str
+    created_at: datetime
+    # The reported palette, enough to open and judge it in the review queue.
+    palette: PaletteLineage
 
     model_config = ConfigDict(from_attributes=True)
 

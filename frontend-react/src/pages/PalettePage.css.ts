@@ -36,6 +36,17 @@ export const byline = style({
   fontSize: "0.95rem",
 });
 
+export const removed = style({
+  margin: "4px 0 0",
+  padding: "8px 12px",
+  width: "fit-content",
+  borderRadius: vars.radius.sm,
+  color: vars.color.danger,
+  background: "rgba(166, 68, 68, 0.1)",
+  fontSize: "0.9rem",
+  fontWeight: 600,
+});
+
 export const owner = style({
   color: vars.color.text,
   fontWeight: 600,

@@ -65,11 +65,14 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
 
 
 def palette_visible_to(palette: models.Palette, viewer: models.User | None) -> bool:
-    """Who may read a palette: anyone for a public one; only its owner or an admin for a private
-    one. (status-based moderation hiding arrives with the moderation step.)"""
+    """Who may read a palette: anyone for a public, active one; only its owner or an admin for a
+    private or moderation-removed one (the owner still sees a removed palette, to be told why)."""
+    is_owner_or_admin = viewer is not None and (viewer.is_admin or palette.owner_id == viewer.id)
+    if palette.status == "removed":
+        return is_owner_or_admin
     if palette.visibility == "public":
         return True
-    return viewer is not None and (viewer.is_admin or palette.owner_id == viewer.id)
+    return is_owner_or_admin
 
 
 def palette_editable_by(palette: models.Palette, user: models.User) -> bool:
@@ -414,6 +417,70 @@ async def update_palette(
     await db.commit()
     await db.refresh(palette)
     return palette
+
+
+async def create_report(
+    db: AsyncSession, palette_id: int, reporter_id: int, reason: str, detail: str
+) -> models.Report:
+    """Open a report, idempotently: a second report of the same palette by the same user returns
+    the first rather than erroring, so the reporter is not told whether they had already flagged
+    it (and the unique constraint is never a 500)."""
+    report = models.Report(
+        palette_id=palette_id, reporter_id=reporter_id, reason=reason, detail=detail
+    )
+    db.add(report)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = (
+            (
+                await db.execute(
+                    select(models.Report).where(
+                        models.Report.palette_id == palette_id,
+                        models.Report.reporter_id == reporter_id,
+                    )
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if existing is None:
+            raise
+        return existing
+    await db.refresh(report)
+    return report
+
+
+async def get_report(db: AsyncSession, report_id: int) -> models.Report | None:
+    return await db.get(models.Report, report_id)
+
+
+async def list_open_reports(db: AsyncSession) -> list[models.Report]:
+    """Open reports for the admin review queue, newest first."""
+    stmt = (
+        select(models.Report)
+        .where(models.Report.status == "open")
+        .order_by(models.Report.created_at.desc(), models.Report.id.desc())
+    )
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def action_report(db: AsyncSession, report: models.Report) -> models.Report:
+    """Uphold a report: remove the palette (a soft takedown — the row stays so the owner is told)
+    and mark the report actioned."""
+    report.status = "actioned"
+    report.palette.status = "removed"
+    await db.commit()
+    await db.refresh(report)
+    return report
+
+
+async def dismiss_report(db: AsyncSession, report: models.Report) -> models.Report:
+    report.status = "dismissed"
+    await db.commit()
+    await db.refresh(report)
+    return report
 
 
 async def get_palettes_for_user(db: AsyncSession, owner_id: int) -> list[models.Palette]:

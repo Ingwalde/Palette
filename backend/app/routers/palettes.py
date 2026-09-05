@@ -12,6 +12,7 @@ router = APIRouter(prefix="/palettes", tags=["palettes"])
 _WRITE_LIMIT = "60/minute"
 # Creation is the spam vector (each makes a row), so it is capped harder than edits.
 _CREATE_LIMIT = "20/hour"
+_REPORT_LIMIT = "10/hour"
 
 
 @router.get("", response_model=schemas.PaletteList)
@@ -98,6 +99,29 @@ async def fork_palette(
     if source is None or not crud.palette_visible_to(source, current_user):
         raise HTTPException(status_code=404, detail="Palette not found")
     return await crud.fork_palette(db, source, current_user.id)
+
+
+@router.post(
+    "/{palette_id}/report",
+    response_model=schemas.ReportRead,
+    status_code=status.HTTP_201_CREATED,
+)
+@limiter.limit(_REPORT_LIMIT)
+async def report_palette(
+    request: Request,
+    palette_id: int,
+    report_data: schemas.ReportCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Flag a palette for moderation. Only a palette you can see may be reported; a second report
+    of the same palette by the same user is idempotent."""
+    palette = await crud.get_palette(db, palette_id)
+    if palette is None or not crud.palette_visible_to(palette, current_user):
+        raise HTTPException(status_code=404, detail="Palette not found")
+    return await crud.create_report(
+        db, palette.id, current_user.id, report_data.reason, report_data.detail
+    )
 
 
 async def _owned_palette(palette_id: int, db: AsyncSession, user: models.User) -> models.Palette:

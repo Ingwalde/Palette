@@ -21,10 +21,12 @@ import {
   deletePalette,
 } from "../api/palettes";
 import { listTags, createTag, updateTag, deleteTag } from "../api/tags";
+import { listReports, actionReport, dismissReport } from "../api/reports";
+import { palettePath } from "../lib/palettePath";
 import { queryKeys } from "../api/queryKeys";
 import { ApiError } from "../lib/http";
 import { useDebounce } from "../lib/useDebounce";
-import type { Palette, Tag, TagKind } from "../types/api";
+import type { Palette, Report, Tag, TagKind } from "../types/api";
 import { PaletteForm, type PaletteFormValues } from "../components/PaletteForm";
 import * as styles from "./AdminPage.css";
 import * as ui from "../styles/ui.css";
@@ -91,8 +93,13 @@ function AdminHero() {
   );
 }
 
-const MODES = ["palettes", "tags"] as const;
+const MODES = ["palettes", "tags", "reports"] as const;
 type Mode = (typeof MODES)[number];
+const MODE_LABEL: Record<Mode, string> = {
+  palettes: "Palettes",
+  tags: "Tags",
+  reports: "Reports",
+};
 
 function AdminPanel({ username }: { username: string }) {
   const [mode, setMode] = useState<Mode>("palettes");
@@ -162,7 +169,7 @@ function AdminPanel({ username }: { username: string }) {
                 tabIndex={mode === value ? 0 : -1}
                 onClick={() => setMode(value)}
               >
-                {value === "palettes" ? "Palettes" : "Tags"}
+                {MODE_LABEL[value]}
               </button>
             ))}
           </div>
@@ -174,7 +181,13 @@ function AdminPanel({ username }: { username: string }) {
           aria-labelledby={`admin-tab-${mode}`}
           tabIndex={-1}
         >
-          {mode === "palettes" ? <PalettesView /> : <TagsView />}
+          {mode === "palettes" ? (
+            <PalettesView />
+          ) : mode === "tags" ? (
+            <TagsView />
+          ) : (
+            <ReportsView />
+          )}
         </div>
       </section>
     </>
@@ -659,6 +672,121 @@ function TagsView() {
             </button>
           </div>
         )}
+      </section>
+    </div>
+  );
+}
+
+/* ------------------------------- Reports view ------------------------------- */
+
+function ReportsView() {
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const { confirm } = useModal();
+
+  const {
+    data: reports,
+    isLoading,
+    isError,
+  } = useQuery({ queryKey: ["reports"], queryFn: listReports });
+  const items = useMemo(() => reports ?? [], [reports]);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["reports"] });
+    queryClient.invalidateQueries({ queryKey: ["palettes"] });
+  };
+
+  const onRemove = async (report: Report) => {
+    const ok = await confirm({
+      title: "Remove palette",
+      message: `Remove "${report.palette.name}" from the site? The owner keeps a private copy.`,
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await actionReport(report.id);
+      showToast("Palette removed");
+      invalidate();
+    } catch (err) {
+      showToast(errMsg(err), "error");
+    }
+  };
+
+  const onDismiss = async (report: Report) => {
+    try {
+      await dismissReport(report.id);
+      showToast("Report dismissed");
+      invalidate();
+    } catch (err) {
+      showToast(errMsg(err), "error");
+    }
+  };
+
+  return (
+    <div className={styles.view}>
+      <section className={styles.list} aria-label="Open reports">
+        <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
+          <div>
+            <p className={ui.eyebrow}>Moderation</p>
+            <h2>Open reports</h2>
+          </div>
+          <p className={home.resultCount}>
+            {isLoading
+              ? "Loading..."
+              : isError
+                ? "API error"
+                : `${items.length} report${items.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
+
+        <div className={styles.items}>
+          {isError ? (
+            <EmptyState
+              title="Couldn't load reports"
+              text="Check your connection and try again."
+            />
+          ) : isLoading ? (
+            <EmptyState title="Loading reports" text="One moment." />
+          ) : items.length === 0 ? (
+            <EmptyState
+              title="No open reports"
+              text="Reported palettes will appear here for review."
+            />
+          ) : (
+            items.map((report) => (
+              <article className={styles.item} key={report.id}>
+                <div className={styles.itemTop}>
+                  <div>
+                    <h3 className={styles.itemTitle}>
+                      <Link to={palettePath(report.palette)}>{report.palette.name}</Link>
+                    </h3>
+                    <p className={styles.itemSlug}>
+                      by {report.palette.owner_handle} · reason: {report.reason}
+                      {report.detail ? ` — ${report.detail}` : ""}
+                    </p>
+                  </div>
+                  <div className={styles.itemActions}>
+                    <button
+                      className={buttonClass("ghost")}
+                      type="button"
+                      onClick={() => void onDismiss(report)}
+                    >
+                      Dismiss
+                    </button>
+                    <button
+                      className={buttonClass("danger")}
+                      type="button"
+                      onClick={() => void onRemove(report)}
+                    >
+                      Remove palette
+                    </button>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
       </section>
     </div>
   );
