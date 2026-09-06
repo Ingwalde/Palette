@@ -85,6 +85,19 @@ class Settings(BaseSettings):
     default_admin_email: str = "admin@palette.local"
     default_admin_password: str = "admin123"
 
+    # OAuth import providers. A provider is enabled only when its client id, secret and redirect
+    # URI are all set; without credentials its endpoints answer 404 and the UI hides its button —
+    # this is the whole feature "flag", so a release ships the code with the provider dark until a
+    # real OAuth app is configured. The redirect URI must match the one registered with the
+    # provider and point at that provider's callback route on this backend.
+    figma_client_id: str = ""
+    figma_client_secret: str = ""
+    figma_redirect_uri: str = ""
+
+    @property
+    def figma_import_enabled(self) -> bool:
+        return bool(self.figma_client_id and self.figma_client_secret and self.figma_redirect_uri)
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_cors_origins(cls, value):

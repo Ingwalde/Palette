@@ -18,12 +18,36 @@ import socket
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import models
+from .. import crud, models, schemas
+from ..config import settings
+from ..database import get_db
 from ..rate_limit import limiter
-from ..security import get_current_user
+from ..security import get_current_user, get_optional_user
 
 router = APIRouter(prefix="/import", tags=["import"])
+
+
+@router.get("/providers", response_model=schemas.ImportProviders)
+async def import_providers(
+    db: AsyncSession = Depends(get_db),
+    current_user: models.User | None = Depends(get_optional_user),
+) -> schemas.ImportProviders:
+    """What the SPA reads once to decide which import buttons to show, and whether the user has
+    already linked each provider. `connected` is always False for a guest."""
+
+    async def status(provider: str, enabled: bool) -> schemas.ProviderStatus:
+        connected = False
+        if enabled and current_user is not None:
+            connected = await crud.get_oauth_token(db, current_user.id, provider) is not None
+        return schemas.ProviderStatus(enabled=enabled, connected=connected)
+
+    return schemas.ImportProviders(
+        figma=await status("figma", settings.figma_import_enabled),
+        pinterest=await status("pinterest", False),
+    )
+
 
 # Fetching a remote URL on the user's behalf is a spam/abuse vector; keep it tight.
 _FETCH_LIMIT = "30/hour"

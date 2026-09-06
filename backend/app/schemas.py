@@ -383,3 +383,33 @@ class ResetPasswordRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+# --- Imports (OAuth providers + extracted drafts) -----------------------------------------------
+
+
+class ProviderStatus(BaseModel):
+    # Whether the deployment has credentials configured for this provider at all.
+    enabled: bool
+    # Whether the current user has linked their account (a stored token). False for a guest.
+    connected: bool
+
+
+class ImportProviders(BaseModel):
+    figma: ProviderStatus
+    pinterest: ProviderStatus
+
+
+class OAuthAuthorizeUrl(BaseModel):
+    url: str
+
+
+class FigmaExtractRequest(BaseModel):
+    # A Figma file key or a full file URL; the router extracts the key from either.
+    file: str = Field(min_length=1, max_length=512)
+
+
+class ImportDraft(BaseModel):
+    # The extracted colours, ready to seed the palette editor. Named to match the frontend's
+    # editor draft rather than a full palette (no name/tags yet).
+    colors: list[str]

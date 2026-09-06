@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
-import { fetchImageBlob } from "../api/imports";
+import {
+  fetchImageBlob,
+  figmaAuthorizeUrl,
+  figmaDisconnect,
+  figmaExtract,
+  getProviders,
+} from "../api/imports";
 import { extractColorsFromBlob } from "../lib/imageColors";
 import { readableTextOn } from "../lib/color";
 import { ApiError } from "../lib/http";
@@ -20,15 +27,37 @@ export function ImportPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { showToast } = useToast();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [url, setUrl] = useState("");
   const [count, setCount] = useState(DEFAULT_COUNT);
   const [colors, setColors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const [figmaFile, setFigmaFile] = useState("");
   // The last decoded image, kept so changing the colour count re-quantises without re-fetching.
   const sourceBlob = useRef<Blob | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  const { data: providers, refetch: refetchProviders } = useQuery({
+    queryKey: ["import-providers"],
+    queryFn: getProviders,
+    enabled: isAuthenticated,
+  });
+  const figma = providers?.figma;
+
+  // The Figma OAuth callback bounces back here with ?figma=connected|error. Report it, refresh the
+  // link state, and strip the param so a reload does not repeat the toast.
+  useEffect(() => {
+    const result = searchParams.get("figma");
+    if (!result) return;
+    if (result === "connected") showToast("Figma connected");
+    else showToast("Figma connection failed", "error");
+    if (result === "connected") void refetchProviders();
+    searchParams.delete("figma");
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams, showToast, refetchProviders]);
 
   // The extractor saves to an account, and the URL path needs the authed proxy — gate the page.
   useEffect(() => {
@@ -99,6 +128,49 @@ export function ImportPage() {
     navigate("/palettes/new", { state: { draft: { colors } } });
   };
 
+  const onConnectFigma = async () => {
+    try {
+      const { url: authorizeUrl } = await figmaAuthorizeUrl();
+      window.location.href = authorizeUrl;
+    } catch {
+      showToast("Could not start the Figma connection", "error");
+    }
+  };
+
+  const onDisconnectFigma = async () => {
+    try {
+      await figmaDisconnect();
+      showToast("Figma disconnected");
+      void refetchProviders();
+    } catch {
+      showToast("Could not disconnect Figma", "error");
+    }
+  };
+
+  const onFigmaExtract = async (e: FormEvent) => {
+    e.preventDefault();
+    const file = figmaFile.trim();
+    if (!file || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const draft = await figmaExtract(file);
+      sourceBlob.current = null;
+      setPreviewUrl((old) => {
+        if (old) URL.revokeObjectURL(old);
+        return "";
+      });
+      setColors(draft.colors);
+      if (draft.colors.length === 0) {
+        setError("That Figma file has no paint styles to import");
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not read that Figma file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   return (
@@ -154,6 +226,46 @@ export function ImportPage() {
               </button>
             </form>
           </div>
+
+          {figma?.enabled && (
+            <div className={styles.figma} aria-label="Figma import">
+              <div className={styles.divider}>or from Figma</div>
+              {figma.connected ? (
+                <form className={styles.urlRow} onSubmit={onFigmaExtract}>
+                  <input
+                    className={`${ui.input} ${styles.urlInput}`}
+                    type="text"
+                    placeholder="Figma file URL or key"
+                    aria-label="Figma file"
+                    value={figmaFile}
+                    onChange={(e) => setFigmaFile(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    className={buttonClass("secondary")}
+                    disabled={busy || !figmaFile.trim()}
+                  >
+                    {busy ? "Reading…" : "Extract from Figma"}
+                  </button>
+                  <button
+                    type="button"
+                    className={buttonClass("ghost")}
+                    onClick={() => void onDisconnectFigma()}
+                  >
+                    Disconnect
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className={buttonClass("secondary")}
+                  onClick={() => void onConnectFigma()}
+                >
+                  Connect Figma
+                </button>
+              )}
+            </div>
+          )}
 
           {error && (
             <p className={styles.error} role="alert">

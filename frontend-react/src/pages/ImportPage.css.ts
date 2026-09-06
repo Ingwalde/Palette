@@ -36,6 +36,12 @@ export const divider = style({
   "::after": { content: '""', flex: 1, height: "1px", background: vars.color.border },
 });
 
+export const figma = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+});
+
 export const countRow = style({
   display: "flex",
   alignItems: "center",

@@ -1,5 +1,28 @@
 import { API_BASE_URL } from "../lib/apiBase";
-import { ApiError, formatApiError } from "../lib/http";
+import { ApiError, formatApiError, request } from "../lib/http";
+import type { ImportDraft, ImportProviders } from "../types/api";
+
+// Which import providers this deployment offers, and whether the user has linked each. Read once
+// when the Import page mounts to decide which buttons to show.
+export function getProviders(): Promise<ImportProviders> {
+  return request<ImportProviders>("/import/providers");
+}
+
+// The Figma authorize URL to send the browser to; the backend signs the state parameter.
+export function figmaAuthorizeUrl(): Promise<{ url: string }> {
+  return request<{ url: string }>("/import/figma/authorize");
+}
+
+export function figmaExtract(file: string): Promise<ImportDraft> {
+  return request<ImportDraft>("/import/figma/extract", {
+    method: "POST",
+    body: JSON.stringify({ file }),
+  });
+}
+
+export function figmaDisconnect(): Promise<void> {
+  return request<void>("/import/figma", { method: "DELETE" });
+}
 
 // A pasted image URL is fetched through the backend proxy (routers/imports.py) so its pixels can
 // be read on a canvas without a cross-origin taint. The proxy returns raw image bytes, not JSON,

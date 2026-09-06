@@ -844,3 +844,51 @@ async def revoke_all_refresh_tokens(db: AsyncSession, user_id: int) -> None:
     """
     await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user_id))
     await db.commit()
+
+
+# --- OAuth import tokens -------------------------------------------------------------------------
+
+
+async def get_oauth_token(
+    db: AsyncSession, user_id: int, provider: str
+) -> models.OAuthToken | None:
+    stmt = select(models.OAuthToken).where(
+        models.OAuthToken.user_id == user_id,
+        models.OAuthToken.provider == provider,
+    )
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def upsert_oauth_token(
+    db: AsyncSession,
+    user_id: int,
+    provider: str,
+    *,
+    access_token: str,
+    refresh_token: str | None,
+    expires_at: datetime | None,
+    scope: str = "",
+) -> models.OAuthToken:
+    """Store (or replace) a user's token for a provider. The token values are expected to be
+    already encrypted by the caller — crud never sees the plaintext."""
+    existing = await get_oauth_token(db, user_id, provider)
+    if existing is None:
+        existing = models.OAuthToken(user_id=user_id, provider=provider)
+        db.add(existing)
+    existing.access_token = access_token
+    existing.refresh_token = refresh_token
+    existing.expires_at = expires_at
+    existing.scope = scope
+    await db.commit()
+    await db.refresh(existing)
+    return existing
+
+
+async def delete_oauth_token(db: AsyncSession, user_id: int, provider: str) -> None:
+    await db.execute(
+        delete(models.OAuthToken).where(
+            models.OAuthToken.user_id == user_id,
+            models.OAuthToken.provider == provider,
+        )
+    )
+    await db.commit()
