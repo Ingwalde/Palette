@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import hashlib
 import hmac
 import logging
@@ -8,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
+from cryptography.fernet import Fernet
 from fastapi import Cookie, Depends, HTTPException, status
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +23,10 @@ logger = logging.getLogger("palette.security")
 ALGORITHM = "HS256"
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
 PASSWORD_RESET_PURPOSE = "reset_password"
+OAUTH_STATE_PURPOSE = "oauth_state"
+# The OAuth authorize→callback round-trip is a browser redirect the user completes in seconds; a
+# short life keeps a leaked state parameter from being replayed later.
+OAUTH_STATE_EXPIRE_MINUTES = 10
 
 # Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
 # Argon2 on the next successful login (see authenticate_user).
@@ -46,6 +52,51 @@ CSRF_COOKIE = "csrf_token"
 
 def generate_csrf_token() -> str:
     return secrets.token_urlsafe(32)
+
+
+# --- OAuth import: token encryption at rest + signed authorize state -----------------------------
+#
+# Provider access/refresh tokens are stored encrypted, never in the clear. The key is derived from
+# SECRET_KEY (already the app's single high-entropy secret) so no second secret has to be managed;
+# rotating SECRET_KEY invalidates stored tokens, which is the safe direction — the user re-links.
+_fernet: Fernet | None = None
+
+
+def _token_cipher() -> Fernet:
+    global _fernet
+    if _fernet is None:
+        key = hashlib.sha256(settings.secret_key.encode()).digest()
+        _fernet = Fernet(base64.urlsafe_b64encode(key))
+    return _fernet
+
+
+def encrypt_secret(plaintext: str) -> str:
+    """Encrypt a provider token for storage. Reversible only with SECRET_KEY."""
+    return _token_cipher().encrypt(plaintext.encode()).decode()
+
+
+def decrypt_secret(ciphertext: str) -> str:
+    """Decrypt a stored provider token. Raises cryptography.fernet.InvalidToken if tampered."""
+    return _token_cipher().decrypt(ciphertext.encode()).decode()
+
+
+def create_oauth_state(user_id: int, provider: str) -> str:
+    """A short-lived signed state parameter binding the OAuth round-trip to a user and provider."""
+    return _encode_token(
+        {"sub": str(user_id), "purpose": OAUTH_STATE_PURPOSE, "prov": provider},
+        timedelta(minutes=OAUTH_STATE_EXPIRE_MINUTES),
+    )
+
+
+def decode_oauth_state(token: str, provider: str) -> int | None:
+    """Return the user id from a valid, unexpired state for `provider`, else None."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        if payload.get("purpose") != OAUTH_STATE_PURPOSE or payload.get("prov") != provider:
+            return None
+        return int(payload["sub"])
+    except (InvalidTokenError, TypeError, ValueError, KeyError):
+        return None
 
 
 def hash_password(password: str) -> str:

@@ -50,6 +50,22 @@ export interface PaletteList {
   offset: number;
 }
 
+export interface ProviderStatus {
+  // Whether the deployment has credentials for this provider (else its UI is hidden).
+  enabled: boolean;
+  // Whether the current user has linked their account.
+  connected: boolean;
+}
+
+export interface ImportProviders {
+  figma: ProviderStatus;
+  pinterest: ProviderStatus;
+}
+
+export interface ImportDraft {
+  colors: string[];
+}
+
 export type TagKind = "free" | "purpose";
 
 export interface Tag {

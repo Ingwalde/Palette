@@ -21,7 +21,18 @@ const user: User = {
 };
 
 vi.mock("../lib/imageColors", () => ({ extractColorsFromBlob: vi.fn() }));
-vi.mock("../api/imports", () => ({ fetchImageBlob: vi.fn() }));
+vi.mock("../api/imports", () => ({
+  fetchImageBlob: vi.fn(),
+  getProviders: vi.fn(),
+  figmaAuthorizeUrl: vi.fn(),
+  figmaExtract: vi.fn(),
+  figmaDisconnect: vi.fn(),
+}));
+
+const DISABLED = {
+  figma: { enabled: false, connected: false },
+  pinterest: { enabled: false, connected: false },
+};
 vi.mock("../api/auth", () => ({
   getCurrentUser: vi.fn(() => Promise.resolve(user)),
   login: vi.fn(),
@@ -68,6 +79,7 @@ beforeEach(() => {
     "#A0A0A0",
     "#F0F0F0",
   ]);
+  vi.mocked(importsApi.getProviders).mockResolvedValue(DISABLED);
 });
 
 describe("ImportPage", () => {
@@ -133,5 +145,61 @@ describe("ImportPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "That URL is not an image",
     );
+  });
+
+  it("hides the Figma controls when the provider is disabled", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: /Extract a palette/i });
+    expect(
+      screen.queryByRole("button", { name: "Connect Figma" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Extract from Figma" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers to connect Figma when enabled but not linked", async () => {
+    vi.mocked(importsApi.getProviders).mockResolvedValue({
+      figma: { enabled: true, connected: false },
+      pinterest: { enabled: false, connected: false },
+    });
+    vi.mocked(importsApi.figmaAuthorizeUrl).mockResolvedValue({
+      url: "https://www.figma.com/oauth?x=1",
+    });
+    // window.location.href assignment is a no-op we don't want jsdom to attempt.
+    const original = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...original, set href(_v: string) {} },
+    });
+    const u = userEvent.setup();
+    renderPage();
+    await u.click(await screen.findByRole("button", { name: "Connect Figma" }));
+    await waitFor(() => expect(importsApi.figmaAuthorizeUrl).toHaveBeenCalled());
+    Object.defineProperty(window, "location", { configurable: true, value: original });
+  });
+
+  it("extracts colors from a Figma file when connected", async () => {
+    vi.mocked(importsApi.getProviders).mockResolvedValue({
+      figma: { enabled: true, connected: true },
+      pinterest: { enabled: false, connected: false },
+    });
+    vi.mocked(importsApi.figmaExtract).mockResolvedValue({
+      colors: ["#101010", "#A0A0A0", "#F0F0F0"],
+    });
+    const u = userEvent.setup();
+    renderPage();
+    await u.type(
+      await screen.findByLabelText("Figma file"),
+      "https://www.figma.com/file/ABC123/x",
+    );
+    await u.click(screen.getByRole("button", { name: "Extract from Figma" }));
+    await waitFor(() =>
+      expect(importsApi.figmaExtract).toHaveBeenCalledWith(
+        "https://www.figma.com/file/ABC123/x",
+      ),
+    );
+    expect(await screen.findByText("#101010")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit as palette" })).toBeInTheDocument();
   });
 });
