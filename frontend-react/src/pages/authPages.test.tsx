@@ -116,11 +116,9 @@ describe("ResetPasswordPage password policy", () => {
 
     // The server would refuse this too; saying so here saves a round trip and, more to the
     // point, keeps the form from promising a rule the server does not honour.
-    // "must be at least" matches the error only; the field hint also says "At least 12
+    // "must be at least" matches the error only; the field hint also says "At least 8
     // characters", and matching both is how this assertion first failed.
-    expect(
-      await screen.findByText(/must be at least 12 characters/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/must be at least 8 characters/i)).toBeInTheDocument();
     expect(authApi.resetPassword).not.toHaveBeenCalled();
   });
 });

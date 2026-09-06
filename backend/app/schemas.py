@@ -10,11 +10,11 @@ EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 # Shared field normalizers, reused by the validators below so each rule lives once.
-# Minimum password length. Twelve rather than six, and length rather than a character-class
+# Minimum password length. Eight (NIST 800-63B's floor), and length rather than a character-class
 # rule: a mandated symbol and digit mostly produces "Password1!", while length is what actually
 # costs an attacker work. NIST 800-63B says the same and explicitly advises against composition
 # rules.
-MIN_PASSWORD_LENGTH = 12
+MIN_PASSWORD_LENGTH = 8
 
 # Refused outright. Not a breach corpus — shipping one would mean a megabyte of data and an
 # update process nobody would run — but the handful that a list of any size would start with,

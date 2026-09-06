@@ -431,7 +431,7 @@ async def test_losing_a_registration_race_gives_409_not_500(client, db_session, 
 async def test_registration_refuses_weak_passwords(client, password, reason):
     """min_length was 6, so "123456" was accepted — in a project whose headline feature is auth.
 
-    Twelve characters and a small refusal list, not a composition rule: mandating a symbol and a
+    Eight characters and a small refusal list, not a composition rule: mandating a symbol and a
     digit mostly produces "Password1!", while length is what costs an attacker work. The third
     case is the one a length floor alone misses — a long password containing the account name is
     guessed immediately.
