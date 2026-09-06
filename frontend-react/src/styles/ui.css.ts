@@ -269,6 +269,12 @@ export const sectionHeadingCompact = style({
   alignItems: "flex-start",
 });
 
+export const buttonRow = style({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "10px",
+});
+
 export const paletteGrid = style({
   display: "grid",
   gridTemplateColumns: "repeat(3, minmax(0, 1fr))",

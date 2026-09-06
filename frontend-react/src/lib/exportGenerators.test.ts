@@ -28,6 +28,28 @@ describe("generateExportText", () => {
     const json = generateExportText([palette], "json");
     expect(JSON.parse(json)).toEqual([palette]);
   });
+
+  it("emits OKLCH custom properties", () => {
+    const css = generateExportText([palette], "oklch");
+    expect(css).toContain("--sea-breeze-1: oklch(");
+    expect(css).not.toContain("#006D77");
+  });
+
+  it("emits a Tailwind config with a nested colour scale", () => {
+    const config = generateExportText([palette], "tailwind");
+    expect(config).toContain("module.exports");
+    expect(config).toContain('"sea-breeze": {');
+    expect(config).toContain('"1": "#006D77"');
+    expect(config).toContain('"2": "#83C5BE"');
+  });
+
+  it("emits an SVG strip with a rect and label per colour", () => {
+    const svg = generateExportText([palette], "svg");
+    expect(svg.startsWith("<svg")).toBe(true);
+    expect(svg).toContain('fill="#006D77"');
+    expect(svg).toContain(">#006D77<");
+    expect((svg.match(/<rect /g) ?? []).length).toBe(2);
+  });
 });
 
 describe("getExportFilename", () => {
