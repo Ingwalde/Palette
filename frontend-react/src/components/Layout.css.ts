@@ -20,7 +20,11 @@ export const header = style({
   padding: "12px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
-  background: vars.color.surfaceGlass,
+  // Nearly opaque, not the 0.80 surfaceGlass the cards use: the header is sticky and scrolls over
+  // the page's content, and a palette's large vivid swatches bled through the glass enough to wash
+  // out the muted nav labels. 94% keeps a hint of the frosted look while staying legible over
+  // anything behind it.
+  background: `color-mix(in srgb, ${vars.color.surface} 94%, transparent)`,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
   "@media": {
