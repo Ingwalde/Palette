@@ -11,7 +11,11 @@ export const header = style({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  width: `min(${vars.layout.container}, calc(100% - 32px))`,
+  // A proportional side gap (rather than a fixed 32px) so the header always reads as a floating
+  // pill: on a narrow window it keeps a visible margin instead of stretching nearly edge-to-edge,
+  // and on a wide one it caps at the container width and centres. Percentage, not vw, so the gap
+  // is unaffected by the scrollbar.
+  width: `min(${vars.layout.container}, 92%)`,
   margin: "16px auto 0",
   padding: "12px",
   border: `1px solid ${vars.color.border}`,
