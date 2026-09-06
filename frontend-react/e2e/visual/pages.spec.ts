@@ -254,12 +254,11 @@ test("state: error toast", async ({ page }) => {
   await passwords.nth(1).fill("newpassword1");
   await page.getByRole("button", { name: "Reset password" }).click();
 
-  // The same message lands inline and in the toast, and role="status" no longer identifies the
-  // toast on its own: the route announcer is a second live region with the same role. Both
-  // belong on the page, so the locator narrows by text rather than the markup weakening.
+  // Error toasts live in the assertive live region (routine info is a polite status). The message
+  // also lands inline in its own alert, so target the toast region by its aria-live, not the role.
   await expect(
     page
-      .getByRole("status")
+      .locator('[aria-live="assertive"]')
       .filter({ hasText: "Invalid or expired password reset link" }),
   ).toBeVisible();
   await settle(page);

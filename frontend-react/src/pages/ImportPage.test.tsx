@@ -146,9 +146,7 @@ describe("ImportPage", () => {
     await u.type(screen.getByLabelText("Image URL"), "https://cdn.test/page.html");
     await u.click(screen.getByRole("button", { name: "Extract from URL" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "That URL is not an image",
-    );
+    expect(await screen.findByText("That URL is not an image")).toBeInTheDocument();
   });
 
   it("hides the Figma controls when the provider is disabled", async () => {

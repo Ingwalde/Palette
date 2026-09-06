@@ -92,7 +92,7 @@ export const navIndicator = style({
   height: "var(--nav-indicator-height, 0)",
   borderRadius: "999px",
   background: vars.color.primary,
-  boxShadow: "0 10px 24px rgba(47, 45, 42, 0.14)",
+  boxShadow: vars.shadow.soft,
   opacity: 0,
   transform: "translate3d(var(--nav-indicator-x, 0), var(--nav-indicator-y, 0), 0)",
   transition:
@@ -104,6 +104,8 @@ export const navIndicator = style({
   "@media": {
     // Wider, softer highlight — gentler corners.
     [PHONE]: { borderRadius: "18px" },
+    // The pill glides between links; reduced motion snaps it into place instead.
+    "(prefers-reduced-motion: reduce)": { transition: "opacity 180ms ease" },
   },
 });
 
@@ -140,6 +142,7 @@ export const navLink = style({
   },
   "@media": {
     [PHONE]: navItemPhone,
+    "(prefers-reduced-motion: reduce)": { transition: "color 220ms ease" },
   },
 });
 
