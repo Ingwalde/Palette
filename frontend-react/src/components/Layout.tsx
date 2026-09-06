@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RouteFallback } from "./RouteFallback";
+import { ThemeToggle } from "./ThemeToggle";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
 
@@ -93,6 +94,7 @@ export function Layout() {
             </NavLink>
           )}
         </nav>
+        <ThemeToggle />
       </header>
 
       {/* tabIndex -1 so the skip link and the route change can both put focus here; it is not

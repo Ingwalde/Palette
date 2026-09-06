@@ -29,6 +29,6 @@ export const toast = style({
 });
 
 export const error = style({
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.danger,
 });

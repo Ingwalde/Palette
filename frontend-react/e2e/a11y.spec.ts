@@ -112,3 +112,28 @@ for (const path of ADMIN_PAGES) {
     expect(violations).toEqual([]);
   });
 }
+
+// The dark theme carries its own palette, so it needs its own contrast audit — the load-bearing
+// pages under the system-preference dark rendering. emulateMedia drives the media query the theme
+// hangs off, without touching localStorage.
+const DARK_PAGES = ["/", "/u/palette/sea-breeze", "/login"];
+for (const path of DARK_PAGES) {
+  test(`a11y (dark) ${path}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await stub(page, false);
+    await page.goto(path, { waitUntil: "networkidle" });
+    await page.waitForTimeout(400);
+    const { violations } = await analyze(page);
+    if (violations.length) {
+      console.log(
+        path,
+        JSON.stringify(
+          violations.map((v) => ({ id: v.id, n: v.nodes.length, t: v.nodes[0]?.target })),
+          null,
+          1,
+        ),
+      );
+    }
+    expect(violations).toEqual([]);
+  });
+}

@@ -23,7 +23,7 @@ export const card = style({
   padding: "28px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.9)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   marginBottom: "32px",
 });
@@ -44,7 +44,7 @@ export const avatar = style({
   flex: "0 0 72px",
   placeItems: "center",
   borderRadius: "50%",
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
   fontSize: "1.6rem",
   fontWeight: 700,

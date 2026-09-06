@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Stamp the saved theme on <html> before first paint so there is no light flash. Separate
+         file, not inline, because the production CSP is script-src 'self' (no 'unsafe-inline'). -->
+    <script src="/theme-init.js"></script>
     <meta
       name="description"
       content="Palette — a full-stack color palette web app. React + TypeScript frontend (v4.9.x)."

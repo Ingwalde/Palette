@@ -61,7 +61,7 @@ globalStyle("body", {
   margin: 0,
   fontFamily: `"Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`,
   color: vars.color.text,
-  background: `radial-gradient(circle at top left, rgba(231, 216, 201, 0.8), transparent 34rem), ${vars.color.bg}`,
+  background: `radial-gradient(circle at top left, ${vars.color.primarySoft}, transparent 34rem), ${vars.color.bg}`,
 });
 
 globalStyle("a", {
@@ -126,6 +126,6 @@ globalStyle("pre", {
 });
 
 globalStyle("::selection", {
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
 });

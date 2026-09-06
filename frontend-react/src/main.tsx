@@ -7,6 +7,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/toast/ToastProvider";
 import { ModalProvider } from "./components/modal/ModalProvider";
 import { ColorFormatProvider } from "./components/ColorFormatContext";
+import { ThemeProvider } from "./components/ThemeContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { initObservability } from "./lib/observability";
 import { App } from "./App";
@@ -23,11 +24,13 @@ createRoot(document.getElementById("root")!).render(
         <ToastProvider>
           <ModalProvider>
             <ColorFormatProvider>
-              <BrowserRouter>
-                <ErrorBoundary>
-                  <App />
-                </ErrorBoundary>
-              </BrowserRouter>
+              <ThemeProvider>
+                <BrowserRouter>
+                  <ErrorBoundary>
+                    <App />
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </ThemeProvider>
             </ColorFormatProvider>
           </ModalProvider>
         </ToastProvider>

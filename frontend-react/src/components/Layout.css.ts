@@ -16,7 +16,7 @@ export const header = style({
   padding: "12px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
-  background: "rgba(255, 250, 242, 0.82)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
   "@media": {
@@ -49,7 +49,7 @@ export const logoMark = style({
   height: "40px",
   placeItems: "center",
   borderRadius: "50%",
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
 });
 
@@ -161,7 +161,7 @@ export const navButton = style({
 export const navLinkActive = style({
   selectors: {
     "&, &:hover": {
-      color: "#fff",
+      color: vars.color.onPrimary,
       fontWeight: 700,
     },
   },
@@ -180,7 +180,7 @@ export const footerPanel = style({
   padding: "20px 24px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.84)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(16px)",
   "@media": {
@@ -223,7 +223,7 @@ globalStyle(`${footerFeatures} span`, {
   alignItems: "center",
   minHeight: "32px",
   padding: "7px 12px",
-  border: "1px solid rgba(47, 45, 42, 0.12)",
+  border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
   color: vars.color.text,
   background: "rgba(239, 231, 220, 0.72)",
@@ -270,7 +270,7 @@ globalStyle(`${footerMeta} span, ${footerMeta} a`, {
 });
 
 globalStyle(`${footerMeta} a`, {
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
   transition: `transform ${vars.motion.transition}, box-shadow ${vars.motion.transition}`,
 });
@@ -278,4 +278,34 @@ globalStyle(`${footerMeta} a`, {
 globalStyle(`${footerMeta} a:hover`, {
   transform: "translateY(-1px)",
   boxShadow: "0 10px 24px rgba(47, 45, 42, 0.14)",
+});
+
+export const themeToggle = style({
+  display: "inline-flex",
+  gap: "2px",
+  padding: "3px",
+  borderRadius: "999px",
+  border: `1px solid ${vars.color.border}`,
+  background: vars.color.surfaceStrong,
+  flexShrink: 0,
+});
+
+export const themeOption = style({
+  border: "none",
+  cursor: "pointer",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  fontSize: "0.78rem",
+  fontWeight: 600,
+  color: vars.color.muted,
+  background: "transparent",
+  fontFamily: "inherit",
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { color: vars.color.text },
+    '&[aria-pressed="true"]': {
+      color: vars.color.onPrimary,
+      background: vars.color.primary,
+    },
+  },
 });
