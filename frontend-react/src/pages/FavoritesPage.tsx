@@ -2,7 +2,9 @@ import { useEffect } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useClearFavorites } from "../api/hooks";
 import { useToast } from "../components/toast/ToastProvider";
+import { useModal } from "../components/modal/ModalProvider";
 import { PaletteCard } from "../components/PaletteCard";
+import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
@@ -17,6 +19,7 @@ export function FavoritesPage() {
   const { data, isLoading, isError, error } = useFavorites();
   const clear = useClearFavorites();
   const { showToast } = useToast();
+  const { confirm } = useModal();
 
   const favorites = data ?? [];
   const authError = isError && isAuthError(error);
@@ -40,7 +43,16 @@ export function FavoritesPage() {
   const clearDisabled =
     !isAuthenticated || isLoading || isError || favorites.length === 0 || clear.isPending;
 
-  const onClear = () => {
+  const onClear = async () => {
+    const ok = await confirm({
+      title: "Clear favorites",
+      message: `Remove all ${favorites.length} saved palette${
+        favorites.length === 1 ? "" : "s"
+      }? This cannot be undone.`,
+      confirmLabel: "Clear favorites",
+      danger: true,
+    });
+    if (!ok) return;
     clear.mutate(undefined, {
       onSuccess: () => showToast("Favorites cleared"),
       onError: (e) =>
@@ -65,7 +77,7 @@ export function FavoritesPage() {
           <button
             className={buttonClass("danger")}
             type="button"
-            onClick={onClear}
+            onClick={() => void onClear()}
             disabled={clearDisabled}
           >
             Clear favorites
@@ -80,10 +92,7 @@ export function FavoritesPage() {
               action={{ label: "Log in", to: "/login" }}
             />
           ) : isLoading ? (
-            <EmptyState
-              title="Loading favorites"
-              text="One moment while we load your saved palettes."
-            />
+            <PaletteCardSkeletonGrid />
           ) : authError ? (
             <EmptyState
               title="Please log in again"

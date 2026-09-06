@@ -4,6 +4,7 @@ import { usePalettesInfinite, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
+import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
 import { CustomSelect } from "../components/CustomSelect";
 import { useColorFormat } from "../components/ColorFormatContext";
 import type { ColorFormat } from "../lib/color";
@@ -336,7 +337,7 @@ export function HomePage() {
               action={{ label: "Try again", onClick: () => void refetch() }}
             />
           ) : isLoading ? (
-            <EmptyState title="Loading palettes" text="One moment while we load them." />
+            <PaletteCardSkeletonGrid />
           ) : palettes.length === 0 ? (
             <EmptyState
               title="No palettes found"

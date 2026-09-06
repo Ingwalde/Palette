@@ -93,10 +93,13 @@ globalStyle("main", {
 
 // A clear keyboard-focus ring on every interactive element that does not define its own.
 // :focus-visible fires for keyboard focus, not mouse clicks. Components with a bespoke focus
-// style override this with their own rule.
+// style override this with their own rule. Two layers: a crisp outline for a sharp edge, and a
+// translucent halo (color.focus) so the ring stays visible against a busy or coloured background
+// — a swatch, a chip, a primary button — where a single hairline can disappear.
 globalStyle(":focus-visible", {
   outline: `2px solid ${vars.color.primary}`,
   outlineOffset: "2px",
+  boxShadow: `0 0 0 4px ${vars.color.focus}`,
 });
 
 globalStyle("h1, h2, h3, p", {

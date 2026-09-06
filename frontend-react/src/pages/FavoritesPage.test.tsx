@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 import { FavoritesPage } from "./FavoritesPage";
 import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
+import { ModalProvider } from "../components/modal/ModalProvider";
 import { ApiError } from "../lib/http";
 
 vi.mock("../api/auth", () => ({
@@ -21,9 +22,11 @@ function renderFavorites() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter>
-            <FavoritesPage />
-          </MemoryRouter>
+          <ModalProvider>
+            <MemoryRouter>
+              <FavoritesPage />
+            </MemoryRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,

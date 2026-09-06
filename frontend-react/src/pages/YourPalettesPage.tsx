@@ -7,6 +7,7 @@ import { listMyPalettes, setPaletteVisibility } from "../api/palettes";
 import { palettePath } from "../lib/palettePath";
 import { ApiError } from "../lib/http";
 import { EmptyState } from "../components/EmptyState";
+import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
 import type { Palette, PaletteVisibility } from "../types/api";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
@@ -77,9 +78,9 @@ export function YourPalettesPage() {
             action={{ label: "Try again", onClick: () => void refetch() }}
           />
         ) : isLoading ? (
-          <p className={ui.muted} role="status">
-            Loading your palettes…
-          </p>
+          <div className={ui.paletteGrid}>
+            <PaletteCardSkeletonGrid count={4} />
+          </div>
         ) : items.length === 0 ? (
           <EmptyState
             title="No palettes yet"
