@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi } from "vitest";
 import { ExportPage } from "./ExportPage";
@@ -45,13 +46,15 @@ vi.mock("../lib/exportGenerators", async (importActual) => ({
 }));
 import * as exportGenerators from "../lib/exportGenerators";
 
-function renderExport() {
+function renderExport(initialEntry = "/export") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <ExportPage />
+          <MemoryRouter initialEntries={[initialEntry]}>
+            <ExportPage />
+          </MemoryRouter>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,

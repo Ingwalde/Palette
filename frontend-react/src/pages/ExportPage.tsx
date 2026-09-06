@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { usePalettes, useFavorites } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { useToast } from "../components/toast/ToastProvider";
@@ -11,6 +12,7 @@ import {
   downloadTextFile,
   downloadDataUrl,
   type ExportFormat,
+  type TextFormat,
 } from "../lib/exportGenerators";
 import type { Palette } from "../types/api";
 import * as ui from "../styles/ui.css";
@@ -23,22 +25,66 @@ const SOURCE_OPTIONS = [
 ];
 const FORMAT_OPTIONS = [
   { value: "css", label: "CSS variables" },
+  { value: "oklch", label: "CSS (OKLCH)" },
+  { value: "tailwind", label: "Tailwind config" },
   { value: "json", label: "JSON" },
+  { value: "svg", label: "SVG strip" },
   { value: "png", label: "PNG image" },
 ];
-const EXT: Record<Exclude<ExportFormat, "png">, string> = {
+const FORMATS: ExportFormat[] = ["css", "oklch", "tailwind", "json", "svg", "png"];
+// File extension per text format; the download name uses it.
+const EXT: Record<TextFormat, string> = {
   css: "css",
+  oklch: "css",
+  tailwind: "js",
   json: "json",
+  svg: "svg",
 };
 
 export function ExportPage() {
-  const [source, setSource] = useState("single");
-  const [format, setFormat] = useState<ExportFormat>("css");
+  // Export state lives in the URL so "export this palette in this format" is a shareable link
+  // (?source=single|favorites&format=…&slug=…). The palette page links here with it pre-filled.
+  const [params, setParams] = useSearchParams();
+  const source = params.get("source") === "favorites" ? "favorites" : "single";
+  const formatParam = params.get("format");
+  const format: ExportFormat = FORMATS.includes(formatParam as ExportFormat)
+    ? (formatParam as ExportFormat)
+    : "css";
+  const selectedSlug = params.get("slug") ?? "";
+
   const [searchInput, setSearchInput] = useState("");
-  const [selectedSlug, setSelectedSlug] = useState("");
   const { showToast } = useToast();
 
+  const patchParams = (next: Record<string, string | null>) => {
+    setParams(
+      (prev) => {
+        const merged = new URLSearchParams(prev);
+        for (const [key, value] of Object.entries(next)) {
+          if (value === null || value === "") merged.delete(key);
+          else merged.set(key, value);
+        }
+        return merged;
+      },
+      { replace: true },
+    );
+  };
+
+  const setSource = (value: string) =>
+    patchParams({ source: value, ...(value !== "single" ? { slug: null } : {}) });
+  const setFormat = (value: ExportFormat) => patchParams({ format: value });
+  const setSelectedSlug = (slug: string) => patchParams({ slug: slug || null });
+
   const singleMode = source === "single";
+
+  // Keep the search box showing the selected palette's name when arriving from a deep link.
+  const { data: selectedForName } = usePalettes(
+    selectedSlug ? { search: selectedSlug, limit: 8 } : { limit: 1 },
+  );
+  useEffect(() => {
+    if (!selectedSlug) return;
+    const match = selectedForName?.items.find((p) => p.slug === selectedSlug);
+    if (match) setSearchInput((prev) => (prev ? prev : match.name));
+  }, [selectedSlug, selectedForName]);
   const query = useDebounce(searchInput.trim(), 180);
 
   // Search server-side rather than filtering a first-200 slice on the client: a match that sat
@@ -65,7 +111,7 @@ export function ExportPage() {
         ? "Choose one palette to generate export."
         : "No palettes selected. Add palettes to favorites.";
     }
-    return generateExportText(selectedPalettes, format as Exclude<ExportFormat, "png">);
+    return generateExportText(selectedPalettes, format as TextFormat);
   }, [isPng, selectedPalettes, singleMode, format]);
 
   const pngDataUrl = useMemo(
@@ -86,12 +132,8 @@ export function ExportPage() {
     setSearchInput(palette.name);
   };
 
-  const onPreview = () => {
-    if (isPng) {
-      if (selectedPalettes.length === 0) return showToast("Choose a palette to preview");
-      showToast("PNG preview updated");
-      return;
-    }
+  const onCopy = () => {
+    if (selectedPalettes.length === 0) return showToast("Nothing to copy yet");
     void copyToClipboard(textOutput);
     showToast("Export result copied");
   };
@@ -103,15 +145,16 @@ export function ExportPage() {
       showToast("PNG image downloaded");
       return;
     }
-    const ext = EXT[format as Exclude<ExportFormat, "png">];
+    if (selectedPalettes.length === 0) return showToast("Nothing to download yet");
+    const ext = EXT[format as TextFormat];
     downloadTextFile(textOutput, getExportFilename(selectedPalettes, ext));
     showToast("Export file downloaded");
   };
 
   const caption =
     singleMode && selectedPalettes.length === 1
-      ? `Previewing selected palette card: ${selectedPalettes[0].name}. Click Download file to save the PNG image.`
-      : `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Click Download file to save the PNG image.`;
+      ? `Previewing selected palette card: ${selectedPalettes[0].name}. Click Download PNG to save the image.`
+      : `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Click Download PNG to save the image.`;
 
   return (
     <>
@@ -119,8 +162,9 @@ export function ExportPage() {
         <p className={ui.eyebrow}>Export</p>
         <h1>Export palettes</h1>
         <p>
-          Generate ready-to-use CSS variables, JSON or a polished PNG preview from any
-          palette.
+          Generate CSS variables, OKLCH, a Tailwind config, JSON, an SVG strip or a
+          polished PNG from any palette. Every choice lives in the URL, so an export is a
+          link you can share.
         </p>
       </section>
 
@@ -133,10 +177,7 @@ export function ExportPage() {
               value={source}
               onChange={(v) => {
                 setSource(v);
-                if (v !== "single") {
-                  setSelectedSlug("");
-                  setSearchInput("");
-                }
+                if (v !== "single") setSearchInput("");
               }}
               ariaLabel="Palette source"
             />
@@ -212,16 +253,29 @@ export function ExportPage() {
           </label>
 
           <div className={styles.panelActions}>
-            <button className={buttonClass("primary")} type="button" onClick={onPreview}>
-              {isPng ? "Refresh preview" : "Copy result"}
-            </button>
-            <button
-              className={buttonClass("secondary")}
-              type="button"
-              onClick={onDownload}
-            >
-              Download file
-            </button>
+            {isPng ? (
+              // PNG is a binary; there is nothing to copy, so download is the primary action.
+              <button
+                className={buttonClass("primary")}
+                type="button"
+                onClick={onDownload}
+              >
+                Download PNG
+              </button>
+            ) : (
+              <>
+                <button className={buttonClass("primary")} type="button" onClick={onCopy}>
+                  Copy result
+                </button>
+                <button
+                  className={buttonClass("secondary")}
+                  type="button"
+                  onClick={onDownload}
+                >
+                  Download file
+                </button>
+              </>
+            )}
           </div>
         </aside>
 

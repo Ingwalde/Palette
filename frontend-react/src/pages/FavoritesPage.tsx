@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useClearFavorites } from "../api/hooks";
 import { useToast } from "../components/toast/ToastProvider";
@@ -74,14 +75,21 @@ export function FavoritesPage() {
             <h2>Favorites</h2>
             <p className={ui.muted}>{count}</p>
           </div>
-          <button
-            className={buttonClass("danger")}
-            type="button"
-            onClick={() => void onClear()}
-            disabled={clearDisabled}
-          >
-            Clear favorites
-          </button>
+          <div className={ui.buttonRow}>
+            {favorites.length > 0 && (
+              <Link className={buttonClass("secondary")} to="/export?source=favorites">
+                Export favorites
+              </Link>
+            )}
+            <button
+              className={buttonClass("danger")}
+              type="button"
+              onClick={() => void onClear()}
+              disabled={clearDisabled}
+            >
+              Clear favorites
+            </button>
+          </div>
         </div>
 
         <div className={ui.paletteGrid}>
