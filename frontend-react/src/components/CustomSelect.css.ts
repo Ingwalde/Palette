@@ -28,25 +28,24 @@ export const button = style({
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
   color: vars.color.text,
-  background:
-    "linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(255, 250, 242, 0.82))",
+  background: vars.color.surfaceGlass,
   boxShadow: "0 10px 30px rgba(47, 45, 42, 0.04)",
   fontWeight: 700,
   textAlign: "left",
   transition: `border-color ${vars.motion.transition}, box-shadow ${vars.motion.transition}, transform ${vars.motion.transition}`,
   selectors: {
     "&:hover": {
-      borderColor: "rgba(47, 45, 42, 0.28)",
-      boxShadow: "0 0 0 4px rgba(48, 47, 44, 0.07), 0 12px 34px rgba(47, 45, 42, 0.08)",
+      borderColor: vars.color.focus,
+      boxShadow: `0 0 0 4px ${vars.color.focus}, ${vars.shadow.soft}`,
     },
     [`${rootOpen} &`]: {
-      borderColor: "rgba(47, 45, 42, 0.28)",
-      boxShadow: "0 0 0 4px rgba(48, 47, 44, 0.07), 0 12px 34px rgba(47, 45, 42, 0.08)",
+      borderColor: vars.color.focus,
+      boxShadow: `0 0 0 4px ${vars.color.focus}, ${vars.shadow.soft}`,
     },
     "&:focus-visible": {
       outline: "none",
-      borderColor: "rgba(47, 45, 42, 0.38)",
-      boxShadow: "0 0 0 4px rgba(48, 47, 44, 0.12)",
+      borderColor: vars.color.focus,
+      boxShadow: `0 0 0 4px ${vars.color.focus}`,
     },
   },
 });
@@ -65,12 +64,12 @@ export const chevron = style({
   height: "34px",
   marginRight: "2px",
   borderRadius: "50%",
-  background: "rgba(48, 47, 44, 0.08)",
+  background: vars.color.surfaceStrong,
   transition: `transform ${vars.motion.transition}, background ${vars.motion.transition}`,
   selectors: {
     [`${rootOpen} &`]: {
       transform: "rotate(180deg)",
-      background: "rgba(48, 47, 44, 0.13)",
+      background: vars.color.primarySoft,
     },
   },
 });
@@ -99,7 +98,7 @@ export const menu = style({
   padding: "10px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "24px",
-  background: "rgba(255, 250, 242, 0.98)",
+  background: vars.color.surfaceGlass,
   boxShadow: "0 24px 70px rgba(47, 45, 42, 0.18)",
   backdropFilter: "blur(18px)",
   animation: `${menuIn} 150ms ease both`,
@@ -141,7 +140,7 @@ export const option = style({
 export const optionSelected = style({
   selectors: {
     "&, &:hover, &:focus-visible": {
-      color: "#fff",
+      color: vars.color.onPrimary,
       background: vars.color.primary,
     },
   },

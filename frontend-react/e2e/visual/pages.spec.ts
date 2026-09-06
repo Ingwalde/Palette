@@ -171,6 +171,14 @@ for (const { name, path, fullPage = true } of GUEST_ROUTES) {
   });
 }
 
+// The dark theme is a whole second palette across every surface; one full-page home baseline under
+// the system-preference dark rendering guards it against a regression that only shows in dark.
+test("dark: home", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await open(page, "/");
+  await expect(page).toHaveScreenshot("dark-home.png", { fullPage: true });
+});
+
 const ADMIN_ROUTES: Route[] = [
   { name: "profile", path: "/profile" },
   { name: "admin", path: "/admin" },

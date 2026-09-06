@@ -11,7 +11,7 @@ export const card = style({
   padding: "24px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.82)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
 });
 
@@ -22,7 +22,7 @@ export const version = style({
   margin: "0 0 12px",
   padding: "7px 12px",
   borderRadius: "999px",
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
   fontSize: "0.84rem",
   fontWeight: 800,

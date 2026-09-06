@@ -49,7 +49,7 @@ export const heroPreviewWindow = style({
   padding: "18px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "34px",
-  background: "rgba(255, 250, 242, 0.78)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
 });
 
@@ -58,7 +58,7 @@ export const heroPreviewTop = style({
   height: "54px",
   marginBottom: "16px",
   borderRadius: "20px",
-  background: "#302f2c",
+  background: vars.color.primary,
 });
 
 export const heroPreviewGrid = style({
@@ -104,12 +104,12 @@ export const tagButton = style({
   color: vars.color.muted,
   background: vars.color.surface,
   selectors: {
-    "&:hover": { color: "#fff", background: vars.color.primary },
+    "&:hover": { color: vars.color.onPrimary, background: vars.color.primary },
   },
 });
 
 export const tagButtonActive = style({
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
 });
 

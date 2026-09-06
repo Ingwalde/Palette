@@ -17,7 +17,7 @@ export const root = style({
   border: `1px dashed ${vars.color.border}`,
   borderRadius: vars.radius.lg,
   textAlign: "center",
-  background: "rgba(255, 250, 242, 0.58)",
+  background: vars.color.surfaceGlass,
   animation: `${riseIn} 550ms ease both`,
   "@media": {
     "(prefers-reduced-motion: reduce)": {

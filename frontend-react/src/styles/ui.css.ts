@@ -37,9 +37,9 @@ export const button = style({
 
 export const buttonVariant = styleVariants({
   primary: {
-    color: "#fff",
+    color: vars.color.onPrimary,
     background: vars.color.primary,
-    boxShadow: "0 12px 28px rgba(47, 45, 42, 0.18)",
+    boxShadow: vars.shadow.soft,
   },
   secondary: {
     color: vars.color.text,
@@ -47,7 +47,7 @@ export const buttonVariant = styleVariants({
     background: vars.color.surface,
   },
   danger: {
-    color: "#fff",
+    color: vars.color.onPrimary,
     background: vars.color.danger,
   },
   ghost: {
@@ -99,13 +99,13 @@ const controlBase = {
   color: vars.color.text,
   background: vars.color.surface,
   outline: "none",
-  boxShadow: "0 10px 30px rgba(47, 45, 42, 0.04)",
+  boxShadow: vars.shadow.soft,
   transition: `border-color ${vars.motion.transition}, box-shadow ${vars.motion.transition}`,
 } as const;
 
 const controlFocus = {
-  borderColor: "rgba(47, 45, 42, 0.35)",
-  boxShadow: "0 0 0 4px rgba(48, 47, 44, 0.08)",
+  borderColor: vars.color.focus,
+  boxShadow: `0 0 0 4px ${vars.color.focus}`,
 } as const;
 
 // Placeholder styled to match the page: Poppins, muted warm tone, lighter while focused.
@@ -347,7 +347,7 @@ export const skipLink = style({
   padding: "10px 16px",
   borderRadius: "10px",
   background: vars.color.primary,
-  color: "#fff",
+  color: vars.color.onPrimary,
   fontWeight: 600,
   textDecoration: "none",
   transition: "top 160ms ease",
