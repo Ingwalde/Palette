@@ -221,6 +221,23 @@ describe("PalettePage", () => {
     expect(screen.queryByRole("button", { name: "Report" })).not.toBeInTheDocument();
   });
 
+  it("simulates color vision over the swatches without changing copied values", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    // The swatch grid is the labelled Colors region's grid; find it via a swatch's ancestor.
+    await screen.findByRole("button", { name: "Copy #006D77" });
+
+    await user.click(screen.getByRole("button", { name: "Deuteranopia" }));
+    expect(await screen.findByText(/Simulating Deuteranopia/)).toBeInTheDocument();
+
+    // Copying still yields the original colour — the filter is purely visual.
+    await user.click(screen.getByRole("button", { name: "Copy #006D77" }));
+    expect(colorLib.copyToClipboard).toHaveBeenCalledWith("#006D77");
+
+    await user.click(screen.getByRole("button", { name: "None" }));
+    expect(screen.queryByText(/Simulating/)).not.toBeInTheDocument();
+  });
+
   it("shows a moderation note on a removed palette", async () => {
     await signIn();
     vi.mocked(palettesApi.getPalette).mockResolvedValue({
