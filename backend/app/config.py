@@ -93,10 +93,21 @@ class Settings(BaseSettings):
     figma_client_id: str = ""
     figma_client_secret: str = ""
     figma_redirect_uri: str = ""
+    pinterest_client_id: str = ""
+    pinterest_client_secret: str = ""
+    pinterest_redirect_uri: str = ""
 
     @property
     def figma_import_enabled(self) -> bool:
         return bool(self.figma_client_id and self.figma_client_secret and self.figma_redirect_uri)
+
+    @property
+    def pinterest_import_enabled(self) -> bool:
+        return bool(
+            self.pinterest_client_id
+            and self.pinterest_client_secret
+            and self.pinterest_redirect_uri
+        )
 
     @field_validator("cors_origins", mode="before")
     @classmethod

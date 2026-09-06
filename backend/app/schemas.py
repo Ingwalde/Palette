@@ -413,3 +413,15 @@ class ImportDraft(BaseModel):
     # The extracted colours, ready to seed the palette editor. Named to match the frontend's
     # editor draft rather than a full palette (no name/tags yet).
     colors: list[str]
+
+
+class PinterestBoard(BaseModel):
+    id: str
+    name: str
+
+
+class PinterestPin(BaseModel):
+    id: str
+    # The pin's image URL; the SPA runs it through the same image proxy + client-side extractor as
+    # a pasted link, since a pin carries an image, not a palette.
+    image_url: str

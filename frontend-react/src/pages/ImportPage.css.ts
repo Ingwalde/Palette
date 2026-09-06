@@ -1,4 +1,4 @@
-import { style } from "@vanilla-extract/css";
+import { globalStyle, style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
 
 export const panel = style({
@@ -40,6 +40,32 @@ export const figma = style({
   display: "flex",
   flexDirection: "column",
   gap: "12px",
+});
+
+export const pins = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
+  gap: "8px",
+});
+
+export const pin = style({
+  padding: 0,
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.sm,
+  overflow: "hidden",
+  cursor: "pointer",
+  background: "transparent",
+  aspectRatio: "1 / 1",
+  transition: vars.motion.transition,
+  ":hover": { transform: "translateY(-2px)" },
+  ":disabled": { cursor: "default", opacity: 0.6 },
+});
+
+globalStyle(`${pin} img`, {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
 });
 
 export const countRow = style({

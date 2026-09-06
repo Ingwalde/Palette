@@ -9,6 +9,10 @@ import {
   figmaDisconnect,
   figmaExtract,
   getProviders,
+  pinterestAuthorizeUrl,
+  pinterestBoards,
+  pinterestDisconnect,
+  pinterestPins,
 } from "../api/imports";
 import { extractColorsFromBlob } from "../lib/imageColors";
 import { readableTextOn } from "../lib/color";
@@ -36,6 +40,7 @@ export function ImportPage() {
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
   const [figmaFile, setFigmaFile] = useState("");
+  const [board, setBoard] = useState("");
   // The last decoded image, kept so changing the colour count re-quantises without re-fetching.
   const sourceBlob = useRef<Blob | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -46,17 +51,35 @@ export function ImportPage() {
     enabled: isAuthenticated,
   });
   const figma = providers?.figma;
+  const pinterest = providers?.pinterest;
 
-  // The Figma OAuth callback bounces back here with ?figma=connected|error. Report it, refresh the
-  // link state, and strip the param so a reload does not repeat the toast.
+  const { data: boards } = useQuery({
+    queryKey: ["pinterest-boards"],
+    queryFn: pinterestBoards,
+    enabled: Boolean(pinterest?.connected),
+  });
+  const { data: pins } = useQuery({
+    queryKey: ["pinterest-pins", board],
+    queryFn: () => pinterestPins(board),
+    enabled: Boolean(pinterest?.connected && board),
+  });
+
+  // The OAuth callback bounces back here with ?figma= or ?pinterest= connected|error. Report it,
+  // refresh the link state, and strip the param so a reload does not repeat the toast.
   useEffect(() => {
-    const result = searchParams.get("figma");
-    if (!result) return;
-    if (result === "connected") showToast("Figma connected");
-    else showToast("Figma connection failed", "error");
-    if (result === "connected") void refetchProviders();
-    searchParams.delete("figma");
-    setSearchParams(searchParams, { replace: true });
+    for (const provider of ["figma", "pinterest"] as const) {
+      const result = searchParams.get(provider);
+      if (!result) continue;
+      const label = provider === "figma" ? "Figma" : "Pinterest";
+      if (result === "connected") {
+        showToast(`${label} connected`);
+        void refetchProviders();
+      } else {
+        showToast(`${label} connection failed`, "error");
+      }
+      searchParams.delete(provider);
+      setSearchParams(searchParams, { replace: true });
+    }
   }, [searchParams, setSearchParams, showToast, refetchProviders]);
 
   // The extractor saves to an account, and the URL path needs the authed proxy — gate the page.
@@ -101,19 +124,24 @@ export function ImportPage() {
     if (file) applyBlob(file);
   };
 
-  const onUrl = async (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = url.trim();
-    if (!trimmed || busy) return;
+  // Fetch a remote image through the proxy and extract from it — shared by the URL form and a
+  // Pinterest pin (a pin is just an image URL).
+  const applyImageUrl = async (target: string) => {
+    if (!target || busy) return;
     setBusy(true);
     setError("");
     try {
-      const blob = await fetchImageBlob(trimmed);
+      const blob = await fetchImageBlob(target);
       applyBlob(blob);
     } catch (err) {
       setBusy(false);
       setError(err instanceof ApiError ? err.message : "Could not fetch that image");
     }
+  };
+
+  const onUrl = (e: FormEvent) => {
+    e.preventDefault();
+    void applyImageUrl(url.trim());
   };
 
   // Re-quantise the already-loaded image when the count changes; no effect until one is loaded.
@@ -144,6 +172,26 @@ export function ImportPage() {
       void refetchProviders();
     } catch {
       showToast("Could not disconnect Figma", "error");
+    }
+  };
+
+  const onConnectPinterest = async () => {
+    try {
+      const { url: authorizeUrl } = await pinterestAuthorizeUrl();
+      window.location.href = authorizeUrl;
+    } catch {
+      showToast("Could not start the Pinterest connection", "error");
+    }
+  };
+
+  const onDisconnectPinterest = async () => {
+    try {
+      await pinterestDisconnect();
+      showToast("Pinterest disconnected");
+      setBoard("");
+      void refetchProviders();
+    } catch {
+      showToast("Could not disconnect Pinterest", "error");
     }
   };
 
@@ -262,6 +310,62 @@ export function ImportPage() {
                   onClick={() => void onConnectFigma()}
                 >
                   Connect Figma
+                </button>
+              )}
+            </div>
+          )}
+
+          {pinterest?.enabled && (
+            <div className={styles.figma} aria-label="Pinterest import">
+              <div className={styles.divider}>or from Pinterest</div>
+              {pinterest.connected ? (
+                <>
+                  <div className={styles.urlRow}>
+                    <select
+                      className={`${ui.input} ${styles.urlInput}`}
+                      aria-label="Pinterest board"
+                      value={board}
+                      onChange={(e) => setBoard(e.target.value)}
+                    >
+                      <option value="">Pick a board…</option>
+                      {(boards ?? []).map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={buttonClass("ghost")}
+                      onClick={() => void onDisconnectPinterest()}
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                  {board && (pins ?? []).length > 0 && (
+                    <div className={styles.pins}>
+                      {(pins ?? []).map((pin) => (
+                        <button
+                          key={pin.id}
+                          type="button"
+                          className={styles.pin}
+                          disabled={busy}
+                          onClick={() => void applyImageUrl(pin.image_url)}
+                          aria-label="Extract colors from this pin"
+                        >
+                          <img src={pin.image_url} alt="" loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className={buttonClass("secondary")}
+                  onClick={() => void onConnectPinterest()}
+                >
+                  Connect Pinterest
                 </button>
               )}
             </div>

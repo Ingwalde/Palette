@@ -45,7 +45,7 @@ async def import_providers(
 
     return schemas.ImportProviders(
         figma=await status("figma", settings.figma_import_enabled),
-        pinterest=await status("pinterest", False),
+        pinterest=await status("pinterest", settings.pinterest_import_enabled),
     )
 
 
