@@ -99,8 +99,11 @@ export const navIndicator = style({
   boxShadow: vars.shadow.soft,
   opacity: 0,
   transform: "translate3d(var(--nav-indicator-x, 0), var(--nav-indicator-y, 0), 0)",
-  transition:
-    "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), width 280ms cubic-bezier(0.22, 1, 0.36, 1), height 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease",
+  // Only the opacity is animated — the pill repositions instantly. It used to glide between links,
+  // but the active label flips to onPrimary the moment it is selected, so while the pill was still
+  // travelling the newly-active label sat on the bare header with an inverted (near-invisible)
+  // colour. Instant repositioning keeps the label and its pill always in step.
+  transition: "opacity 180ms ease",
   pointerEvents: "none",
   selectors: {
     [`${navReady} &`]: { opacity: 1 },
@@ -108,8 +111,6 @@ export const navIndicator = style({
   "@media": {
     // Wider, softer highlight — gentler corners.
     [PHONE]: { borderRadius: "18px" },
-    // The pill glides between links; reduced motion snaps it into place instead.
-    "(prefers-reduced-motion: reduce)": { transition: "opacity 180ms ease" },
   },
 });
 
@@ -137,7 +138,10 @@ export const navLink = style({
   fontWeight: 600,
   lineHeight: 1.2,
   background: "transparent",
-  transition: "color 220ms ease, font-weight 220ms ease, transform 220ms ease",
+  // Colour changes instantly (no transition): the active label must reach its on-pill colour the
+  // same instant the pill lands under it, or it flashes low-contrast on the way. Transform still
+  // eases for the hover lift.
+  transition: "font-weight 220ms ease, transform 220ms ease",
   selectors: {
     "&:hover": {
       color: vars.color.text,
@@ -146,7 +150,7 @@ export const navLink = style({
   },
   "@media": {
     [PHONE]: navItemPhone,
-    "(prefers-reduced-motion: reduce)": { transition: "color 220ms ease" },
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
   },
 });
 
