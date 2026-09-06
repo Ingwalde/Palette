@@ -66,6 +66,16 @@ export interface ImportDraft {
   colors: string[];
 }
 
+export interface PinterestBoard {
+  id: string;
+  name: string;
+}
+
+export interface PinterestPin {
+  id: string;
+  image_url: string;
+}
+
 export type TagKind = "free" | "purpose";
 
 export interface Tag {

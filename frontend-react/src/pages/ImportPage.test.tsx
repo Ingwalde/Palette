@@ -27,6 +27,10 @@ vi.mock("../api/imports", () => ({
   figmaAuthorizeUrl: vi.fn(),
   figmaExtract: vi.fn(),
   figmaDisconnect: vi.fn(),
+  pinterestAuthorizeUrl: vi.fn(),
+  pinterestDisconnect: vi.fn(),
+  pinterestBoards: vi.fn(() => Promise.resolve([])),
+  pinterestPins: vi.fn(() => Promise.resolve([])),
 }));
 
 const DISABLED = {
@@ -201,5 +205,47 @@ describe("ImportPage", () => {
     );
     expect(await screen.findByText("#101010")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit as palette" })).toBeInTheDocument();
+  });
+
+  it("hides Pinterest controls when disabled", async () => {
+    renderPage();
+    await screen.findByRole("heading", { name: /Extract a palette/i });
+    expect(
+      screen.queryByRole("button", { name: "Connect Pinterest" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("extracts from a chosen Pinterest pin via the image proxy", async () => {
+    vi.mocked(importsApi.getProviders).mockResolvedValue({
+      figma: { enabled: false, connected: false },
+      pinterest: { enabled: true, connected: true },
+    });
+    vi.mocked(importsApi.pinterestBoards).mockResolvedValue([
+      { id: "b1", name: "Moodboard" },
+    ]);
+    vi.mocked(importsApi.pinterestPins).mockResolvedValue([
+      { id: "p1", image_url: "https://i.pinimg.com/p1.jpg" },
+    ]);
+    vi.mocked(importsApi.fetchImageBlob).mockResolvedValue(
+      new Blob(["x"], { type: "image/png" }),
+    );
+    const u = userEvent.setup();
+    renderPage();
+
+    await screen.findByLabelText("Pinterest board");
+    // Wait for the boards query to populate the options before selecting.
+    await screen.findByRole("option", { name: "Moodboard" });
+    await u.selectOptions(screen.getByLabelText("Pinterest board"), "b1");
+    const pin = await screen.findByRole("button", {
+      name: "Extract colors from this pin",
+    });
+    await u.click(pin);
+
+    await waitFor(() =>
+      expect(importsApi.fetchImageBlob).toHaveBeenCalledWith(
+        "https://i.pinimg.com/p1.jpg",
+      ),
+    );
+    expect(await screen.findByText("#101010")).toBeInTheDocument();
   });
 });

@@ -1,6 +1,11 @@
 import { API_BASE_URL } from "../lib/apiBase";
 import { ApiError, formatApiError, request } from "../lib/http";
-import type { ImportDraft, ImportProviders } from "../types/api";
+import type {
+  ImportDraft,
+  ImportProviders,
+  PinterestBoard,
+  PinterestPin,
+} from "../types/api";
 
 // Which import providers this deployment offers, and whether the user has linked each. Read once
 // when the Import page mounts to decide which buttons to show.
@@ -22,6 +27,24 @@ export function figmaExtract(file: string): Promise<ImportDraft> {
 
 export function figmaDisconnect(): Promise<void> {
   return request<void>("/import/figma", { method: "DELETE" });
+}
+
+export function pinterestAuthorizeUrl(): Promise<{ url: string }> {
+  return request<{ url: string }>("/import/pinterest/authorize");
+}
+
+export function pinterestDisconnect(): Promise<void> {
+  return request<void>("/import/pinterest", { method: "DELETE" });
+}
+
+export function pinterestBoards(): Promise<PinterestBoard[]> {
+  return request<PinterestBoard[]>("/import/pinterest/boards");
+}
+
+export function pinterestPins(boardId: string): Promise<PinterestPin[]> {
+  return request<PinterestPin[]>(
+    `/import/pinterest/boards/${encodeURIComponent(boardId)}/pins`,
+  );
 }
 
 // A pasted image URL is fetched through the backend proxy (routers/imports.py) so its pixels can
