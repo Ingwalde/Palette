@@ -66,6 +66,55 @@ export const colorsSection = style({
   paddingTop: "8px",
 });
 
+export const simBar = style({
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "12px",
+});
+
+export const simLabel = style({
+  fontSize: "0.85rem",
+  fontWeight: 600,
+  color: vars.color.muted,
+});
+
+export const simOptions = style({
+  display: "inline-flex",
+  flexWrap: "wrap",
+  gap: "2px",
+  padding: "3px",
+  borderRadius: "999px",
+  border: `1px solid ${vars.color.border}`,
+  background: vars.color.surfaceStrong,
+});
+
+export const simOption = style({
+  border: "none",
+  cursor: "pointer",
+  padding: "6px 12px",
+  borderRadius: "999px",
+  fontSize: "0.8rem",
+  fontWeight: 600,
+  fontFamily: "inherit",
+  color: vars.color.muted,
+  background: "transparent",
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { color: vars.color.text },
+    '&[aria-pressed="true"]': {
+      color: vars.color.onPrimary,
+      background: vars.color.primary,
+    },
+  },
+});
+
+export const simNote = style({
+  margin: 0,
+  fontSize: "0.85rem",
+  color: vars.color.muted,
+});
+
 export const colors = style({
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",

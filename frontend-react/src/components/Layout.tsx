@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RouteFallback } from "./RouteFallback";
 import { ThemeToggle } from "./ThemeToggle";
+import { ColorVisionFilters } from "./ColorVisionFilters";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
 
@@ -37,6 +38,7 @@ export function Layout() {
 
   return (
     <>
+      <ColorVisionFilters />
       <a className={ui.skipLink} href="#main-content">
         Skip to content
       </a>

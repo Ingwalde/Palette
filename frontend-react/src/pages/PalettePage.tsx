@@ -11,6 +11,7 @@ import { CURATOR_HANDLE } from "../lib/constants";
 import { palettePath } from "../lib/palettePath";
 import { forkPalette } from "../api/palettes";
 import { reportPalette } from "../api/reports";
+import { CVD_TYPES, cvdLabel } from "../lib/colorVision";
 import { useModal } from "../components/modal/ModalProvider";
 import {
   copyToClipboard,
@@ -38,6 +39,8 @@ export function PalettePage() {
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
   const [forking, setForking] = useState(false);
+  // Colour-vision simulation is an inspection mode over the swatches — local, never persisted.
+  const [sim, setSim] = useState("none");
 
   const { data: palette, isLoading, error } = usePalette(handle, slug);
 
@@ -209,7 +212,42 @@ export function PalettePage() {
       </section>
 
       <section className={`${ui.section} ${styles.colorsSection}`} aria-label="Colors">
-        <div className={styles.colors}>
+        <div className={styles.simBar} role="group" aria-label="Color vision simulation">
+          <span className={styles.simLabel}>Color vision</span>
+          <div className={styles.simOptions}>
+            <button
+              type="button"
+              className={styles.simOption}
+              aria-pressed={sim === "none"}
+              onClick={() => setSim("none")}
+            >
+              None
+            </button>
+            {CVD_TYPES.map((type) => (
+              <button
+                key={type.id}
+                type="button"
+                className={styles.simOption}
+                aria-pressed={sim === type.id}
+                title={type.note}
+                onClick={() => setSim(type.id)}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {sim !== "none" && (
+          <p className={styles.simNote} role="status">
+            Simulating {cvdLabel(sim)}. Copied values are unchanged.
+          </p>
+        )}
+
+        <div
+          className={styles.colors}
+          style={sim !== "none" ? { filter: `url(#${sim})` } : undefined}
+        >
           {palette.colors.map((color, i) => {
             return (
               <button
