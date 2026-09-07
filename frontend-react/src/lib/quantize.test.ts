@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { medianCut, quantizeToHex, rgbToHex, type RGB } from "./quantize";
+import { dominantColors, medianCut, quantizeToHex, rgbToHex, type RGB } from "./quantize";
 
 describe("rgbToHex", () => {
   it("formats an RGB triple as uppercase hex", () => {
@@ -57,6 +57,40 @@ describe("medianCut", () => {
     const snapshot = JSON.stringify(pixels);
     medianCut(pixels, 2);
     expect(JSON.stringify(pixels)).toBe(snapshot);
+  });
+});
+
+describe("dominantColors", () => {
+  it("returns nothing for no pixels", () => {
+    expect(dominantColors([], 4)).toEqual([]);
+  });
+
+  it("keeps a solid region's true colour instead of a muddy average", () => {
+    // A large vivid-orange block with a little dark and light noise around it. Median-cut averaging
+    // returned a greyed tan here; popularity must give back the orange essentially intact.
+    const orange: RGB[] = Array.from({ length: 300 }, () => [250, 86, 47] as RGB);
+    const dark: RGB[] = Array.from({ length: 30 }, () => [20, 20, 20] as RGB);
+    const light: RGB[] = Array.from({ length: 30 }, () => [245, 245, 245] as RGB);
+    const colors = dominantColors([...orange, ...dark, ...light], 2);
+    const near = colors.find(([r, g, b]) => Math.hypot(r - 250, g - 86, b - 47) < 20);
+    expect(near).toBeDefined();
+  });
+
+  it("ranks by dominance: the biggest cluster wins for a single colour", () => {
+    const many: RGB[] = Array.from({ length: 100 }, () => [200, 30, 30] as RGB);
+    const few: RGB[] = Array.from({ length: 10 }, () => [30, 30, 200] as RGB);
+    expect(dominantColors([...many, ...few], 1)).toEqual([[200, 30, 30]]);
+  });
+
+  it("does not list two near-identical swatches when a distinct one is available", () => {
+    const cream: RGB[] = Array.from({ length: 200 }, () => [235, 228, 208] as RGB);
+    const cream2: RGB[] = Array.from({ length: 150 }, () => [232, 225, 205] as RGB);
+    const accent: RGB[] = Array.from({ length: 120 }, () => [250, 86, 47] as RGB);
+    const colors = dominantColors([...cream, ...cream2, ...accent], 2);
+    const hasAccent = colors.some(
+      ([r, g, b]) => Math.hypot(r - 250, g - 86, b - 47) < 20,
+    );
+    expect(hasAccent).toBe(true);
   });
 });
 
