@@ -24,10 +24,15 @@ server {
         # decides which one is used) — without them the browser blocks every error report and
         # Web Vital.
         #
+        # img-src allows blob: because the client decodes local files it never uploads raw — the
+        # avatar cropper and the import image-extractor read a picked file through a blob: URL /
+        # ImageBitmap before turning it into a small data: URL. Without blob: the browser blocks
+        # that load and the picker fails with "that file could not be read as an image".
+        #
         # CONNECT_SRC_EXTRA is empty in production, where the API is same-origin behind the
         # reverse proxy. docker-compose.yml sets it to the local dev API ports, because over
         # plain http the app talks to http://<hostname>:8000 (see src/lib/apiBase.ts).
-        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${CONNECT_SRC_EXTRA}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io ${CONNECT_SRC_EXTRA}; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-Frame-Options "DENY" always;
         add_header Referrer-Policy "strict-origin-when-cross-origin" always;
