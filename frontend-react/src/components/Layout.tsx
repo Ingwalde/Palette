@@ -23,7 +23,13 @@ export function Layout() {
     if (!nav) return;
     const move = () => {
       const active = nav.querySelector<HTMLElement>(`.${styles.navLinkActive}`);
-      if (!active) return;
+      // On a route no nav item owns (a palette page, the changelog), there is nothing to sit
+      // under — hide the pill instead of leaving it stranded under the last active link, where the
+      // now-inactive label reads as a washed-out highlight.
+      if (!active) {
+        nav.classList.remove(styles.navReady);
+        return;
+      }
       nav.style.setProperty("--nav-indicator-x", `${active.offsetLeft}px`);
       nav.style.setProperty("--nav-indicator-y", `${active.offsetTop}px`);
       nav.style.setProperty("--nav-indicator-width", `${active.offsetWidth}px`);
