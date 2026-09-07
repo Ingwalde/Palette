@@ -23,6 +23,8 @@ describe("MobileMenu", () => {
     const trigger = screen.getByRole("button", { name: /Account menu, ann/ });
     expect(trigger).toHaveTextContent("A");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
+    // Closed on mount: the panel is `hidden`, so it is out of the tree until the avatar is pressed.
+    expect(screen.queryByRole("navigation", { name: "Account" })).not.toBeInTheDocument();
 
     await u.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
