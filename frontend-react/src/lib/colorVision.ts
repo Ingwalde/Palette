@@ -42,3 +42,7 @@ export const CVD_TYPES: CvdType[] = [
 export function cvdLabel(id: string): string | undefined {
   return CVD_TYPES.find((t) => t.id === id)?.label;
 }
+
+export function cvdNote(id: string): string | undefined {
+  return CVD_TYPES.find((t) => t.id === id)?.note;
+}
