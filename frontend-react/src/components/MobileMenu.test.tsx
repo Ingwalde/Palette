@@ -44,6 +44,16 @@ describe("MobileMenu", () => {
     expect(within(menu).queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
+  it("closes when a menu link is chosen", async () => {
+    const u = userEvent.setup();
+    renderMenu({ isAuthenticated: false, isAdmin: false });
+    const button = screen.getByRole("button", { name: "Menu" });
+    await u.click(button);
+    const menu = screen.getByRole("navigation", { name: "More" });
+    await u.click(within(menu).getByRole("link", { name: "Export" }));
+    expect(button).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("closes on Escape", async () => {
     const u = userEvent.setup();
     renderMenu({ isAuthenticated: true, isAdmin: false });

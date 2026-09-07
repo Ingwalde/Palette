@@ -22,20 +22,22 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
   // Close on navigation.
   useEffect(() => setOpen(false), [location.pathname]);
 
-  // Close on Escape or a click outside the menu.
+  // Close on Escape or a press outside the menu. `pointerdown` (not `mousedown`) so a tap on a bare
+  // area of the page closes it on touch too — iOS Safari does not fire mouse events on elements
+  // without a click handler, which left the menu stuck open on a phone.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
-    const onDown = (e: MouseEvent) => {
+    const onDown = (e: Event) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onDown);
+    document.addEventListener("pointerdown", onDown);
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("pointerdown", onDown);
     };
   }, [open]);
 
@@ -64,6 +66,11 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
         className={styles.mobileMenuPanel}
         aria-label="More"
         hidden={!open}
+        // Close as soon as a link is chosen, even when it points at the current route (where the
+        // navigation effect would not fire). The theme buttons are not links, so they stay open.
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a")) setOpen(false);
+        }}
       >
         <NavLink to="/" end className={itemClass}>
           Home
