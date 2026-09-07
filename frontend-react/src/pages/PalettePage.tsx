@@ -363,7 +363,7 @@ export function PalettePage() {
             <tbody>
               {matrix.map((row, i) => (
                 <tr key={palette.colors[i]}>
-                  <th scope="row" className={styles.matrixHead}>
+                  <th scope="row" className={styles.matrixRowHead}>
                     <span
                       className={styles.matrixSwatch}
                       style={{ background: palette.colors[i] } as CSSProperties}

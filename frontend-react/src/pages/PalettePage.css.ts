@@ -190,7 +190,11 @@ export const matrix = style({
 });
 
 export const matrixCorner = style({
-  background: "transparent",
+  // Pinned with the row-header column so it never scrolls off; opaque so ratio cells slide under it.
+  position: "sticky",
+  left: 0,
+  zIndex: 2,
+  background: vars.color.surface,
 });
 
 export const matrixHead = style({
@@ -201,6 +205,18 @@ export const matrixHead = style({
   color: vars.color.text,
   borderBottom: `1px solid ${vars.color.border}`,
 });
+
+// The first column (each row's colour) stays put while the ratio grid scrolls horizontally, so you
+// never lose track of which pair a cell belongs to on a narrow screen.
+export const matrixRowHead = style([
+  matrixHead,
+  {
+    position: "sticky",
+    left: 0,
+    zIndex: 1,
+    background: vars.color.surface,
+  },
+]);
 
 export const matrixSwatch = style({
   display: "inline-block",
