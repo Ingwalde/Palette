@@ -102,6 +102,7 @@ export const menu = style({
   // behind bled through the options and made them hard to read. Near-solid keeps a hint of frost.
   background: `color-mix(in srgb, ${vars.color.surface} 97%, transparent)`,
   boxShadow: vars.shadow.soft,
+  WebkitBackdropFilter: "blur(18px)",
   backdropFilter: "blur(18px)",
   animation: `${menuIn} 150ms ease both`,
   // The original set max-height twice — 290px here, then min(280px, calc(100vh - 180px)) in a
