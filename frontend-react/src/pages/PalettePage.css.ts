@@ -89,19 +89,22 @@ export const simOptions = style({
   background: vars.color.surfaceStrong,
 });
 
-// The gliding thumb that sits under the active choice. One column wide, translated by whole
-// columns; only its position animates, so the labels never invert mid-slide.
+// The gliding thumb that sits under the active choice. Its position and width are measured from the
+// active button in JS (see PalettePage) and written into --sim-x / --sim-w, so it tracks labels of
+// different widths instead of assuming equal columns. Only position and width animate — the labels
+// just change colour, so nothing inverts mid-slide.
 export const simThumb = style({
   position: "absolute",
   top: "3px",
   bottom: "3px",
-  left: "3px",
-  width: "calc((100% - 6px) / var(--sim-count))",
+  left: 0,
+  width: "var(--sim-w, 0px)",
   borderRadius: "999px",
   background: vars.color.surface,
   boxShadow: vars.shadow.soft,
-  transform: "translateX(calc(var(--sim-active) * 100%))",
-  transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+  transform: "translateX(var(--sim-x, 3px))",
+  transition:
+    "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 260ms cubic-bezier(0.22, 1, 0.36, 1)",
   pointerEvents: "none",
   "@media": {
     "(prefers-reduced-motion: reduce)": { transition: "none" },
