@@ -48,7 +48,11 @@ describe("Layout nav", () => {
   it("shows Login and hides Admin for a logged-out visitor", async () => {
     vi.mocked(authApi.getCurrentUser).mockRejectedValue(new ApiError("no", 401));
     renderLayout();
-    expect(await screen.findByRole("link", { name: "Login" })).toBeInTheDocument();
+    // Login appears twice: the desktop nav and the phone header's action cluster (one hidden by a
+    // media query, but both in the DOM).
+    expect(
+      (await screen.findAllByRole("link", { name: "Login" })).length,
+    ).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Favorites" })).toHaveAttribute(
       "href",
