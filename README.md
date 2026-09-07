@@ -24,8 +24,10 @@ Cloudflare + Caddy, auto-deployed on every green build to `main`. Full release h
 
 ## Screenshots
 
-| Home — browse & filter                                                       | Admin — colour-row editor                                                           | Export — PNG preview                                                      |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+![Palette page: the swatch grid with per-colour values, a colour-vision simulation control, fork/report actions and the WCAG contrast matrix](docs/assets/palette.png)
+
+| Home — the community feed                                                   | Admin — colour-row editor                                                           | Export — PNG preview                                                      |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | ![Home page: hero, search field and tag filter chips](docs/assets/home.png) | ![Admin panel: dynamic HEX-row colour editor with tag chips](docs/assets/admin.png) | ![Export page: selected palette with PNG preview](docs/assets/export.png) |
 
 ![Demo: live search filtering the palette grid down to matching palettes](docs/assets/demo.gif)
