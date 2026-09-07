@@ -65,7 +65,16 @@ export function ProfilePage() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth });
       showToast("Profile photo updated");
     } catch (e) {
-      showToast(err(e), "error");
+      // fileToAvatarDataUrl throws a descriptive Error (unsupported format, decode failure), so
+      // surface that instead of the generic fallback — "HEIC isn't supported" tells the user what
+      // to do; "Something went wrong" does not.
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error && e.message
+            ? e.message
+            : "Something went wrong";
+      showToast(msg, "error");
     }
   };
 
