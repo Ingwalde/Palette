@@ -67,13 +67,17 @@ export function Layout() {
             Export
           </NavLink>
           {isAuthenticated && (
-            <NavLink to="/palettes/new" className={linkClass}>
-              New palette
-            </NavLink>
-          )}
-          {isAuthenticated && (
-            <NavLink to="/import" className={linkClass}>
-              Import
+            // One entry for the two ways to make a palette; the page itself tabs between a blank
+            // editor and Import, so the nav item stays active on both routes.
+            <NavLink
+              to="/palettes/new"
+              className={({ isActive }) =>
+                isActive || location.pathname === "/import"
+                  ? `${styles.navLink} ${styles.navLinkActive}`
+                  : styles.navLink
+              }
+            >
+              Create
             </NavLink>
           )}
           {isAdmin && (

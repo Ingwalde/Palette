@@ -10,6 +10,7 @@ import { palettePath } from "../lib/palettePath";
 import { ApiError } from "../lib/http";
 import { EmptyState } from "../components/EmptyState";
 import { PaletteForm, type PaletteFormValues } from "../components/PaletteForm";
+import { CreateTabs } from "../components/CreateTabs";
 import * as ui from "../styles/ui.css";
 
 export function PaletteEditorPage() {
@@ -104,6 +105,7 @@ export function PaletteEditorPage() {
   return (
     <>
       <section className={`${ui.section} ${ui.pageHero}`}>
+        {!isEdit && <CreateTabs />}
         <p className={ui.eyebrow}>{isEdit ? "Edit" : "Create"}</p>
         <h1>{isEdit ? "Edit palette" : "New palette"}</h1>
         <p>

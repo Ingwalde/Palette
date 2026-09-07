@@ -201,7 +201,7 @@ export function ProfilePage() {
                 Logout
               </button>
               <button
-                className={buttonClass("ghost")}
+                className={buttonClass("danger")}
                 type="button"
                 onClick={() => void onLogoutEverywhere()}
               >

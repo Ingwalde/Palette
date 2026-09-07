@@ -71,7 +71,7 @@ const GUEST_PAGES = [
   "/reset-password?token=audit",
   "/verify?token=audit",
 ];
-const ADMIN_PAGES = ["/admin", "/profile", "/import"];
+const ADMIN_PAGES = ["/admin", "/profile", "/import", "/palettes/new"];
 
 for (const path of GUEST_PAGES) {
   test(`a11y (guest) ${path}`, async ({ page }) => {

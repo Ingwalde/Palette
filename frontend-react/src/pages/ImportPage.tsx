@@ -15,6 +15,7 @@ import {
   pinterestPins,
 } from "../api/imports";
 import { extractColorsFromBlob } from "../lib/imageColors";
+import { CreateTabs } from "../components/CreateTabs";
 import { readableTextOn } from "../lib/color";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
@@ -224,6 +225,7 @@ export function ImportPage() {
   return (
     <>
       <section className={`${ui.section} ${ui.pageHero}`}>
+        <CreateTabs />
         <p className={ui.eyebrow}>Import</p>
         <h1>Extract a palette from an image</h1>
         <p>

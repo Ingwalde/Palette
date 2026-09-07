@@ -98,8 +98,10 @@ export const menu = style({
   padding: "10px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "24px",
-  background: vars.color.surfaceGlass,
-  boxShadow: "0 24px 70px rgba(47, 45, 42, 0.18)",
+  // Opaque, not the 0.80 surfaceGlass: a floating menu sits over the page, and at 0.80 the content
+  // behind bled through the options and made them hard to read. Near-solid keeps a hint of frost.
+  background: `color-mix(in srgb, ${vars.color.surface} 97%, transparent)`,
+  boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
   animation: `${menuIn} 150ms ease both`,
   // The original set max-height twice — 290px here, then min(280px, calc(100vh - 180px)) in a
