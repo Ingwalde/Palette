@@ -4,7 +4,23 @@
 
 const AVATAR_SIZE = 128;
 
+// The formats a browser <canvas> can actually decode here. iPhones hand back HEIC/HEIF, which
+// nothing outside Safari decodes; the backend also only accepts PNG/JPEG/WebP/GIF.
+const SUPPORTED_TYPE = /^image\/(png|jpe?g|webp|gif)$/i;
+
 export function fileToAvatarDataUrl(file: File, size = AVATAR_SIZE): Promise<string> {
+  // Reject unusable files up front with a message that says what to do — otherwise HEIC surfaces
+  // only as a late, opaque "image could not be read" from the decoder, which read to the user as a
+  // generic failure.
+  if (/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name)) {
+    return Promise.reject(
+      new Error("HEIC photos aren't supported here — choose a JPEG or PNG."),
+    );
+  }
+  if (file.type && !SUPPORTED_TYPE.test(file.type)) {
+    return Promise.reject(new Error("Choose a PNG, JPEG, WebP or GIF image."));
+  }
+
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
     const image = new Image();
