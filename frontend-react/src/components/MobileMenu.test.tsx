@@ -5,62 +5,63 @@ import { describe, it, expect } from "vitest";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeProvider } from "./ThemeContext";
 
-function renderMenu(props: { isAuthenticated: boolean; isAdmin: boolean }) {
+function renderMenu(props: { isAdmin: boolean; username?: string }) {
   return render(
     <ThemeProvider>
       <MemoryRouter>
-        <MobileMenu {...props} />
+        <MobileMenu isAdmin={props.isAdmin} username={props.username ?? "ann"} />
       </MemoryRouter>
     </ThemeProvider>,
   );
 }
 
 describe("MobileMenu", () => {
-  it("is closed until the button is pressed", async () => {
+  it("is closed until the avatar is pressed, then shows every tab for an admin", async () => {
     const u = userEvent.setup();
-    renderMenu({ isAuthenticated: true, isAdmin: true });
-    const button = screen.getByRole("button", { name: "Menu" });
-    expect(button).toHaveAttribute("aria-expanded", "false");
+    renderMenu({ isAdmin: true, username: "ann" });
+    // The avatar is the trigger and shows the account initial.
+    const trigger = screen.getByRole("button", { name: /Account menu, ann/ });
+    expect(trigger).toHaveTextContent("A");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
 
-    await u.click(button);
-    expect(button).toHaveAttribute("aria-expanded", "true");
-    const menu = screen.getByRole("navigation", { name: "More" });
-    for (const name of ["Home", "Favorites", "Export", "Create", "Admin"]) {
+    await u.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const menu = screen.getByRole("navigation", { name: "Account" });
+    for (const name of ["Home", "Favorites", "Export", "Create", "Admin", "Account"]) {
       expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
     }
-    // The theme control rides along in the menu.
     expect(within(menu).getByRole("group", { name: "Theme" })).toBeInTheDocument();
   });
 
-  it("shows the shared tabs but omits Create and Admin for a guest", async () => {
+  it("omits Admin for a non-admin", async () => {
     const u = userEvent.setup();
-    renderMenu({ isAuthenticated: false, isAdmin: false });
-    await u.click(screen.getByRole("button", { name: "Menu" }));
-    const menu = screen.getByRole("navigation", { name: "More" });
-    for (const name of ["Home", "Favorites", "Export"]) {
-      expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
-    }
-    expect(within(menu).queryByRole("link", { name: "Create" })).not.toBeInTheDocument();
+    renderMenu({ isAdmin: false });
+    await u.click(screen.getByRole("button", { name: /Account menu/ }));
+    const menu = screen.getByRole("navigation", { name: "Account" });
+    expect(within(menu).getByRole("link", { name: "Create" })).toBeInTheDocument();
     expect(within(menu).queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 
   it("closes when a menu link is chosen", async () => {
     const u = userEvent.setup();
-    renderMenu({ isAuthenticated: false, isAdmin: false });
-    const button = screen.getByRole("button", { name: "Menu" });
-    await u.click(button);
-    const menu = screen.getByRole("navigation", { name: "More" });
-    await u.click(within(menu).getByRole("link", { name: "Export" }));
-    expect(button).toHaveAttribute("aria-expanded", "false");
+    renderMenu({ isAdmin: false });
+    const trigger = screen.getByRole("button", { name: /Account menu/ });
+    await u.click(trigger);
+    await u.click(
+      within(screen.getByRole("navigation", { name: "Account" })).getByRole("link", {
+        name: "Export",
+      }),
+    );
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("closes on Escape", async () => {
     const u = userEvent.setup();
-    renderMenu({ isAuthenticated: true, isAdmin: false });
-    const button = screen.getByRole("button", { name: "Menu" });
-    await u.click(button);
-    expect(button).toHaveAttribute("aria-expanded", "true");
+    renderMenu({ isAdmin: false });
+    const trigger = screen.getByRole("button", { name: /Account menu/ });
+    await u.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
     await u.keyboard("{Escape}");
-    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 });

@@ -4,16 +4,17 @@ import { ThemeToggle } from "./ThemeToggle";
 import * as styles from "./Layout.css";
 
 interface MobileMenuProps {
-  isAuthenticated: boolean;
   isAdmin: boolean;
+  username: string;
 }
 
 /**
- * The phone-only overflow menu. The full nav does not fit a narrow header, so on mobile Home lives
- * on the logo, Favorites lives on the profile page, the account is a profile avatar, and everything
- * else — Export, Create, the theme and Admin — collapses in here behind a single button.
+ * The phone-only account menu. Only shown to a signed-in user: the avatar is the trigger, and
+ * tapping it opens the full set of tabs (a guest sees a plain Login link in the header instead).
+ * The whole nav collapses in here because it does not fit a narrow header — Home lives on the logo
+ * too, but is repeated here for reach.
  */
-export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
+export function MobileMenu({ isAdmin, username }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -50,13 +51,13 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
     <div className={styles.mobileMenuRoot} ref={rootRef}>
       <button
         type="button"
-        className={styles.mobileMenuButton}
-        aria-label="Menu"
+        className={styles.avatarButton}
+        aria-label={`Account menu, ${username}`}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className={styles.mobileMenuIcon} aria-hidden="true" />
+        {username.charAt(0).toUpperCase()}
       </button>
 
       {/* A disclosure of links, not an ARIA menu widget (which would demand arrow-key roving) — a
@@ -64,7 +65,7 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
       <nav
         id={panelId}
         className={styles.mobileMenuPanel}
-        aria-label="More"
+        aria-label="Account"
         hidden={!open}
         // Close as soon as a link is chosen, even when it points at the current route (where the
         // navigation effect would not fire). The theme buttons are not links, so they stay open.
@@ -81,23 +82,24 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
         <NavLink to="/export" className={itemClass}>
           Export
         </NavLink>
-        {isAuthenticated && (
-          <NavLink
-            to="/palettes/new"
-            className={({ isActive }) =>
-              isActive || location.pathname === "/import"
-                ? `${styles.mobileMenuItem} ${styles.mobileMenuItemActive}`
-                : styles.mobileMenuItem
-            }
-          >
-            Create
-          </NavLink>
-        )}
+        <NavLink
+          to="/palettes/new"
+          className={({ isActive }) =>
+            isActive || location.pathname === "/import"
+              ? `${styles.mobileMenuItem} ${styles.mobileMenuItemActive}`
+              : styles.mobileMenuItem
+          }
+        >
+          Create
+        </NavLink>
         {isAdmin && (
           <NavLink to="/admin" className={itemClass}>
             Admin
           </NavLink>
         )}
+        <NavLink to="/profile" className={itemClass}>
+          Account
+        </NavLink>
         <div className={styles.mobileMenuDivider} />
         <ThemeToggle />
       </nav>

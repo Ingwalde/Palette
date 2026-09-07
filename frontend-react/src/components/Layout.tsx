@@ -111,16 +111,11 @@ export function Layout() {
           <ThemeToggle />
         </div>
 
-        {/* Phone header: the account as an avatar, everything else behind the overflow menu. */}
+        {/* Phone header: a signed-in user gets the avatar that opens the menu; a guest just gets
+            a Login link. */}
         <div className={styles.mobileActions}>
           {isAuthenticated ? (
-            <NavLink
-              to="/profile"
-              className={styles.avatar}
-              aria-label={`Account: ${user?.username}`}
-            >
-              {(user?.username ?? "?").charAt(0).toUpperCase()}
-            </NavLink>
+            <MobileMenu isAdmin={isAdmin} username={user?.username ?? "?"} />
           ) : (
             <NavLink
               to="/login"
@@ -131,7 +126,6 @@ export function Layout() {
               Login
             </NavLink>
           )}
-          <MobileMenu isAuthenticated={isAuthenticated} isAdmin={isAdmin} />
         </div>
       </header>
 
