@@ -76,7 +76,8 @@ describe("App shell", () => {
 
   it("shows Login and hides Admin for a logged-out visitor", () => {
     renderAt("/");
-    expect(screen.getByRole("link", { name: "Login" })).toBeInTheDocument();
+    // Login renders in both the desktop nav and the phone action cluster.
+    expect(screen.getAllByRole("link", { name: "Login" }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
 

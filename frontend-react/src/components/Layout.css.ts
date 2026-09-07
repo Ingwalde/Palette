@@ -28,11 +28,10 @@ export const header = style({
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
   "@media": {
+    // The phone header is just the logo and the compact actions on one row, so it stays a pill.
     [PHONE]: {
-      alignItems: "flex-start",
-      borderRadius: "28px",
-      flexDirection: "column",
-      gap: "12px",
+      gap: "8px",
+      paddingLeft: "8px",
       marginBottom: "8px",
     },
   },
@@ -70,14 +69,42 @@ export const nav = style({
   display: "flex",
   gap: "4px",
   "@media": {
-    // All tabs on one row, shrinking evenly to fit without clipping or overlapping.
+    // The full nav does not fit a phone; it moves into the overflow menu (see mobileActions).
+    [PHONE]: { display: "none" },
+  },
+});
+
+// Shown only on the desktop header; the phone header hides it and offers the theme in the menu.
+export const desktopOnly = style({
+  "@media": {
+    [PHONE]: { display: "none" },
+  },
+});
+
+// The phone-only cluster on the right of the header: the account avatar and the overflow menu.
+export const mobileActions = style({
+  display: "none",
+  "@media": {
     [PHONE]: {
-      width: "100%",
-      flexWrap: "nowrap",
-      justifyContent: "space-between",
-      gap: 0,
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
     },
   },
+});
+
+// The account as a round avatar (its initial) linking to the profile page.
+export const avatar = style({
+  display: "grid",
+  placeItems: "center",
+  width: "40px",
+  height: "40px",
+  flexShrink: 0,
+  borderRadius: "50%",
+  color: vars.color.onPrimary,
+  background: vars.color.primary,
+  fontWeight: 700,
+  textDecoration: "none",
 });
 
 /**
@@ -323,4 +350,95 @@ export const themeOption = style({
       background: vars.color.primary,
     },
   },
+});
+
+export const mobileMenuRoot = style({
+  position: "relative",
+});
+
+export const mobileMenuButton = style({
+  display: "grid",
+  placeItems: "center",
+  width: "40px",
+  height: "40px",
+  flexShrink: 0,
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: "50%",
+  cursor: "pointer",
+  color: vars.color.text,
+  background: vars.color.surfaceStrong,
+});
+
+// A three-line hamburger drawn with the box and two pseudo-elements.
+export const mobileMenuIcon = style({
+  position: "relative",
+  width: "18px",
+  height: "2px",
+  borderRadius: "2px",
+  background: "currentColor",
+  "::before": {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: "-6px",
+    width: "18px",
+    height: "2px",
+    borderRadius: "2px",
+    background: "currentColor",
+  },
+  "::after": {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: "6px",
+    width: "18px",
+    height: "2px",
+    borderRadius: "2px",
+    background: "currentColor",
+  },
+});
+
+export const mobileMenuPanel = style({
+  position: "absolute",
+  top: "calc(100% + 10px)",
+  right: 0,
+  zIndex: 30,
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  minWidth: "180px",
+  padding: "8px",
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.md,
+  background: `color-mix(in srgb, ${vars.color.surface} 97%, transparent)`,
+  boxShadow: vars.shadow.soft,
+  backdropFilter: "blur(18px)",
+});
+
+export const mobileMenuItem = style({
+  padding: "10px 14px",
+  borderRadius: vars.radius.sm,
+  fontSize: "0.95rem",
+  fontWeight: 600,
+  textDecoration: "none",
+  color: vars.color.text,
+  background: "transparent",
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { background: vars.color.surfaceStrong },
+  },
+});
+
+export const mobileMenuItemActive = style({
+  color: vars.color.onPrimary,
+  background: vars.color.primary,
+  selectors: {
+    "&:hover": { background: vars.color.primary },
+  },
+});
+
+export const mobileMenuDivider = style({
+  height: "1px",
+  margin: "4px 6px",
+  background: vars.color.border,
 });

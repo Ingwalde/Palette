@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RouteFallback } from "./RouteFallback";
 import { ThemeToggle } from "./ThemeToggle";
+import { MobileMenu } from "./MobileMenu";
 import { ColorVisionFilters } from "./ColorVisionFilters";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
@@ -106,7 +107,32 @@ export function Layout() {
             </NavLink>
           )}
         </nav>
-        <ThemeToggle />
+        <div className={styles.desktopOnly}>
+          <ThemeToggle />
+        </div>
+
+        {/* Phone header: the account as an avatar, everything else behind the overflow menu. */}
+        <div className={styles.mobileActions}>
+          {isAuthenticated ? (
+            <NavLink
+              to="/profile"
+              className={styles.avatar}
+              aria-label={`Account: ${user?.username}`}
+            >
+              {(user?.username ?? "?").charAt(0).toUpperCase()}
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/login"
+              className={({ isActive }) =>
+                `${styles.navLink} ${styles.navButton}${isActive ? ` ${styles.navLinkActive}` : ""}`
+              }
+            >
+              Login
+            </NavLink>
+          )}
+          <MobileMenu isAuthenticated={isAuthenticated} isAdmin={isAdmin} />
+        </div>
       </header>
 
       {/* tabIndex -1 so the skip link and the route change can both put focus here; it is not
