@@ -53,8 +53,23 @@ test("home", async ({ page }) => {
   await page.screenshot({ path: path.join(OUT, "home.png") });
 });
 
+test("palette", async ({ page }) => {
+  // The palette page is the heart of v5.0: the swatch grid, the colour-vision control, the
+  // contrast matrix and the fork/report actions. Reached from the feed so the slug is not
+  // hardcoded — the first card's link lands on /u/:handle/:slug.
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.getByRole("article").first().getByRole("link").first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Copy #/ }).first()).toBeVisible();
+  await settle(page);
+  await page.screenshot({ path: path.join(OUT, "palette.png") });
+});
+
 test("export", async ({ page }) => {
-  await page.goto("/export", { waitUntil: "networkidle" });
+  // PNG format straight from the URL — export state is linkable in v5.0, so this avoids reaching
+  // for the format dropdown (whose last option sits under the footer at this viewport). The
+  // caption promises "a selected palette with the PNG preview".
+  await page.goto("/export?format=png", { waitUntil: "networkidle" });
 
   // A picked palette with its preview rendered — an empty export page shows nothing worth
   // putting in a README. The field is "Search palette", not the home page's search box.
@@ -63,12 +78,6 @@ test("export", async ({ page }) => {
     .getByRole("button", { name: /Green Strawberry/i })
     .first()
     .click();
-  await expect(page.getByText(/Green Strawberry/).first()).toBeVisible();
-
-  // PNG, not the default CSS variables: the caption promises "a selected palette with the PNG
-  // preview", and the code output is already visible on the page in every other form.
-  await page.getByRole("button", { name: /format/i }).click();
-  await page.getByRole("option", { name: "PNG image" }).click();
   await expect(
     page.getByRole("img", { name: /palette card|preview/i }).first(),
   ).toBeVisible();
