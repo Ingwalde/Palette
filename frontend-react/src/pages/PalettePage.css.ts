@@ -80,16 +80,37 @@ export const simLabel = style({
 });
 
 export const simOptions = style({
-  display: "inline-flex",
-  flexWrap: "wrap",
-  gap: "2px",
+  position: "relative",
+  display: "grid",
+  gridTemplateColumns: "repeat(var(--sim-count), 1fr)",
   padding: "3px",
   borderRadius: "999px",
   border: `1px solid ${vars.color.border}`,
   background: vars.color.surfaceStrong,
 });
 
+// The gliding thumb that sits under the active choice. One column wide, translated by whole
+// columns; only its position animates, so the labels never invert mid-slide.
+export const simThumb = style({
+  position: "absolute",
+  top: "3px",
+  bottom: "3px",
+  left: "3px",
+  width: "calc((100% - 6px) / var(--sim-count))",
+  borderRadius: "999px",
+  background: vars.color.surface,
+  boxShadow: vars.shadow.soft,
+  transform: "translateX(calc(var(--sim-active) * 100%))",
+  transition: "transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
+  pointerEvents: "none",
+  "@media": {
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+});
+
 export const simOption = style({
+  position: "relative",
+  zIndex: 1,
   border: "none",
   cursor: "pointer",
   padding: "6px 12px",
@@ -97,15 +118,14 @@ export const simOption = style({
   fontSize: "0.8rem",
   fontWeight: 600,
   fontFamily: "inherit",
+  whiteSpace: "nowrap",
   color: vars.color.muted,
   background: "transparent",
-  transition: vars.motion.transition,
+  transition: "color 200ms ease",
   selectors: {
     "&:hover": { color: vars.color.text },
-    '&[aria-pressed="true"]': {
-      color: vars.color.onPrimary,
-      background: vars.color.primary,
-    },
+    // The active label rides the surface thumb — text colour, never an inverted pill.
+    '&[aria-pressed="true"]': { color: vars.color.text },
   },
 });
 

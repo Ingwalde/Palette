@@ -11,7 +11,10 @@ import { CURATOR_HANDLE } from "../lib/constants";
 import { palettePath } from "../lib/palettePath";
 import { forkPalette } from "../api/palettes";
 import { reportPalette } from "../api/reports";
-import { CVD_TYPES, cvdLabel } from "../lib/colorVision";
+import { CVD_TYPES, cvdLabel, cvdNote } from "../lib/colorVision";
+
+// The color-vision choices in order: no simulation, then the three dichromacies.
+const simChoices = ["none", ...CVD_TYPES.map((t) => t.id)];
 import { useModal } from "../components/modal/ModalProvider";
 import {
   copyToClipboard,
@@ -214,25 +217,28 @@ export function PalettePage() {
       <section className={`${ui.section} ${styles.colorsSection}`} aria-label="Colors">
         <div className={styles.simBar} role="group" aria-label="Color vision simulation">
           <span className={styles.simLabel}>Color vision</span>
-          <div className={styles.simOptions}>
-            <button
-              type="button"
-              className={styles.simOption}
-              aria-pressed={sim === "none"}
-              onClick={() => setSim("none")}
-            >
-              None
-            </button>
-            {CVD_TYPES.map((type) => (
+          <div
+            className={styles.simOptions}
+            style={
+              {
+                "--sim-count": simChoices.length,
+                "--sim-active": Math.max(0, simChoices.indexOf(sim)),
+              } as CSSProperties
+            }
+          >
+            {/* The thumb glides under the active choice; the labels only change colour, so nothing
+                inverts mid-slide. */}
+            <span className={styles.simThumb} aria-hidden="true" />
+            {simChoices.map((choice) => (
               <button
-                key={type.id}
+                key={choice}
                 type="button"
                 className={styles.simOption}
-                aria-pressed={sim === type.id}
-                title={type.note}
-                onClick={() => setSim(type.id)}
+                aria-pressed={sim === choice}
+                title={choice === "none" ? "No simulation" : cvdNote(choice)}
+                onClick={() => setSim(choice)}
               >
-                {type.label}
+                {choice === "none" ? "None" : cvdLabel(choice)}
               </button>
             ))}
           </div>
