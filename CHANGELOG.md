@@ -1,5 +1,21 @@
 # Changelog
 
+## v5.0.2 — A sharper import and a tidier search
+
+- **Faithful image extraction** — the image→palette extractor now uses a popularity pass instead of
+  median-cut averaging, so a solid vivid region keeps its true colour rather than coming back a
+  greyed blend (a bright orange block no longer reads as muddy tan).
+- **HEIC and CSP fixes for photos** — uploading an avatar or extracting from a picked file no longer
+  fails silently: `img-src` now allows `blob:` so the browser can decode a local file, and an
+  undecodable file (an iPhone HEIC on a non-Safari browser) reports a clear message naming the
+  accepted formats instead of a generic error.
+- **Random hero preview** — the home page shows a different real four-colour palette on each visit,
+  and the redundant "Random palette" button is gone.
+- **Tidier search** — the search field, sort and format selects and the tag filters sit on one
+  framed panel, and the format select no longer drops onto its own full-width row.
+- **UI polish** — a sliding thumb on the create tabs, the admin mode pill sized for its three tabs,
+  and a pinned first column on the contrast matrix so it stays readable while scrolling.
+
 ## v5.0.1 — Two-colour imports and profile photos
 
 - **Two-colour imports** — the image extractor's colour count can now go as low as two (the slider
@@ -117,7 +133,7 @@ changing, but not worth changing without deciding. These are those decisions.
 ### Security
 
 - **Registering no longer says whether an address is already in use.** A `409 "Email is already
-  registered"` turned a list of addresses into a list of people who use this site — the exact
+registered"` turned a list of addresses into a list of people who use this site — the exact
   question `/forgot-password` and `/resend-verification` have always refused to answer, and the
   one login stopped answering in v4.9.0. Registration now replies the same way either way, spends
   the same time doing it, and sends a message to the address explaining that an account already
@@ -165,7 +181,7 @@ A read of the backend against its own stated intentions, and the fixes for what 
   Caddy's TLS, and past the rate limiter — because uvicorn runs with `--forwarded-allow-ips=*`,
   so anyone reaching it could set their own `X-Forwarded-For` and get a fresh bucket per request,
   making the five-logins-a-minute limit no limit at all. The Dockerfile already said trusting all
-  forwarders was safe *because* the port was proxy-only; that was the assumption, and Compose
+  forwarders was safe _because_ the port was proxy-only; that was the assumption, and Compose
   broke it. Both ports now bind to loopback, which is where Caddy looks for them anyway.
 - **Argon2 concurrency is bounded.** Moving hashing off the event loop removed the only thing
   serialising it: `asyncio.to_thread` uses an executor sized for I/O, and every hash asks for
@@ -227,7 +243,7 @@ A read of the backend against its own stated intentions, and the fixes for what 
   all four containers ran with `restart=no`: a host reboot, or the Docker daemon restarting under
   them, left the site down until someone logged in and brought it up by hand — which this server
   has already needed once. They now restart `unless-stopped`, so a deliberate `docker compose
-  down` still means down.
+down` still means down.
 
 ### Accessibility
 
@@ -371,7 +387,7 @@ Backend untouched — this release is the frontend and the pipeline around it.
 ### Accessibility
 
 Two defects the axe suite in v4.8.1 could not reach. It audits a page that has already
-rendered; these are about what happens *between* pages, and what the keyboard can do while a
+rendered; these are about what happens _between_ pages, and what the keyboard can do while a
 dialog is open.
 
 - **Navigating announced nothing and moved nothing.** A full page load tells a screen reader
@@ -391,13 +407,13 @@ dialog is open.
 
 Measured with Lighthouse in a container, three runs, against the previous release:
 
-| | v4.8.4 | v4.8.5 |
-| --- | --- | --- |
-| Entry chunk | 336.3 kB | 248.8 kB |
-| Entry CSS | 29.4 kB | 13.7 kB |
-| Scripts transferred | 101.9 kB | 96.3 kB |
+|                        | v4.8.4   | v4.8.5   |
+| ---------------------- | -------- | -------- |
+| Entry chunk            | 336.3 kB | 248.8 kB |
+| Entry CSS              | 29.4 kB  | 13.7 kB  |
+| Scripts transferred    | 101.9 kB | 96.3 kB  |
 | First contentful paint | 736.9 ms | 559.9 ms |
-| Speed Index | 736.9 | 620.5 |
+| Speed Index            | 736.9    | 620.5    |
 
 - **Every route except home is code-split.** A visitor who only browses palettes no longer
   downloads the admin editor, the export page's canvas renderer and the whole changelog. Home
@@ -491,7 +507,7 @@ stylesheets — is gone.
   production file. dotenv resolves duplicates last-wins, so production had been running on the
   second block, admin password included. Staging also inherited `backend/.env`, meaning it shared
   production's credentials outright; it now has its own decrypted env file and `env_file:
-  !override` so no production value can leak through a key staging forgot to set.
+!override` so no production value can leak through a key staging forgot to set.
 - **Source maps are no longer published.** The build emits them `hidden` for Sentry and the image
   build deletes them, instead of serving the readable TypeScript source to anyone who asks.
 
@@ -571,7 +587,7 @@ Follow-up polish after the v4.8 React cutover.
 - **Deploy resilience** — the frontend image build (`npm ci` + Vite) was OOM-killing the ~1 GB
   production VM and blowing past the SSH command timeout, taking the site down. The deploy now
   ensures a 2 GB swap file and uses a 40-minute command timeout; and the frontend image is built
-  in CI and pushed to GHCR so the VM only *pulls* it — no heavy build on the small box.
+  in CI and pushed to GHCR so the VM only _pulls_ it — no heavy build on the small box.
 
 ## v4.8.0 — React + TypeScript frontend
 
@@ -813,7 +829,7 @@ Full rewrite of the frontend from vanilla ES modules to **React 19 + TypeScript 
 ### Changed
 
 - Clicking the email verification link now signs the user in automatically: `GET
-  /api/auth/verify` returns an access token, and the verify page stores the session and
+/api/auth/verify` returns an access token, and the verify page stores the session and
   sends the user straight to their account.
 - Friendlier, randomized success message on the verify page.
 
@@ -1060,7 +1076,6 @@ Palette v3.2.0 — Export Workflow and UI Polish
 # Changelog
 
 ## v3.1.0 — Authentication, User Accounts and User Favorites
-
 
 ### Release summary
 

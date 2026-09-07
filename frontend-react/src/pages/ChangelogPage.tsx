@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.0.2",
+    title: "A sharper import and a tidier search",
+    items: [
+      "Image extraction is truer to the picture — a solid, vivid area keeps its real colour instead of coming back a greyed blend.",
+      "Adding a profile photo or extracting from a picked file works reliably now, and an unreadable file (an iPhone HEIC) says so clearly instead of failing silently.",
+      "The home page shows a different real palette each visit, and the search field, filters and options sit together on one tidy panel.",
+    ],
+  },
+  {
     version: "v5.0.1",
     title: "Two-colour imports and profile photos",
     items: [
