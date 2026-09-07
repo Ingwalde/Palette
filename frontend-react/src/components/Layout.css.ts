@@ -416,6 +416,11 @@ export const mobileMenuPanel = style({
   background: `color-mix(in srgb, ${vars.color.surface} 97%, transparent)`,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
+  selectors: {
+    // `display: flex` above beats the user-agent `[hidden] { display: none }`, so the panel would
+    // stay visible even when closed (hidden={!open}). Hide it explicitly.
+    "&[hidden]": { display: "none" },
+  },
 });
 
 export const mobileMenuItem = style({
