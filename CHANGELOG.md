@@ -1,5 +1,58 @@
 # Changelog
 
+## v5.0.0 — Palette becomes a community
+
+Palette stops being a read-only catalogue and becomes a place people contribute to: accounts own
+palettes, a public feed shows what everyone has published, and colours can be pulled in from images
+and design tools. The release shipped as a sequence of self-contained, Docker-green PRs into a
+`release/v5.0` integration branch.
+
+### Community
+
+- **Ownership model** — `Palette.owner_id` (a curator account owns the seed catalogue),
+  `visibility` (private → public on publish, stamping `published_at`), a moderation `status`
+  (active | removed), `favorites_count` / `forks_count` counters and `forked_from_id` lineage. URLs
+  moved to `/u/:handle/:slug`, built from one `palettePath()` helper; the feed filters
+  `visibility = public AND status = active`.
+- **Owner-scoped CRUD + editor** — signed-in users create, edit and delete their own palettes
+  through a shared `PaletteForm`; a "Your palettes" page lists them with a Publish action.
+- **Fork / remix** — fork a public palette into your account (private, `forked_from_id` set), then
+  open its editor; the source is shown as lineage on the copy.
+- **Moderation** — a rate-limited, idempotent report endpoint and an admin queue; actioning a
+  report soft-removes the palette (it leaves the feed and everyone else's reach but the owner still
+  sees it), dismissing keeps it live.
+
+### Import
+
+- **Image → palette** — a hand-written median-cut quantiser (`lib/quantize.ts`, unit-tested) turns
+  an uploaded or linked image into an editable draft. A pasted URL is fetched through an
+  **SSRF-fenced** backend proxy (public-host-only, no redirects, image-only, size-capped, auth,
+  rate-limited).
+- **Figma** and **Pinterest** OAuth2 imports, gated on configuration (no credentials → the
+  endpoints 404 and the UI hides the panel). Provider tokens are **encrypted at rest** (Fernet keyed
+  from `SECRET_KEY`), refreshed server-side; the OAuth round-trip is authorised by a signed `state`,
+  not a cookie.
+
+### Polish
+
+- **Dark theme** — the token contract gained `surfaceGlass`, `onPrimary`, `focus` and a dark
+  `shadow.soft`; every hardcoded colour became a token. Delivered three ways (`:root`, a
+  system-preference media query, and an explicit `data-theme`), with a System / Light / Dark toggle,
+  a pre-paint `theme-init.js` (the CSP forbids inline script), and AA contrast verified in dark.
+- **Accessibility** — pausable toasts (assertive errors vs polite info, a dismiss button,
+  reduced-motion), a two-layer focus ring, a confirmed "Clear favorites", and skeleton loaders.
+- **Export** — dropped a no-op button, added Tailwind, OKLCH and SVG formats, and moved the export
+  state into the URL so an export is a shareable link.
+- **Colour-vision simulation** — Brettel–Viénot `feColorMatrix` filters preview the swatches for the
+  three dichromacies; an inspection mode that never persists and never changes the copied values.
+- **Header** — always a floating pill; the active nav label and the sticky header stay legible
+  during a selection and over vivid scrolled content.
+
+### Security / config
+
+- New dependency `cryptography` for token encryption at rest.
+- Minimum password length is 8 (NIST 800-63B's floor).
+
 ## v4.9.3 — A second pass over the review
 
 A round of small, deliberate corrections found by reading the code again after v4.9.2 shipped —

@@ -4,7 +4,11 @@ import type { PaletteListParams } from "../types/api";
 export const queryKeys = {
   auth: ["auth", "me"] as const,
   palettes: (params: PaletteListParams = {}) => ["palettes", params] as const,
-  palette: (slug: string) => ["palette", slug] as const,
+  // Kept under the "palettes" prefix so usePalette can still seed a page from it; the "infinite"
+  // segment separates it from the plain list's cache entry.
+  palettesInfinite: (params: PaletteListParams = {}) =>
+    ["palettes", "infinite", params] as const,
+  palette: (handle: string, slug: string) => ["palette", handle, slug] as const,
   tags: ["tags"] as const,
   favorites: ["favorites"] as const,
 };

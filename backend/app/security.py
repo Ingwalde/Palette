@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import hashlib
 import hmac
 import logging
@@ -8,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
+from cryptography.fernet import Fernet
 from fastapi import Cookie, Depends, HTTPException, status
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +23,10 @@ logger = logging.getLogger("palette.security")
 ALGORITHM = "HS256"
 EMAIL_VERIFICATION_PURPOSE = "verify_email"
 PASSWORD_RESET_PURPOSE = "reset_password"
+OAUTH_STATE_PURPOSE = "oauth_state"
+# The OAuth authorize→callback round-trip is a browser redirect the user completes in seconds; a
+# short life keeps a leaked state parameter from being replayed later.
+OAUTH_STATE_EXPIRE_MINUTES = 10
 
 # Argon2id for new hashes. Legacy PBKDF2-SHA256 hashes are still verified and upgraded to
 # Argon2 on the next successful login (see authenticate_user).
@@ -46,6 +52,51 @@ CSRF_COOKIE = "csrf_token"
 
 def generate_csrf_token() -> str:
     return secrets.token_urlsafe(32)
+
+
+# --- OAuth import: token encryption at rest + signed authorize state -----------------------------
+#
+# Provider access/refresh tokens are stored encrypted, never in the clear. The key is derived from
+# SECRET_KEY (already the app's single high-entropy secret) so no second secret has to be managed;
+# rotating SECRET_KEY invalidates stored tokens, which is the safe direction — the user re-links.
+_fernet: Fernet | None = None
+
+
+def _token_cipher() -> Fernet:
+    global _fernet
+    if _fernet is None:
+        key = hashlib.sha256(settings.secret_key.encode()).digest()
+        _fernet = Fernet(base64.urlsafe_b64encode(key))
+    return _fernet
+
+
+def encrypt_secret(plaintext: str) -> str:
+    """Encrypt a provider token for storage. Reversible only with SECRET_KEY."""
+    return _token_cipher().encrypt(plaintext.encode()).decode()
+
+
+def decrypt_secret(ciphertext: str) -> str:
+    """Decrypt a stored provider token. Raises cryptography.fernet.InvalidToken if tampered."""
+    return _token_cipher().decrypt(ciphertext.encode()).decode()
+
+
+def create_oauth_state(user_id: int, provider: str) -> str:
+    """A short-lived signed state parameter binding the OAuth round-trip to a user and provider."""
+    return _encode_token(
+        {"sub": str(user_id), "purpose": OAUTH_STATE_PURPOSE, "prov": provider},
+        timedelta(minutes=OAUTH_STATE_EXPIRE_MINUTES),
+    )
+
+
+def decode_oauth_state(token: str, provider: str) -> int | None:
+    """Return the user id from a valid, unexpired state for `provider`, else None."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        if payload.get("purpose") != OAUTH_STATE_PURPOSE or payload.get("prov") != provider:
+            return None
+        return int(payload["sub"])
+    except (InvalidTokenError, TypeError, ValueError, KeyError):
+        return None
 
 
 def hash_password(password: str) -> str:
@@ -313,42 +364,58 @@ async def revoke_refresh_token(db: AsyncSession, token: str) -> None:
         await crud.revoke_refresh_token(db, stored)
 
 
-async def get_current_user(
-    access_token: str | None = Cookie(default=None),
-    db: AsyncSession = Depends(get_db),
-) -> models.User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-    )
-
+async def _resolve_user(access_token: str | None, db: AsyncSession) -> models.User | None:
+    """Decode the access cookie to a user, or None if it is absent, malformed, purpose-scoped, or
+    stale. The single source of truth for both the required and the optional dependency below."""
     if not access_token:
-        raise credentials_exception
+        return None
 
     try:
         payload = jwt.decode(access_token, settings.secret_key, algorithms=[ALGORITHM])
         # Reject purpose-scoped tokens (e.g. email verification) as bearer credentials.
         if payload.get("purpose") is not None:
-            raise credentials_exception
+            return None
         sub = payload.get("sub")
         if sub is None:
-            raise credentials_exception
+            return None
         user_id = int(sub)
         token_version = payload.get("ver")
     except (InvalidTokenError, TypeError, ValueError):
-        raise credentials_exception from None
+        return None
 
     user = await crud.get_user(db, user_id)
     if user is None:
-        raise credentials_exception
+        return None
 
     # Stale version = the session was ended server-side (password change, reset,
     # logout-everywhere). A missing claim means a token minted before this check existed, so it
     # is stale too — that logs everyone out once, on the release that introduces this.
     if token_version is None or token_version != user.token_version:
-        raise credentials_exception
+        return None
 
     return user
+
+
+async def get_current_user(
+    access_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> models.User:
+    user = await _resolve_user(access_token, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
+    return user
+
+
+async def get_optional_user(
+    access_token: str | None = Cookie(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> models.User | None:
+    """Like get_current_user but returns None instead of 401 — for endpoints a guest may read
+    (a public palette) while a signed-in owner sees more (their own private one)."""
+    return await _resolve_user(access_token, db)
 
 
 def require_admin_user(current_user: models.User = Depends(get_current_user)) -> models.User:

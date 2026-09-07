@@ -18,6 +18,10 @@ export const container = style({
 });
 
 export const toast = style({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  marginTop: "10px",
   padding: "14px 16px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.md,
@@ -26,9 +30,37 @@ export const toast = style({
   boxShadow: vars.shadow.soft,
   animation: `${slideIn} 300ms cubic-bezier(0.22, 1, 0.36, 1) both`,
   transition: "opacity 250ms ease, transform 250ms ease",
+  "@media": {
+    // The stack animates in; a reader who asked for stillness gets it placed, not slid.
+    "(prefers-reduced-motion: reduce)": { animation: "none", transition: "none" },
+  },
+});
+
+export const message = style({
+  flex: 1,
+});
+
+export const dismiss = style({
+  flexShrink: 0,
+  display: "grid",
+  placeItems: "center",
+  width: "24px",
+  height: "24px",
+  border: "none",
+  borderRadius: "50%",
+  cursor: "pointer",
+  color: "inherit",
+  background: "transparent",
+  fontSize: "0.9rem",
+  lineHeight: 1,
+  opacity: 0.7,
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { opacity: 1 },
+  },
 });
 
 export const error = style({
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.danger,
 });

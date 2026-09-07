@@ -61,7 +61,7 @@ globalStyle("body", {
   margin: 0,
   fontFamily: `"Poppins", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`,
   color: vars.color.text,
-  background: `radial-gradient(circle at top left, rgba(231, 216, 201, 0.8), transparent 34rem), ${vars.color.bg}`,
+  background: `radial-gradient(circle at top left, ${vars.color.primarySoft}, transparent 34rem), ${vars.color.bg}`,
 });
 
 globalStyle("a", {
@@ -93,10 +93,13 @@ globalStyle("main", {
 
 // A clear keyboard-focus ring on every interactive element that does not define its own.
 // :focus-visible fires for keyboard focus, not mouse clicks. Components with a bespoke focus
-// style override this with their own rule.
+// style override this with their own rule. Two layers: a crisp outline for a sharp edge, and a
+// translucent halo (color.focus) so the ring stays visible against a busy or coloured background
+// — a swatch, a chip, a primary button — where a single hairline can disappear.
 globalStyle(":focus-visible", {
   outline: `2px solid ${vars.color.primary}`,
   outlineOffset: "2px",
+  boxShadow: `0 0 0 4px ${vars.color.focus}`,
 });
 
 globalStyle("h1, h2, h3, p", {
@@ -106,7 +109,10 @@ globalStyle("h1, h2, h3, p", {
 globalStyle("h1", {
   maxWidth: "760px",
   marginBottom: "18px",
-  fontSize: "clamp(2.4rem, 6vw, 5rem)",
+  // Was clamp(2.4rem, 6vw, 5rem) — big enough that the home hero ate the whole first screen and
+  // not one palette showed without scrolling, on a site whose point is palettes. Smaller, so the
+  // grid starts above the fold. Global on purpose: every page's h1 was oversized.
+  fontSize: "clamp(2.2rem, 4.5vw, 3.6rem)",
   lineHeight: 1.14,
   letterSpacing: "-0.06em",
 });
@@ -123,6 +129,6 @@ globalStyle("pre", {
 });
 
 globalStyle("::selection", {
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
 });

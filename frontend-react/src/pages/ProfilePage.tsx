@@ -177,7 +177,10 @@ export function ProfilePage() {
 
           <div className={styles.actions}>
             <div className={styles.actionsMain}>
-              <Link className={buttonClass("primary")} to="/favorites">
+              <Link className={buttonClass("primary")} to="/palettes/mine">
+                Your palettes
+              </Link>
+              <Link className={buttonClass("secondary")} to="/favorites">
                 Open favorites
               </Link>
               <button

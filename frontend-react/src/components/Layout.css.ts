@@ -11,12 +11,20 @@ export const header = style({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  width: `min(${vars.layout.container}, calc(100% - 32px))`,
+  // A proportional side gap (rather than a fixed 32px) so the header always reads as a floating
+  // pill: on a narrow window it keeps a visible margin instead of stretching nearly edge-to-edge,
+  // and on a wide one it caps at the container width and centres. Percentage, not vw, so the gap
+  // is unaffected by the scrollbar.
+  width: `min(${vars.layout.container}, 92%)`,
   margin: "16px auto 0",
   padding: "12px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
-  background: "rgba(255, 250, 242, 0.82)",
+  // Nearly opaque, not the 0.80 surfaceGlass the cards use: the header is sticky and scrolls over
+  // the page's content, and a palette's large vivid swatches bled through the glass enough to wash
+  // out the muted nav labels. 94% keeps a hint of the frosted look while staying legible over
+  // anything behind it.
+  background: `color-mix(in srgb, ${vars.color.surface} 94%, transparent)`,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(18px)",
   "@media": {
@@ -49,7 +57,7 @@ export const logoMark = style({
   height: "40px",
   placeItems: "center",
   borderRadius: "50%",
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
 });
 
@@ -92,11 +100,14 @@ export const navIndicator = style({
   height: "var(--nav-indicator-height, 0)",
   borderRadius: "999px",
   background: vars.color.primary,
-  boxShadow: "0 10px 24px rgba(47, 45, 42, 0.14)",
+  boxShadow: vars.shadow.soft,
   opacity: 0,
   transform: "translate3d(var(--nav-indicator-x, 0), var(--nav-indicator-y, 0), 0)",
-  transition:
-    "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), width 280ms cubic-bezier(0.22, 1, 0.36, 1), height 280ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease",
+  // Only the opacity is animated — the pill repositions instantly. It used to glide between links,
+  // but the active label flips to onPrimary the moment it is selected, so while the pill was still
+  // travelling the newly-active label sat on the bare header with an inverted (near-invisible)
+  // colour. Instant repositioning keeps the label and its pill always in step.
+  transition: "opacity 180ms ease",
   pointerEvents: "none",
   selectors: {
     [`${navReady} &`]: { opacity: 1 },
@@ -131,7 +142,10 @@ export const navLink = style({
   fontWeight: 600,
   lineHeight: 1.2,
   background: "transparent",
-  transition: "color 220ms ease, font-weight 220ms ease, transform 220ms ease",
+  // Colour changes instantly (no transition): the active label must reach its on-pill colour the
+  // same instant the pill lands under it, or it flashes low-contrast on the way. Transform still
+  // eases for the hover lift.
+  transition: "font-weight 220ms ease, transform 220ms ease",
   selectors: {
     "&:hover": {
       color: vars.color.text,
@@ -140,6 +154,7 @@ export const navLink = style({
   },
   "@media": {
     [PHONE]: navItemPhone,
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
   },
 });
 
@@ -161,7 +176,7 @@ export const navButton = style({
 export const navLinkActive = style({
   selectors: {
     "&, &:hover": {
-      color: "#fff",
+      color: vars.color.onPrimary,
       fontWeight: 700,
     },
   },
@@ -180,7 +195,7 @@ export const footerPanel = style({
   padding: "20px 24px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.84)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   backdropFilter: "blur(16px)",
   "@media": {
@@ -223,7 +238,7 @@ globalStyle(`${footerFeatures} span`, {
   alignItems: "center",
   minHeight: "32px",
   padding: "7px 12px",
-  border: "1px solid rgba(47, 45, 42, 0.12)",
+  border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
   color: vars.color.text,
   background: "rgba(239, 231, 220, 0.72)",
@@ -270,7 +285,7 @@ globalStyle(`${footerMeta} span, ${footerMeta} a`, {
 });
 
 globalStyle(`${footerMeta} a`, {
-  color: "#fff",
+  color: vars.color.onPrimary,
   background: vars.color.primary,
   transition: `transform ${vars.motion.transition}, box-shadow ${vars.motion.transition}`,
 });
@@ -278,4 +293,34 @@ globalStyle(`${footerMeta} a`, {
 globalStyle(`${footerMeta} a:hover`, {
   transform: "translateY(-1px)",
   boxShadow: "0 10px 24px rgba(47, 45, 42, 0.14)",
+});
+
+export const themeToggle = style({
+  display: "inline-flex",
+  gap: "2px",
+  padding: "3px",
+  borderRadius: "999px",
+  border: `1px solid ${vars.color.border}`,
+  background: vars.color.surfaceStrong,
+  flexShrink: 0,
+});
+
+export const themeOption = style({
+  border: "none",
+  cursor: "pointer",
+  padding: "6px 10px",
+  borderRadius: "999px",
+  fontSize: "0.78rem",
+  fontWeight: 600,
+  color: vars.color.muted,
+  background: "transparent",
+  fontFamily: "inherit",
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { color: vars.color.text },
+    '&[aria-pressed="true"]': {
+      color: vars.color.onPrimary,
+      background: vars.color.primary,
+    },
+  },
 });

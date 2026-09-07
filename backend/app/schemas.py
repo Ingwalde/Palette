@@ -10,11 +10,11 @@ EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 # Shared field normalizers, reused by the validators below so each rule lives once.
-# Minimum password length. Twelve rather than six, and length rather than a character-class
+# Minimum password length. Eight (NIST 800-63B's floor), and length rather than a character-class
 # rule: a mandated symbol and digit mostly produces "Password1!", while length is what actually
 # costs an attacker work. NIST 800-63B says the same and explicitly advises against composition
 # rules.
-MIN_PASSWORD_LENGTH = 12
+MIN_PASSWORD_LENGTH = 8
 
 # Refused outright. Not a breach corpus — shipping one would mean a megabyte of data and an
 # update process nobody would run — but the handful that a list of any size would start with,
@@ -130,11 +130,17 @@ class PaletteCreate(PaletteBase):
     slug: str | None = Field(default=None, max_length=120)
 
 
+VISIBILITIES = ("private", "public")
+
+
 class PaletteUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=160)
     description: str | None = Field(default=None, max_length=1000)
     colors: list[str] | None = Field(default=None, min_length=1, max_length=8)
     tags: list[str] | None = Field(default=None, max_length=12)
+    # Publish/unpublish rides on the same PATCH: "public" makes it visible and stamps published_at,
+    # "private" hides it again.
+    visibility: str | None = Field(default=None)
 
     @field_validator("colors")
     @classmethod
@@ -146,12 +152,68 @@ class PaletteUpdate(BaseModel):
     def _normalize_tags(cls, tags: list[str] | None) -> list[str] | None:
         return None if tags is None else normalize_tags(tags)
 
+    @field_validator("visibility")
+    @classmethod
+    def _validate_visibility(cls, visibility: str | None) -> str | None:
+        if visibility is None:
+            return None
+        if visibility not in VISIBILITIES:
+            raise ValueError(f"visibility must be one of {', '.join(VISIBILITIES)}")
+        return visibility
+
+
+class PaletteLineage(BaseModel):
+    """The compact reference a fork shows for its source — enough to render 'Forked from X by Y'
+    with a link, without a second request."""
+
+    name: str
+    slug: str
+    owner_handle: str
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 class PaletteRead(PaletteBase):
     id: int
     slug: str
+    # The owner's handle, read from the Palette.owner_handle property — the curator handle for a
+    # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
+    owner_handle: str
+    visibility: str
+    # "active" or "removed" (by moderation). A removed palette is hidden from everyone but its
+    # owner, who sees the state on their own copy.
+    status: str
+    # Set when this palette was forked from another; null otherwise.
+    forked_from: PaletteLineage | None = None
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+REPORT_REASONS = ("spam", "offensive", "copyright", "other")
+
+
+class ReportCreate(BaseModel):
+    reason: str = Field(default="other")
+    detail: str = Field(default="", max_length=500)
+
+    @field_validator("reason")
+    @classmethod
+    def _validate_reason(cls, reason: str) -> str:
+        if reason not in REPORT_REASONS:
+            raise ValueError(f"reason must be one of {', '.join(REPORT_REASONS)}")
+        return reason
+
+
+class ReportRead(BaseModel):
+    id: int
+    reason: str
+    detail: str
+    status: str
+    created_at: datetime
+    # The reported palette, enough to open and judge it in the review queue.
+    palette: PaletteLineage
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -321,3 +383,45 @@ class ResetPasswordRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+# --- Imports (OAuth providers + extracted drafts) -----------------------------------------------
+
+
+class ProviderStatus(BaseModel):
+    # Whether the deployment has credentials configured for this provider at all.
+    enabled: bool
+    # Whether the current user has linked their account (a stored token). False for a guest.
+    connected: bool
+
+
+class ImportProviders(BaseModel):
+    figma: ProviderStatus
+    pinterest: ProviderStatus
+
+
+class OAuthAuthorizeUrl(BaseModel):
+    url: str
+
+
+class FigmaExtractRequest(BaseModel):
+    # A Figma file key or a full file URL; the router extracts the key from either.
+    file: str = Field(min_length=1, max_length=512)
+
+
+class ImportDraft(BaseModel):
+    # The extracted colours, ready to seed the palette editor. Named to match the frontend's
+    # editor draft rather than a full palette (no name/tags yet).
+    colors: list[str]
+
+
+class PinterestBoard(BaseModel):
+    id: str
+    name: str
+
+
+class PinterestPin(BaseModel):
+    id: str
+    # The pin's image URL; the SPA runs it through the same image proxy + client-side extractor as
+    # a pasted link, since a pin carries an image, not a palette.
+    image_url: str

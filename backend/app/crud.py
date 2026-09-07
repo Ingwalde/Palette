@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, Select, Text, delete, func, or_, select, true
+from sqlalchemy import CursorResult, Select, Text, delete, func, or_, select, true, update
 from sqlalchemy import cast as sql_cast
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,6 +64,40 @@ async def get_palette_by_slug(db: AsyncSession, slug: str) -> models.Palette | N
     return (await db.execute(stmt)).scalars().first()
 
 
+def palette_visible_to(palette: models.Palette, viewer: models.User | None) -> bool:
+    """Who may read a palette: anyone for a public, active one; only its owner or an admin for a
+    private or moderation-removed one (the owner still sees a removed palette, to be told why)."""
+    is_owner_or_admin = viewer is not None and (viewer.is_admin or palette.owner_id == viewer.id)
+    if palette.status == "removed":
+        return is_owner_or_admin
+    if palette.visibility == "public":
+        return True
+    return is_owner_or_admin
+
+
+def palette_editable_by(palette: models.Palette, user: models.User) -> bool:
+    """Who may edit or delete a palette: its owner, or an admin."""
+    return user.is_admin or palette.owner_id == user.id
+
+
+async def get_palette_for_owner(
+    db: AsyncSession,
+    handle: str,
+    slug: str,
+    viewer: models.User | None = None,
+) -> models.Palette | None:
+    """Resolve the palette at /u/:handle/:slug for `viewer`. Slugs are globally unique for now, so
+    the lookup is by slug; the handle is verified against the owner so a wrong handle 404s rather
+    than serving another owner's palette under it, and a private palette 404s for anyone but its
+    owner or an admin (a 404, not a 403, so its existence is not revealed)."""
+    palette = await get_palette_by_slug(db, slug)
+    if palette is None or palette.owner_handle != handle:
+        return None
+    if not palette_visible_to(palette, viewer):
+        return None
+    return palette
+
+
 def _like_pattern(search: str) -> str:
     """A contains-pattern with the user's own wildcards escaped.
 
@@ -75,7 +109,13 @@ def _like_pattern(search: str) -> str:
 
 
 def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
-    stmt = select(models.Palette)
+    # The public list is the community feed: only published, un-removed palettes. Private drafts
+    # and moderation-removed palettes never appear here — the owner sees a private one through
+    # "your palettes", and a single palette through its own visibility-checked route.
+    stmt = select(models.Palette).where(
+        models.Palette.visibility == "public",
+        models.Palette.status == "active",
+    )
 
     if search:
         like = _like_pattern(search)
@@ -112,6 +152,25 @@ async def get_palettes(
         stmt = stmt.order_by(func.lower(models.Palette.name).asc())
     elif sort == "za":
         stmt = stmt.order_by(func.lower(models.Palette.name).desc())
+    elif sort == "new":
+        # Most recently published first; the id breaks ties and orders the (seed) rows whose
+        # published_at was backfilled to the same value deterministically.
+        stmt = stmt.order_by(
+            models.Palette.published_at.desc().nullslast(), models.Palette.id.desc()
+        )
+    elif sort == "popular":
+        # Denormalised counters, so this is an index-friendly order rather than a COUNT per row.
+        stmt = stmt.order_by(
+            (models.Palette.favorites_count + models.Palette.forks_count).desc(),
+            models.Palette.published_at.desc().nullslast(),
+            models.Palette.id.desc(),
+        )
+    elif sort == "curated":
+        stmt = stmt.order_by(
+            models.Palette.is_featured.desc(),
+            models.Palette.published_at.desc().nullslast(),
+            models.Palette.id.desc(),
+        )
     else:
         stmt = stmt.order_by(models.Palette.id.asc())
 
@@ -255,14 +314,19 @@ async def delete_tag_everywhere(db: AsyncSession, name: str) -> int:
     return len(palettes)
 
 
-async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) -> models.Palette:
+async def create_palette(
+    db: AsyncSession,
+    palette_data: schemas.PaletteCreate,
+    owner_id: int | None = None,
+) -> models.Palette:
     """Create a palette, retrying once if a concurrent create takes the slug first.
 
-    get_unique_slug is check-then-insert and says so: the unique constraint is what actually
-    decides. Rather than widen the window with a lock, the loser recomputes and tries again —
-    by then the winner's row is visible, so the next free suffix is a different one. One retry
-    is enough for the collision this can produce; a second failure is a real problem and is
-    allowed to surface rather than be looped over.
+    `owner_id` is the creating user; a palette is created private (the default) and made public
+    later by publishing. get_unique_slug is check-then-insert and says so: the unique constraint
+    is what actually decides. Rather than widen the window with a lock, the loser recomputes and
+    tries again — by then the winner's row is visible, so the next free suffix is a different one.
+    One retry is enough for the collision this can produce; a second failure is a real problem and
+    is allowed to surface rather than be looped over.
     """
     desired_slug = palette_data.slug or palette_data.name
 
@@ -274,6 +338,7 @@ async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) 
             description=palette_data.description,
             colors=palette_data.colors,
             tags=palette_data.tags,
+            owner_id=owner_id,
         )
         db.add(palette)
         try:
@@ -285,6 +350,36 @@ async def create_palette(db: AsyncSession, palette_data: schemas.PaletteCreate) 
             continue
         await db.refresh(palette)
         return palette
+
+    raise AssertionError("unreachable: the loop either returns or raises")
+
+
+async def fork_palette(db: AsyncSession, source: models.Palette, owner_id: int) -> models.Palette:
+    """Copy `source` into `owner_id`'s account as a private palette, recording the lineage and
+    bumping the source's fork counter. Same one-retry slug handling as create_palette."""
+    for attempt in (1, 2):
+        slug = await get_unique_slug(db, source.name)
+        copy = models.Palette(
+            slug=slug,
+            name=source.name,
+            description=source.description,
+            colors=list(source.colors),
+            tags=list(source.tags),
+            owner_id=owner_id,
+            visibility="private",
+            forked_from_id=source.id,
+        )
+        db.add(copy)
+        source.forks_count += 1
+        try:
+            await db.commit()
+        except IntegrityError:
+            await db.rollback()
+            if attempt == 2:
+                raise
+            continue
+        await db.refresh(copy)
+        return copy
 
     raise AssertionError("unreachable: the loop either returns or raises")
 
@@ -312,9 +407,91 @@ async def update_palette(
     if "tags" in data and data["tags"] is not None:
         palette.tags = data["tags"]
 
+    if "visibility" in data and data["visibility"] is not None:
+        palette.visibility = data["visibility"]
+        # Stamp the moment it first goes public; leave the stamp on when hidden again so a
+        # re-publish keeps its original date rather than jumping to the top of the feed each time.
+        if palette.visibility == "public" and palette.published_at is None:
+            palette.published_at = datetime.now(UTC)
+
     await db.commit()
     await db.refresh(palette)
     return palette
+
+
+async def create_report(
+    db: AsyncSession, palette_id: int, reporter_id: int, reason: str, detail: str
+) -> models.Report:
+    """Open a report, idempotently: a second report of the same palette by the same user returns
+    the first rather than erroring, so the reporter is not told whether they had already flagged
+    it (and the unique constraint is never a 500)."""
+    report = models.Report(
+        palette_id=palette_id, reporter_id=reporter_id, reason=reason, detail=detail
+    )
+    db.add(report)
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = (
+            (
+                await db.execute(
+                    select(models.Report).where(
+                        models.Report.palette_id == palette_id,
+                        models.Report.reporter_id == reporter_id,
+                    )
+                )
+            )
+            .scalars()
+            .first()
+        )
+        if existing is None:
+            raise
+        return existing
+    await db.refresh(report)
+    return report
+
+
+async def get_report(db: AsyncSession, report_id: int) -> models.Report | None:
+    return await db.get(models.Report, report_id)
+
+
+async def list_open_reports(db: AsyncSession) -> list[models.Report]:
+    """Open reports for the admin review queue, newest first."""
+    stmt = (
+        select(models.Report)
+        .where(models.Report.status == "open")
+        .order_by(models.Report.created_at.desc(), models.Report.id.desc())
+    )
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def action_report(db: AsyncSession, report: models.Report) -> models.Report:
+    """Uphold a report: remove the palette (a soft takedown — the row stays so the owner is told)
+    and mark the report actioned."""
+    report.status = "actioned"
+    report.palette.status = "removed"
+    await db.commit()
+    await db.refresh(report)
+    return report
+
+
+async def dismiss_report(db: AsyncSession, report: models.Report) -> models.Report:
+    report.status = "dismissed"
+    await db.commit()
+    await db.refresh(report)
+    return report
+
+
+async def get_palettes_for_user(db: AsyncSession, owner_id: int) -> list[models.Palette]:
+    """Every palette a user owns, newest first — for their "your palettes" page. Includes private
+    ones, which is why it is keyed on the owner rather than the public filter."""
+    stmt = (
+        select(models.Palette)
+        .where(models.Palette.owner_id == owner_id)
+        .order_by(models.Palette.created_at.desc(), models.Palette.id.desc())
+    )
+    return list((await db.execute(stmt)).scalars().all())
 
 
 async def delete_palette(db: AsyncSession, palette: models.Palette) -> None:
@@ -330,6 +507,10 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
     # The table is empty, so slug collisions can only come from the batch itself — resolve
     # them in memory. create_palette would commit and refresh once per row and run a slug
     # query per row on top; this is one insert and one commit for the whole seed.
+    # The seed catalogue is the public, curated content: created public and featured (dated to
+    # now), not private like a user palette. The migration backfills an already-populated table;
+    # this covers a fresh one, where seeding runs after the migration on an empty table.
+    now = datetime.now(UTC)
     taken: set[str] = set()
     rows: list[models.Palette] = []
     for palette_data in palettes:
@@ -342,6 +523,9 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
                 description=palette_data.description,
                 colors=palette_data.colors,
                 tags=palette_data.tags,
+                visibility="public",
+                is_featured=True,
+                published_at=now,
             )
         )
 
@@ -467,6 +651,41 @@ async def create_admin_if_missing(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+async def get_or_create_curator(db: AsyncSession, password_hash: str) -> models.User:
+    """The reserved account that owns the seed catalogue, so every palette has an owner handle
+    for its URL. A system account: the password hash is a throwaway random value (nobody signs
+    in as it), it is not an admin, and it is created once."""
+    curator = await get_user_by_username(db, models.CURATOR_HANDLE)
+    if curator is None:
+        curator = models.User(
+            username=models.CURATOR_HANDLE,
+            email=models.CURATOR_EMAIL,
+            password_hash=password_hash,
+            is_admin=False,
+            email_verified=True,
+        )
+        db.add(curator)
+        await db.commit()
+        await db.refresh(curator)
+    return curator
+
+
+async def backfill_palette_owner(db: AsyncSession, owner_id: int) -> int:
+    """Assign every ownerless palette to `owner_id`. Idempotent: once nothing is ownerless it
+    updates zero rows. Run at startup after the curator exists."""
+    result = cast(
+        CursorResult[Any],
+        await db.execute(
+            update(models.Palette)
+            .where(models.Palette.owner_id.is_(None))
+            .values(owner_id=owner_id)
+        ),
+    )
+    if result.rowcount:
+        await db.commit()
+    return result.rowcount or 0
 
 
 async def get_user_favorite_palettes(db: AsyncSession, user: models.User) -> list[models.Palette]:
@@ -624,4 +843,52 @@ async def revoke_all_refresh_tokens(db: AsyncSession, user_id: int) -> None:
     names both say "revoke" because both end the session — the storage choice differs underneath.
     """
     await db.execute(delete(models.RefreshToken).where(models.RefreshToken.user_id == user_id))
+    await db.commit()
+
+
+# --- OAuth import tokens -------------------------------------------------------------------------
+
+
+async def get_oauth_token(
+    db: AsyncSession, user_id: int, provider: str
+) -> models.OAuthToken | None:
+    stmt = select(models.OAuthToken).where(
+        models.OAuthToken.user_id == user_id,
+        models.OAuthToken.provider == provider,
+    )
+    return (await db.execute(stmt)).scalar_one_or_none()
+
+
+async def upsert_oauth_token(
+    db: AsyncSession,
+    user_id: int,
+    provider: str,
+    *,
+    access_token: str,
+    refresh_token: str | None,
+    expires_at: datetime | None,
+    scope: str = "",
+) -> models.OAuthToken:
+    """Store (or replace) a user's token for a provider. The token values are expected to be
+    already encrypted by the caller — crud never sees the plaintext."""
+    existing = await get_oauth_token(db, user_id, provider)
+    if existing is None:
+        existing = models.OAuthToken(user_id=user_id, provider=provider)
+        db.add(existing)
+    existing.access_token = access_token
+    existing.refresh_token = refresh_token
+    existing.expires_at = expires_at
+    existing.scope = scope
+    await db.commit()
+    await db.refresh(existing)
+    return existing
+
+
+async def delete_oauth_token(db: AsyncSession, user_id: int, provider: str) -> None:
+    await db.execute(
+        delete(models.OAuthToken).where(
+            models.OAuthToken.user_id == user_id,
+            models.OAuthToken.provider == provider,
+        )
+    )
     await db.commit()

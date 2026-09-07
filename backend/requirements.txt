@@ -11,4 +11,5 @@ redis==8.1.0
 psycopg[binary]==3.3.4
 asyncpg==0.31.0
 httpx==0.28.1
+cryptography==50.0.1
 sentry-sdk[fastapi]==2.67.1

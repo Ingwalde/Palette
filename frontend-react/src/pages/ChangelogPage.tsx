@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.0",
+    title: "Palette becomes a community",
+    items: [
+      "Sign up and make your own palettes: create, edit and keep them private, then publish to a public feed everyone can browse — and fork anyone's palette to remix it into your own.",
+      "Build a palette from an image — upload one or paste a link — or connect Figma to pull a file's exact colours. A report button and an admin review queue keep the feed clean.",
+      "A dark theme with a System / Light / Dark switch, a colour-vision check on every palette, and exports to Tailwind, OKLCH, SVG, JSON, CSS or PNG — each one a shareable link.",
+    ],
+  },
+  {
     version: "v4.9.3",
     title: "A second pass over the review",
     items: [

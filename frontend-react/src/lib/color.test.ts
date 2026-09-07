@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { getPaletteContrastStatus } from "./color";
+import {
+  formatColor,
+  getContrastMatrix,
+  getPaletteContrastStatus,
+  toHslString,
+  toOklchString,
+  toRgbString,
+} from "./color";
 
 describe("getPaletteContrastStatus", () => {
   it("rates black-on-white as excellent (21:1)", () => {
@@ -25,5 +32,58 @@ describe("getPaletteContrastStatus", () => {
     expect(() => getPaletteContrastStatus(["not-a-color", "#FFFFFF"])).toThrow(
       /Invalid HEX/,
     );
+  });
+});
+
+describe("getContrastMatrix", () => {
+  it("is N×N with an empty diagonal", () => {
+    const m = getContrastMatrix(["#000000", "#FFFFFF", "#808080"]);
+    expect(m).toHaveLength(3);
+    expect(m[0]).toHaveLength(3);
+    expect(m[0][0]).toBeNull();
+    expect(m[1][1]).toBeNull();
+    expect(m[2][2]).toBeNull();
+  });
+
+  it("labels black-vs-white AAA at 21:1 and is symmetric", () => {
+    const m = getContrastMatrix(["#000000", "#FFFFFF"]);
+    expect(m[0][1]).toEqual({ ratio: 21, level: "AAA" });
+    expect(m[1][0]).toEqual({ ratio: 21, level: "AAA" });
+  });
+
+  it("marks a low-contrast pair with a dash", () => {
+    const m = getContrastMatrix(["#777777", "#808080"]);
+    expect(m[0][1]?.level).toBe("—");
+  });
+});
+
+describe("toRgbString / toHslString", () => {
+  it("converts primaries", () => {
+    expect(toRgbString("#FF0000")).toBe("rgb(255, 0, 0)");
+    expect(toHslString("#FF0000")).toBe("hsl(0, 100%, 50%)");
+    expect(toRgbString("#000000")).toBe("rgb(0, 0, 0)");
+    expect(toHslString("#FFFFFF")).toBe("hsl(0, 0%, 100%)");
+  });
+});
+
+describe("toOklchString", () => {
+  it("matches known OKLCH values", () => {
+    expect(toOklchString("#000000")).toBe("oklch(0.000 0.000 0.0)");
+    // sRGB red's published OKLCH is ~0.628 / 0.258 / 29.2.
+    expect(toOklchString("#FF0000")).toBe("oklch(0.628 0.258 29.2)");
+  });
+
+  it("gives white lightness 1 and no chroma", () => {
+    const white = toOklchString("#FFFFFF");
+    expect(white.startsWith("oklch(1.000 0.000")).toBe(true);
+  });
+});
+
+describe("formatColor", () => {
+  it("dispatches to each format and normalises hex", () => {
+    expect(formatColor("#ff0000", "hex")).toBe("#FF0000");
+    expect(formatColor("#ff0000", "rgb")).toBe("rgb(255, 0, 0)");
+    expect(formatColor("#ff0000", "hsl")).toBe("hsl(0, 100%, 50%)");
+    expect(formatColor("#ff0000", "oklch")).toBe("oklch(0.628 0.258 29.2)");
   });
 });

@@ -21,7 +21,7 @@ export const panel = style({
   padding: "20px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.78)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   "@media": {
     "(max-width: 920px)": { position: "static" },
@@ -65,7 +65,7 @@ export const imageFrame = style({
   padding: "16px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.88)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
 });
 
@@ -108,13 +108,13 @@ export const pickerOption = style({
   border: `1px solid ${vars.color.border}`,
   borderRadius: "22px",
   color: vars.color.text,
-  background: "rgba(255, 250, 242, 0.72)",
+  background: vars.color.surfaceGlass,
   cursor: "pointer",
   textAlign: "left",
   transition: `border-color ${vars.motion.transition}, background ${vars.motion.transition}, transform ${vars.motion.transition}`,
   selectors: {
     "&:hover": {
-      borderColor: "rgba(47, 45, 42, 0.35)",
+      borderColor: vars.color.focus,
       background: vars.color.primarySoft,
       transform: "translateY(-1px)",
     },
@@ -125,7 +125,7 @@ export const pickerOption = style({
 });
 
 export const pickerOptionSelected = style({
-  borderColor: "rgba(47, 45, 42, 0.35)",
+  borderColor: vars.color.focus,
   background: vars.color.primarySoft,
   transform: "translateY(-1px)",
 });

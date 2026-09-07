@@ -46,6 +46,18 @@ const VerifyPage = lazy(() =>
 const NotFoundPage = lazy(() =>
   import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
+const PalettePage = lazy(() =>
+  import("./pages/PalettePage").then((m) => ({ default: m.PalettePage })),
+);
+const PaletteEditorPage = lazy(() =>
+  import("./pages/PaletteEditorPage").then((m) => ({ default: m.PaletteEditorPage })),
+);
+const YourPalettesPage = lazy(() =>
+  import("./pages/YourPalettesPage").then((m) => ({ default: m.YourPalettesPage })),
+);
+const ImportPage = lazy(() =>
+  import("./pages/ImportPage").then((m) => ({ default: m.ImportPage })),
+);
 
 export function App() {
   return (
@@ -63,6 +75,11 @@ export function App() {
 
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
+        <Route path="palettes/new" element={<PaletteEditorPage />} />
+        <Route path="import" element={<ImportPage />} />
+        <Route path="palettes/mine" element={<YourPalettesPage />} />
+        <Route path="u/:handle/:slug" element={<PalettePage />} />
+        <Route path="u/:handle/:slug/edit" element={<PaletteEditorPage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="favorites" element={<FavoritesPage />} />
         <Route path="export" element={<ExportPage />} />

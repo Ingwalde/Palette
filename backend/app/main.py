@@ -19,9 +19,24 @@ from .config import settings
 from .crud import purge_expired_refresh_tokens
 from .database import AsyncSessionLocal, run_migrations
 from .rate_limit import limiter
-from .routers import auth, favorites, palettes, tags
+from .routers import (
+    auth,
+    favorites,
+    figma,
+    imports,
+    palettes,
+    pinterest,
+    reports,
+    tags,
+    users,
+)
 from .security import ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE
-from .seed import seed_default_admin_user, seed_default_palettes, seed_default_tags
+from .seed import (
+    seed_curator_and_backfill,
+    seed_default_admin_user,
+    seed_default_palettes,
+    seed_default_tags,
+)
 
 # Mutating requests must echo the csrf_token cookie in the X-CSRF-Token header (double-submit
 # The version prefix every router is mounted under. Named once so the CSRF exemptions below and
@@ -71,6 +86,11 @@ async def lifespan(app: FastAPI):
         await seed_default_palettes(db)
         await seed_default_tags(db)
         await seed_default_admin_user(db)
+        # After the palettes and the admin exist: give every ownerless palette the curator owner
+        # so each one has a handle for its /u/:handle/:slug URL.
+        adopted = await seed_curator_and_backfill(db)
+        if adopted:
+            logging.getLogger("palette").info("Assigned %d palette(s) to the curator.", adopted)
         # Housekeeping: expired refresh tokens are unreachable by every code path that reads
         # them, so they are storage and nothing else.
         removed = await purge_expired_refresh_tokens(db)
@@ -86,8 +106,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v4.9.3 with auth, favorites, PostgreSQL and Docker.",
-    version="4.9.3",
+    description="Backend API for Palette v5.0.0 with auth, favorites, PostgreSQL and Docker.",
+    version="5.0.0",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -194,6 +214,11 @@ app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(palettes.router, prefix=API_PREFIX)
 app.include_router(favorites.router, prefix=API_PREFIX)
 app.include_router(tags.router, prefix=API_PREFIX)
+app.include_router(users.router, prefix=API_PREFIX)
+app.include_router(reports.router, prefix=API_PREFIX)
+app.include_router(imports.router, prefix=API_PREFIX)
+app.include_router(figma.router, prefix=API_PREFIX)
+app.include_router(pinterest.router, prefix=API_PREFIX)
 
 
 def _problem(status_code: int, detail, title: str | None = None) -> JSONResponse:
@@ -230,7 +255,7 @@ async def _validation_exception_handler(request, exc: RequestValidationError) ->
 async def root():
     return {
         "name": "Palette API",
-        "version": "4.9.3",
+        "version": "5.0.0",
         # Only advertise the docs where they exist. With enable_api_docs off — the production
         # default — /api/docs is a 404, so linking to it sent anyone following the root response
         # to a dead end.

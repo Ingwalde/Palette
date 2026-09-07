@@ -1,26 +1,83 @@
 import type { Palette } from "../types/api";
+import { toOklchString } from "./color";
 
-export type ExportFormat = "css" | "json" | "png";
+export type ExportFormat = "css" | "oklch" | "tailwind" | "json" | "svg" | "png";
+export type TextFormat = Exclude<ExportFormat, "png">;
 
 // ---- text generators ----------------------------------------------------------------
 
-function generateCssVariables(palettes: Palette[]): string {
+function generateCssVariables(palettes: Palette[], oklch: boolean): string {
   return palettes
     .map((palette) => {
       const variables = palette.colors
-        .map((color, index) => `  --${palette.slug}-${index + 1}: ${color};`)
+        .map((color, index) => {
+          const value = oklch ? toOklchString(color) : color;
+          return `  --${palette.slug}-${index + 1}: ${value};`;
+        })
         .join("\n");
       return `/* ${palette.name} */\n:root {\n${variables}\n}`;
     })
     .join("\n\n");
 }
 
-export function generateExportText(
-  palettes: Palette[],
-  format: Exclude<ExportFormat, "png">,
-): string {
-  if (format === "json") return JSON.stringify(palettes, null, 2);
-  return generateCssVariables(palettes);
+// A Tailwind `theme.extend.colors` fragment: each palette becomes a nested colour scale keyed by
+// position, so `bg-sea-breeze-1` and friends resolve after a merge into tailwind.config.js.
+function generateTailwind(palettes: Palette[]): string {
+  const colors = palettes
+    .map((palette) => {
+      const scale = palette.colors
+        .map((color, index) => `        "${index + 1}": "${color}",`)
+        .join("\n");
+      return `      "${palette.slug}": {\n${scale}\n      },`;
+    })
+    .join("\n");
+  return `/** @type {import('tailwindcss').Config} */\nmodule.exports = {\n  theme: {\n    extend: {\n      colors: {\n${colors}\n      },\n    },\n  },\n};`;
+}
+
+// A flat SVG strip: one row of swatches per palette, labelled, ready to drop into a doc or a
+// README. Sized so each swatch is 120×120 with the hex beneath.
+function generateSvg(palettes: Palette[]): string {
+  const swatch = 120;
+  const gap = 8;
+  const rowHeight = swatch + 34;
+  const width = Math.max(
+    ...palettes.map((p) => p.colors.length * swatch + (p.colors.length - 1) * gap),
+    swatch,
+  );
+  const height = palettes.length * (rowHeight + 24);
+
+  const rows = palettes
+    .map((palette, row) => {
+      const top = row * (rowHeight + 24);
+      const cells = palette.colors
+        .map((color, i) => {
+          const x = i * (swatch + gap);
+          return (
+            `    <rect x="${x}" y="${top}" width="${swatch}" height="${swatch}" rx="12" fill="${color}"/>\n` +
+            `    <text x="${x + swatch / 2}" y="${top + swatch + 20}" font-family="monospace" font-size="13" text-anchor="middle" fill="#333">${color.toUpperCase()}</text>`
+          );
+        })
+        .join("\n");
+      return `  <!-- ${palette.name} -->\n${cells}`;
+    })
+    .join("\n");
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${rows}\n</svg>`;
+}
+
+export function generateExportText(palettes: Palette[], format: TextFormat): string {
+  switch (format) {
+    case "json":
+      return JSON.stringify(palettes, null, 2);
+    case "oklch":
+      return generateCssVariables(palettes, true);
+    case "tailwind":
+      return generateTailwind(palettes);
+    case "svg":
+      return generateSvg(palettes);
+    default:
+      return generateCssVariables(palettes, false);
+  }
 }
 
 // ---- download helpers ---------------------------------------------------------------

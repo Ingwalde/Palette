@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, type Location } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
@@ -13,6 +13,11 @@ export function LoginPage() {
   const { login, register, isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where a guest was sent from (e.g. pressing Save on a card) so they return there after signing
+  // in. Default to the profile page, the app's normal login landing.
+  const from = (location.state as { from?: Location } | null)?.from;
+  const target = from ?? "/profile";
 
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -25,8 +30,8 @@ export function LoginPage() {
 
   // Already signed in → nothing to do here.
   useEffect(() => {
-    if (isAuthenticated) navigate("/profile", { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) navigate(target, { replace: true });
+  }, [isAuthenticated, navigate, target]);
 
   const errorMessage = (error: unknown) =>
     error instanceof ApiError ? error.message : "Something went wrong";
@@ -38,7 +43,7 @@ export function LoginPage() {
       await login({ username: loginUsername.trim(), password: loginPassword });
       setLoginPassword("");
       showToast("Logged in");
-      navigate("/profile");
+      navigate(target, { replace: true });
     } catch (error) {
       showToast(errorMessage(error), "error");
     } finally {

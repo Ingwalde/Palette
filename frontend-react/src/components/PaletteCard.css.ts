@@ -15,7 +15,7 @@ export const card = style({
   padding: "18px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.78)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
   overflow: "hidden",
   animation: `${cardIn} 560ms cubic-bezier(0.22, 1, 0.36, 1) both`,
@@ -49,6 +49,22 @@ export const title = style({
   letterSpacing: "-0.04em",
 });
 
+export const titleLink = style({
+  color: "inherit",
+  textDecoration: "none",
+  transition: vars.motion.transition,
+  ":hover": { color: vars.color.muted },
+  // A visible target for keyboard focus that does not shift layout.
+  ":focus-visible": { textDecoration: "underline" },
+});
+
+export const byline = style({
+  margin: "0 0 4px",
+  color: vars.color.muted,
+  fontSize: "0.78rem",
+  fontWeight: 600,
+});
+
 export const meta = style({
   margin: 0,
   color: vars.color.muted,
@@ -62,7 +78,7 @@ export const colors = style({
   minHeight: "130px",
   overflow: "hidden",
   borderRadius: "20px",
-  border: "1px solid rgba(47, 45, 42, 0.08)",
+  border: `1px solid ${vars.color.border}`,
   "@media": {
     // Shorter on phones. The rule lived in pages.css under the 680px breakpoint.
     "(max-width: 680px)": { minHeight: "110px" },
@@ -156,4 +172,8 @@ export const contrastBadge = style({
   fontSize: "0.82rem",
   fontWeight: 700,
   whiteSpace: "nowrap",
+  // It links to the contrast table on the palette page now.
+  textDecoration: "none",
+  transition: vars.motion.transition,
+  ":hover": { background: vars.color.surfaceStrong },
 });

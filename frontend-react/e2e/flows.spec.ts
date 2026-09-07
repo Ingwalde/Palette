@@ -47,7 +47,7 @@ test.beforeEach(async ({ page }) => {
 
 test("home lists palettes and filters by search", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /available palettes/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /all palettes/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Sea Breeze" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Desert Clay" })).toBeVisible();
 });

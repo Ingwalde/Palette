@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
-import { copyToClipboard, getPaletteContrastStatus } from "../lib/color";
+import { palettePath } from "../lib/palettePath";
+import { CURATOR_HANDLE } from "../lib/constants";
+import { copyToClipboard, formatColor, getPaletteContrastStatus } from "../lib/color";
+import { useColorFormat } from "./ColorFormatContext";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
 import { useToast } from "./toast/ToastProvider";
@@ -10,7 +14,10 @@ import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
   const { showToast } = useToast();
@@ -50,12 +57,16 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       () => setRevealed((c) => (c === color ? null : c)),
       1800,
     );
-    await copy(color, `${color} copied`);
+    const shown = formatColor(color, format);
+    await copy(shown, `${shown} copied`);
   };
 
   const onToggleFavorite = () => {
     if (!isAuthenticated) {
-      showToast("Log in to save favorites");
+      // Carry the intent to the login page rather than dying in a toast: after signing in the
+      // visitor lands back where they were and presses Save themselves (saving it for them
+      // unasked would be writing to their account without consent).
+      navigate("/login", { state: { from: location } });
       return;
     }
     toggleFavorite.mutate(
@@ -76,7 +87,20 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     <article className={styles.card} data-palette-id={palette.slug}>
       <div className={styles.header}>
         <div>
-          <h3 className={styles.title}>{palette.name}</h3>
+          <h3 className={styles.title}>
+            <Link
+              to={palettePath(palette)}
+              state={{ from: location.search }}
+              className={styles.titleLink}
+            >
+              {palette.name}
+            </Link>
+          </h3>
+          <p className={styles.byline}>
+            {palette.owner_handle === CURATOR_HANDLE
+              ? "Palette"
+              : `by ${palette.owner_handle}`}
+          </p>
           <p className={styles.meta}>{palette.description}</p>
         </div>
         <button
@@ -98,8 +122,8 @@ export function PaletteCard({ palette }: { palette: Palette }) {
             type="button"
             className={`${styles.swatch}${revealed === color ? ` ${styles.swatchRevealed}` : ""}`}
             style={{ "--swatch-color": color } as CSSProperties}
-            data-color={color}
-            aria-label={`Copy ${color}`}
+            data-color={formatColor(color, format)}
+            aria-label={`Copy ${formatColor(color, format)}`}
             onClick={() => void copyColor(color)}
           />
         ))}
@@ -114,15 +138,27 @@ export function PaletteCard({ palette }: { palette: Palette }) {
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.contrastBadge}>
+        <Link
+          to={`${palettePath(palette)}#contrast`}
+          className={styles.contrastBadge}
+          title={`Between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors.`}
+        >
           {contrast.label} · {contrast.ratio}:1
-        </span>
+          <span className={ui.visuallyHidden}>
+            {` — between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors`}
+          </span>
+        </Link>
         <button
           type="button"
           className={buttonClass("ghost")}
-          onClick={() => void copy(palette.name, `Palette name copied: ${palette.name}`)}
+          onClick={() =>
+            void copy(
+              palette.colors.join(", "),
+              `${palette.colors.length} color${palette.colors.length === 1 ? "" : "s"} copied`,
+            )
+          }
         >
-          Copy name
+          Copy all
         </button>
       </div>
     </article>

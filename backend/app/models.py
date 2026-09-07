@@ -12,9 +12,16 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
+
+# The reserved account that owns the seed catalogue, so every palette has an owner handle for its
+# /u/:handle/:slug URL — the seed palettes predate user ownership and would otherwise have none.
+# A palette with no owner at all (a just-created admin one before the startup backfill runs) still
+# resolves here, so the URL never breaks.
+CURATOR_HANDLE = "palette"
+CURATOR_EMAIL = "palette@palettes-app.com"
 
 
 def _utcnow() -> datetime:
@@ -67,6 +74,9 @@ class Palette(Base):
             text("(tags::text) gin_trgm_ops"),
             postgresql_using="gin",
         ),
+        # The community feed reads public + active palettes ordered by recency; a btree over these
+        # columns serves the filter and the ordering (scannable either direction).
+        Index("ix_palettes_feed", "visibility", "status", "published_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
@@ -75,6 +85,42 @@ class Palette(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     colors: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
     tags: Mapped[list[str]] = mapped_column(JSONB, nullable=False, default=list)
+    # Nullable so the column can be added to an existing table without a default row-rewrite; the
+    # startup backfill then assigns every ownerless palette to the curator account. Loaded with
+    # selectin so `owner_handle` works under async without a lazy load on the request path.
+    owner_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=True
+    )
+    owner: Mapped["User | None"] = relationship("User", lazy="selectin")
+    # Community columns. `private` on create, `public` on publish (published_at stamps that
+    # moment); `status` is the moderation state; `is_featured` drives the "curated" feed sort and
+    # the cold-start (seed palettes are featured). The counters are denormalised so the feed's
+    # "popular" sort is an index read, not a COUNT(*) per row — kept in step with favourites/forks
+    # in the transaction that changes them.
+    visibility: Mapped[str] = mapped_column(
+        String(16), default="private", server_default="private", nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        String(16), default="active", server_default="active", nullable=False
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    favorites_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False
+    )
+    forks_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    # Lineage for fork/remix and send-a-copy. SET NULL, not CASCADE: deleting the original should
+    # not delete the copies someone else now owns; they just lose the link.
+    forked_from_id: Mapped[int | None] = mapped_column(
+        ForeignKey("palettes.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    # The palette this was forked from, for the "Forked from X by Y" lineage line. Self-referential
+    # many-to-one; selectin so the lineage serialises under async without a lazy load.
+    forked_from: Mapped["Palette | None"] = relationship(
+        "Palette", remote_side="Palette.id", lazy="selectin"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -84,6 +130,12 @@ class Palette(Base):
         onupdate=_utcnow,
         nullable=False,
     )
+
+    @property
+    def owner_handle(self) -> str:
+        """The handle for this palette's /u/:handle/:slug URL — the owner's username, or the
+        curator handle when it has no owner yet."""
+        return self.owner.username if self.owner is not None else CURATOR_HANDLE
 
 
 class Tag(Base):
@@ -161,6 +213,75 @@ class RefreshToken(Base):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+
+
+class Report(Base):
+    """A moderation report against a public palette. One per (palette, reporter) so a single
+    user cannot spam-report the same palette; status moves open → actioned | dismissed."""
+
+    __tablename__ = "reports"
+    __table_args__ = (
+        UniqueConstraint("palette_id", "reporter_id", name="uq_report_palette_reporter"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    palette_id: Mapped[int] = mapped_column(
+        ForeignKey("palettes.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    reporter_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True, nullable=True
+    )
+    reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    detail: Mapped[str] = mapped_column(String(500), default="", server_default="", nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), default="open", server_default="open", nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+    # The reported palette, for the admin review queue. selectin so it serialises under async.
+    palette: Mapped["Palette"] = relationship("Palette", lazy="selectin")
+
+
+class Notification(Base):
+    """An in-app notification for a recipient — currently a palette sent by another user. `kind`
+    keeps it extensible; `payload` carries the sender handle and palette slug."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, nullable=False
+    )
+
+
+class OAuthToken(Base):
+    """A stored OAuth token for an import provider (Figma / Pinterest). One row per
+    (user, provider). The tokens are encrypted at rest and never leave the backend."""
+
+    __tablename__ = "oauth_tokens"
+    __table_args__ = (UniqueConstraint("user_id", "provider", name="uq_oauth_user_provider"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(16), nullable=False)
+    # Ciphertext, not the raw tokens (see security.py for the encryption helper added with the
+    # import steps).
+    access_token: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    scope: Mapped[str] = mapped_column(String(255), default="", server_default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,6 +7,7 @@ import { PaletteCard } from "../components/PaletteCard";
 import { FavoritesPage } from "./FavoritesPage";
 import { AuthProvider } from "../auth/AuthContext";
 import { ToastProvider } from "../components/toast/ToastProvider";
+import { ModalProvider } from "../components/modal/ModalProvider";
 import type { Palette, User } from "../types/api";
 import * as favoritesApi from "../api/favorites";
 
@@ -21,6 +22,8 @@ const admin: User = {
 const palette: Palette = {
   id: 1,
   slug: "sea-breeze",
+  owner_handle: "palette",
+  visibility: "public",
   name: "Sea Breeze",
   description: "Fresh.",
   colors: ["#000000", "#FFFFFF"],
@@ -49,7 +52,9 @@ function wrap(node: React.ReactNode) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter>{node}</MemoryRouter>
+          <ModalProvider>
+            <MemoryRouter>{node}</MemoryRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,
@@ -78,6 +83,9 @@ describe("FavoritesPage (signed in)", () => {
     const clear = screen.getByRole("button", { name: "Clear favorites" });
     expect(clear).toBeEnabled();
     await user.click(clear);
+    // Destructive: confirm in the dialog before it runs.
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Clear favorites" }));
     expect(favoritesApi.clearFavorites).toHaveBeenCalled();
     expect(await screen.findByText("Favorites cleared")).toBeInTheDocument();
   });

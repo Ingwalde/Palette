@@ -18,6 +18,8 @@ const PALETTES = {
       description: "Fresh blue and green colors inspired by the sea.",
       colors: ["#006D77", "#0F9199", "#83C5BE", "#EDE7C8"],
       tags: ["cold", "sea"],
+      owner_handle: "palette",
+      visibility: "public",
       created_at: "",
       updated_at: "",
     },
@@ -30,6 +32,9 @@ const TAGS = [{ name: "cold", kind: "free", count: 1 }];
 
 async function stub(page: Page, loggedIn: boolean) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
+  await page.route("**/api/v1/users/*/palettes/*", (r) =>
+    r.fulfill({ json: PALETTES.items[0] }),
+  );
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
   await page.route("**/api/v1/auth/me", (r) =>
@@ -52,6 +57,7 @@ async function analyze(page: Page) {
 
 const GUEST_PAGES = [
   "/",
+  "/u/palette/sea-breeze", // the palette page, with its color blocks and contrast table
   "/login",
   "/favorites",
   "/export",
@@ -65,7 +71,7 @@ const GUEST_PAGES = [
   "/reset-password?token=audit",
   "/verify?token=audit",
 ];
-const ADMIN_PAGES = ["/admin", "/profile"];
+const ADMIN_PAGES = ["/admin", "/profile", "/import"];
 
 for (const path of GUEST_PAGES) {
   test(`a11y (guest) ${path}`, async ({ page }) => {
@@ -92,6 +98,31 @@ for (const path of ADMIN_PAGES) {
     await stub(page, true);
     await page.goto(path, { waitUntil: "networkidle" });
     await page.waitForTimeout(500);
+    const { violations } = await analyze(page);
+    if (violations.length) {
+      console.log(
+        path,
+        JSON.stringify(
+          violations.map((v) => ({ id: v.id, n: v.nodes.length, t: v.nodes[0]?.target })),
+          null,
+          1,
+        ),
+      );
+    }
+    expect(violations).toEqual([]);
+  });
+}
+
+// The dark theme carries its own palette, so it needs its own contrast audit — the load-bearing
+// pages under the system-preference dark rendering. emulateMedia drives the media query the theme
+// hangs off, without touching localStorage.
+const DARK_PAGES = ["/", "/u/palette/sea-breeze", "/login"];
+for (const path of DARK_PAGES) {
+  test(`a11y (dark) ${path}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await stub(page, false);
+    await page.goto(path, { waitUntil: "networkidle" });
+    await page.waitForTimeout(400);
     const { violations } = await analyze(page);
     if (violations.length) {
       console.log(

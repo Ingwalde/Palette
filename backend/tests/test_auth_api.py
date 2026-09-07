@@ -259,10 +259,12 @@ async def test_login_upgrades_legacy_hash(client, db_session):
 
 
 async def test_admin_gate_blocks_regular_user(user_client, user_csrf):
+    # Creating a palette is open to any signed-in user now; the admin gate still guards the tag
+    # catalogue, so that is what this asserts.
     resp = await user_client.post(
-        "/api/v1/palettes",
+        "/api/v1/tags",
         headers=user_csrf,
-        json={"name": "Blocked", "colors": ["#112233"], "tags": []},
+        json={"name": "blocked-tag", "kind": "free"},
     )
     assert resp.status_code == 403
 
@@ -429,7 +431,7 @@ async def test_losing_a_registration_race_gives_409_not_500(client, db_session, 
 async def test_registration_refuses_weak_passwords(client, password, reason):
     """min_length was 6, so "123456" was accepted — in a project whose headline feature is auth.
 
-    Twelve characters and a small refusal list, not a composition rule: mandating a symbol and a
+    Eight characters and a small refusal list, not a composition rule: mandating a symbol and a
     digit mostly produces "Password1!", while length is what costs an attacker work. The third
     case is the one a length floor alone misses — a long password containing the account name is
     guessed immediately.

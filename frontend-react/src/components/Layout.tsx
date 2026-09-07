@@ -3,6 +3,8 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { RouteAnnouncer } from "./RouteAnnouncer";
 import { RouteFallback } from "./RouteFallback";
+import { ThemeToggle } from "./ThemeToggle";
+import { ColorVisionFilters } from "./ColorVisionFilters";
 import * as styles from "./Layout.css";
 import * as ui from "../styles/ui.css";
 
@@ -36,6 +38,7 @@ export function Layout() {
 
   return (
     <>
+      <ColorVisionFilters />
       <a className={ui.skipLink} href="#main-content">
         Skip to content
       </a>
@@ -57,6 +60,16 @@ export function Layout() {
           <NavLink to="/export" className={linkClass}>
             Export
           </NavLink>
+          {isAuthenticated && (
+            <NavLink to="/palettes/new" className={linkClass}>
+              New palette
+            </NavLink>
+          )}
+          {isAuthenticated && (
+            <NavLink to="/import" className={linkClass}>
+              Import
+            </NavLink>
+          )}
           {isAdmin && (
             <NavLink to="/admin" className={linkClass}>
               Admin
@@ -83,6 +96,7 @@ export function Layout() {
             </NavLink>
           )}
         </nav>
+        <ThemeToggle />
       </header>
 
       {/* tabIndex -1 so the skip link and the route change can both put focus here; it is not
@@ -100,7 +114,7 @@ export function Layout() {
       <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>
           <div className={styles.footerContent}>
-            <p className={styles.footerEyebrow}>Palette v4.9.3</p>
+            <p className={styles.footerEyebrow}>Palette v5.0</p>
             <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.

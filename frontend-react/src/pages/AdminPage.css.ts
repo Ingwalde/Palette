@@ -9,7 +9,7 @@ const PHONE = "(max-width: 680px)";
 const surface = {
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.78)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
 } as const;
 
@@ -88,7 +88,7 @@ export const modeButton = style({
 });
 
 export const modeButtonActive = style({
-  color: "#fff",
+  color: vars.color.onPrimary,
 });
 
 export const view = style({
@@ -294,7 +294,7 @@ export const tagChipRemove = style({
   selectors: {
     "&:hover": {
       background: "rgba(200, 60, 60, 0.14)",
-      color: "#b23b3b",
+      color: vars.color.danger,
     },
   },
 });
@@ -335,7 +335,7 @@ export const tagBadge = style({
 
 /** Built at runtime as tagBadgeKind[tag.kind], so both keys have to exist. */
 export const tagBadgeKind = {
-  purpose: style({ background: "rgba(60, 120, 90, 0.16)", color: "#2f6b46" }),
+  purpose: style({ background: "rgba(60, 120, 90, 0.16)", color: vars.color.success }),
   free: style({ background: "rgba(0, 0, 0, 0.06)", color: vars.color.muted }),
 };
 

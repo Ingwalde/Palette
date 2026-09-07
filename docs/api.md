@@ -366,6 +366,60 @@ Returns:
 
 ---
 
+## Community & import endpoints (v5.0)
+
+Palettes are owned in v5.0. The frontend reads a single palette by owner handle and slug —
+`GET /api/v1/users/{handle}/palettes/{slug}` — and the per-palette mutations below resolve their
+target by palette **id** (or `(handle, slug)` for the read), consistent with the owner-scoped read.
+Every mutation needs a session cookie and the `X-CSRF-Token` header.
+
+### Owner-scoped palettes
+
+| Method   | Endpoint                                    | Purpose                                             |
+| -------- | ------------------------------------------- | --------------------------------------------------- |
+| `GET`    | `/api/v1/users/{handle}/palettes/{slug}`    | Read one palette by owner and slug (public read)    |
+| `GET`    | `/api/v1/palettes/mine`                     | The signed-in user's own palettes (any visibility)  |
+| `POST`   | `/api/v1/palettes`                          | Create a palette (private until published)          |
+| `PATCH`  | `/api/v1/palettes/{id}`                     | Edit a palette; set `visibility` to publish/unpublish |
+| `DELETE` | `/api/v1/palettes/{id}`                     | Delete one of your palettes                         |
+| `POST`   | `/api/v1/palettes/{id}/fork`                | Fork a public palette into your account (private)   |
+
+Publishing is a `PATCH` that sets `visibility: "public"`; the server stamps `published_at`. The
+public feed (`GET /api/v1/palettes`) returns only `visibility = public AND status = active`.
+
+### Moderation
+
+| Method | Endpoint                              | Purpose                                              |
+| ------ | ------------------------------------- | ---------------------------------------------------- |
+| `POST` | `/api/v1/palettes/{id}/report`        | Report a palette (rate-limited, idempotent per user) |
+| `GET`  | `/api/v1/reports`                     | Admin: the open-report queue                          |
+| `POST` | `/api/v1/reports/{id}/action`         | Admin: soft-remove the palette (`status = removed`)   |
+| `POST` | `/api/v1/reports/{id}/dismiss`        | Admin: close the report, keep the palette live        |
+
+A removed palette leaves the feed and every other viewer's reach; its owner still sees it.
+
+### Import
+
+| Method   | Endpoint                                        | Purpose                                                   |
+| -------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `GET`    | `/api/v1/import/providers`                       | Which providers are enabled, and whether the user is linked |
+| `GET`    | `/api/v1/import/fetch?url=`                       | Proxy an image URL for the client-side extractor (SSRF-fenced: http/https only, public host, no redirects, image-only, size-capped) |
+| `GET`    | `/api/v1/import/figma/authorize`                 | Figma OAuth authorize URL                                 |
+| `GET`    | `/api/v1/import/figma/callback?code=&state=`     | Figma OAuth callback (redirects back to the import page)  |
+| `POST`   | `/api/v1/import/figma/extract`                   | Extract a Figma file's paint-style colours as a draft     |
+| `DELETE` | `/api/v1/import/figma`                            | Unlink Figma                                              |
+| `GET`    | `/api/v1/import/pinterest/authorize`             | Pinterest OAuth authorize URL                             |
+| `GET`    | `/api/v1/import/pinterest/callback?code=&state=` | Pinterest OAuth callback                                  |
+| `GET`    | `/api/v1/import/pinterest/boards`                 | List the linked account's boards                          |
+| `GET`    | `/api/v1/import/pinterest/boards/{id}/pins`       | List a board's pins (image URLs for the extractor)        |
+| `DELETE` | `/api/v1/import/pinterest`                         | Unlink Pinterest                                          |
+
+Figma and Pinterest are gated on configuration: without a client id, secret and redirect URI the
+endpoints return `404` and the UI hides the panel. Provider tokens are encrypted at rest; the OAuth
+round-trip is authorised by a short-lived signed `state`, not a session cookie.
+
+---
+
 ## Common status codes
 
 | Code  | Meaning                                                                       |

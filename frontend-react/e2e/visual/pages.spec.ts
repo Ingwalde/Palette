@@ -25,6 +25,8 @@ const PALETTES = {
     {
       id: 1,
       slug: "sea-breeze",
+      owner_handle: "palette",
+      visibility: "public",
       name: "Sea Breeze",
       description: "Fresh blue and green colors inspired by the sea.",
       colors: ["#006D77", "#0F9199", "#83C5BE", "#EDE7C8"],
@@ -35,6 +37,8 @@ const PALETTES = {
     {
       id: 2,
       slug: "desert-clay",
+      owner_handle: "palette",
+      visibility: "public",
       name: "Desert Clay",
       description: "Warm earthy browns fading into soft sand.",
       colors: ["#6A4A32", "#A9744F", "#C89B7B"],
@@ -55,6 +59,9 @@ const TAGS = [
 
 async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
+  await page.route("**/api/v1/users/*/palettes/*", (r) =>
+    r.fulfill({ json: PALETTES.items[0] }),
+  );
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
   await page.route("**/api/v1/auth/verify*", (r) =>
@@ -146,6 +153,7 @@ type Route = { name: string; path: string; fullPage?: boolean };
 
 const GUEST_ROUTES: Route[] = [
   { name: "home", path: "/" },
+  { name: "palette-detail", path: "/u/palette/sea-breeze" },
   { name: "login", path: "/login" },
   { name: "favorites-logged-out", path: "/favorites" },
   { name: "export", path: "/export" },
@@ -162,6 +170,14 @@ for (const { name, path, fullPage = true } of GUEST_ROUTES) {
     await expect(page).toHaveScreenshot(`${name}.png`, { fullPage });
   });
 }
+
+// The dark theme is a whole second palette across every surface; one full-page home baseline under
+// the system-preference dark rendering guards it against a regression that only shows in dark.
+test("dark: home", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await open(page, "/");
+  await expect(page).toHaveScreenshot("dark-home.png", { fullPage: true });
+});
 
 const ADMIN_ROUTES: Route[] = [
   { name: "profile", path: "/profile" },
@@ -238,12 +254,11 @@ test("state: error toast", async ({ page }) => {
   await passwords.nth(1).fill("newpassword1");
   await page.getByRole("button", { name: "Reset password" }).click();
 
-  // The same message lands inline and in the toast, and role="status" no longer identifies the
-  // toast on its own: the route announcer is a second live region with the same role. Both
-  // belong on the page, so the locator narrows by text rather than the markup weakening.
+  // Error toasts live in the assertive live region (routine info is a polite status). The message
+  // also lands inline in its own alert, so target the toast region by its aria-live, not the role.
   await expect(
     page
-      .getByRole("status")
+      .locator('[aria-live="assertive"]')
       .filter({ hasText: "Invalid or expired password reset link" }),
   ).toBeVisible();
   await settle(page);

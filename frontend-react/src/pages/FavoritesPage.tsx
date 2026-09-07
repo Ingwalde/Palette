@@ -1,8 +1,11 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useClearFavorites } from "../api/hooks";
 import { useToast } from "../components/toast/ToastProvider";
+import { useModal } from "../components/modal/ModalProvider";
 import { PaletteCard } from "../components/PaletteCard";
+import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
@@ -17,6 +20,7 @@ export function FavoritesPage() {
   const { data, isLoading, isError, error } = useFavorites();
   const clear = useClearFavorites();
   const { showToast } = useToast();
+  const { confirm } = useModal();
 
   const favorites = data ?? [];
   const authError = isError && isAuthError(error);
@@ -40,7 +44,16 @@ export function FavoritesPage() {
   const clearDisabled =
     !isAuthenticated || isLoading || isError || favorites.length === 0 || clear.isPending;
 
-  const onClear = () => {
+  const onClear = async () => {
+    const ok = await confirm({
+      title: "Clear favorites",
+      message: `Remove all ${favorites.length} saved palette${
+        favorites.length === 1 ? "" : "s"
+      }? This cannot be undone.`,
+      confirmLabel: "Clear favorites",
+      danger: true,
+    });
+    if (!ok) return;
     clear.mutate(undefined, {
       onSuccess: () => showToast("Favorites cleared"),
       onError: (e) =>
@@ -53,7 +66,7 @@ export function FavoritesPage() {
       <section className={`${ui.section} ${ui.pageHero}`}>
         <p className={ui.eyebrow}>Saved palettes</p>
         <h1>Your favorite palettes</h1>
-        <p>Favorites are connected to your account and stored in the backend database.</p>
+        <p>Palettes you save stay with your account, so they follow you to any device.</p>
       </section>
 
       <section className={ui.section}>
@@ -62,28 +75,32 @@ export function FavoritesPage() {
             <h2>Favorites</h2>
             <p className={ui.muted}>{count}</p>
           </div>
-          <button
-            className={buttonClass("danger")}
-            type="button"
-            onClick={onClear}
-            disabled={clearDisabled}
-          >
-            Clear favorites
-          </button>
+          <div className={ui.buttonRow}>
+            {favorites.length > 0 && (
+              <Link className={buttonClass("secondary")} to="/export?source=favorites">
+                Export favorites
+              </Link>
+            )}
+            <button
+              className={buttonClass("danger")}
+              type="button"
+              onClick={() => void onClear()}
+              disabled={clearDisabled}
+            >
+              Clear favorites
+            </button>
+          </div>
         </div>
 
         <div className={ui.paletteGrid}>
           {!isAuthenticated ? (
             <EmptyState
               title="Log in to view favorites"
-              text="Favorites are now connected to your account. Log in to save and view your palettes."
+              text="Log in to save palettes to your account and open them here any time."
               action={{ label: "Log in", to: "/login" }}
             />
           ) : isLoading ? (
-            <EmptyState
-              title="Loading favorites"
-              text="The app is loading your saved palettes from the backend API."
-            />
+            <PaletteCardSkeletonGrid />
           ) : authError ? (
             <EmptyState
               title="Please log in again"

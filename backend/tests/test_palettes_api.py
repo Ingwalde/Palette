@@ -1,21 +1,24 @@
+from datetime import UTC, datetime
+
 import pytest_asyncio
 from app import crud, schemas
 
 
+async def _seed_public(db, **fields):
+    """Create a palette and publish it, standing in for the public curated catalogue (create
+    makes a palette private by default)."""
+    palette = await crud.create_palette(db, schemas.PaletteCreate(**fields))
+    palette.visibility = "public"
+    palette.published_at = datetime.now(UTC)
+    await db.commit()
+    return palette
+
+
 @pytest_asyncio.fixture
 async def seeded(db_session):
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Alpha Warm", colors=["#aa1122"], tags=["warm", "bold"]),
-    )
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Beta Cold", colors=["#1122aa"], tags=["cold"]),
-    )
-    await crud.create_palette(
-        db_session,
-        schemas.PaletteCreate(name="Gamma Warm", colors=["#aa8811"], tags=["warm"]),
-    )
+    await _seed_public(db_session, name="Alpha Warm", colors=["#aa1122"], tags=["warm", "bold"])
+    await _seed_public(db_session, name="Beta Cold", colors=["#1122aa"], tags=["cold"])
+    await _seed_public(db_session, name="Gamma Warm", colors=["#aa8811"], tags=["warm"])
 
 
 async def test_list_all(client, seeded):
@@ -169,3 +172,99 @@ async def test_admin_delete_palette_that_someone_favorited(admin_client, admin_c
 
     await _login(admin_client, "fan")
     assert (await admin_client.get("/api/v1/favorites")).json() == []
+
+
+async def test_list_includes_owner_handle(client, seeded):
+    # Every palette carries the owner handle the frontend builds its /u/:handle/:slug URL from;
+    # a palette with no owner falls back to the curator handle.
+    body = (await client.get("/api/v1/palettes")).json()
+    assert all(p["owner_handle"] == "palette" for p in body["items"])
+
+
+async def test_read_palette_by_owner_handle(client, seeded):
+    slug = (await client.get("/api/v1/palettes")).json()["items"][0]["slug"]
+    resp = await client.get(f"/api/v1/users/palette/palettes/{slug}")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["slug"] == slug
+    assert body["owner_handle"] == "palette"
+
+
+async def test_read_palette_wrong_handle_is_404(client, seeded):
+    # A real slug under the wrong handle must not leak across owners.
+    slug = (await client.get("/api/v1/palettes")).json()["items"][0]["slug"]
+    resp = await client.get(f"/api/v1/users/nobody/palettes/{slug}")
+    assert resp.status_code == 404
+
+
+async def test_read_palette_unknown_slug_is_404(client):
+    resp = await client.get("/api/v1/users/palette/palettes/does-not-exist")
+    assert resp.status_code == 404
+
+
+async def test_new_palette_is_private_by_default(db_session):
+    from app import crud, schemas
+
+    p = await crud.create_palette(
+        db_session, schemas.PaletteCreate(name="Draft", colors=["#111111"])
+    )
+    assert p.visibility == "private"
+    assert p.status == "active"
+    assert p.is_featured is False
+    assert p.favorites_count == 0
+    assert p.forks_count == 0
+    assert p.published_at is None
+    assert p.forked_from_id is None
+
+
+async def test_seed_palettes_are_public_and_featured(db_session):
+    from app import models
+    from app.crud import create_many_if_empty
+    from app.schemas import PaletteCreate
+    from sqlalchemy import select
+
+    created = await create_many_if_empty(
+        db_session, [PaletteCreate(name="Seed One", colors=["#222222"])]
+    )
+    assert created == 1
+    p = (
+        (await db_session.execute(select(models.Palette).where(models.Palette.name == "Seed One")))
+        .scalars()
+        .first()
+    )
+    assert p is not None
+    assert p.visibility == "public"
+    assert p.is_featured is True
+    assert p.published_at is not None
+
+
+async def test_list_excludes_private_palettes(client, seeded, db_session):
+    # A private draft alongside the public catalogue must not appear in the public feed.
+    await crud.create_palette(
+        db_session, schemas.PaletteCreate(name="Secret Draft", colors=["#010203"])
+    )
+    body = (await client.get("/api/v1/palettes")).json()
+    names = {p["name"] for p in body["items"]}
+    assert "Secret Draft" not in names
+    assert body["total"] == 3
+
+
+async def test_feed_sorts_are_accepted(client, seeded):
+    for sort in ("new", "popular", "curated"):
+        resp = await client.get("/api/v1/palettes", params={"sort": sort})
+        assert resp.status_code == 200, sort
+        assert resp.json()["total"] == 3
+
+
+async def test_curated_sort_puts_featured_first(client, db_session):
+    from datetime import UTC, datetime
+
+    plain = await _seed_public(db_session, name="Plain One", colors=["#111111"])
+    plain.is_featured = False
+    featured = await _seed_public(db_session, name="Featured One", colors=["#222222"])
+    featured.is_featured = True
+    featured.published_at = datetime(2020, 1, 1, tzinfo=UTC)  # older, but featured
+    await db_session.commit()
+
+    items = (await client.get("/api/v1/palettes", params={"sort": "curated"})).json()["items"]
+    assert items[0]["name"] == "Featured One"

@@ -174,6 +174,36 @@ Status: completed.
 - Admin delete/rename use styled modal dialogs instead of the browser confirm/prompt.
 - Search and pagination on the admin palette list (10 per page).
 
+## v5.0 — Palette becomes a community
+
+Status: completed.
+
+- Ownership model: accounts own palettes (a curator account owns the seed catalogue), private →
+  public on publish, a moderation status, favorites/forks counters and fork lineage; URLs at
+  `/u/:handle/:slug`; the feed shows `visibility = public AND status = active`.
+- Owner-scoped create/edit/delete and a "Your palettes" page with Publish; fork a public palette
+  into your own account and remix it.
+- Moderation: a rate-limited, idempotent report endpoint and an admin queue; actioning soft-removes
+  a palette, dismissing keeps it live.
+- Import: an image → palette extractor (hand-written median-cut, an SSRF-fenced fetch proxy) plus
+  Figma and Pinterest OAuth2 imports, gated on configuration, with provider tokens encrypted at
+  rest and a signed-state OAuth round-trip.
+- Polish: a dark theme with a System / Light / Dark toggle; pausable toasts, a two-layer focus
+  ring, a guarded destructive action and skeleton loaders; export to Tailwind / OKLCH / SVG / JSON
+  / CSS / PNG with the state in the URL; a Brettel–Viénot colour-vision simulation; a legible
+  floating header. Minimum password length lowered to 8.
+
+Deferred:
+
+- Direct send (palette to another user) — built behind a flag conceptually but not shipped;
+  notifications infrastructure deferred with it.
+- Canva import — no colour endpoint; the image extractor already covers export → image generically.
+- `unlisted` visibility — a shared link is public in v5.0.
+- Colour search ("palettes near `#3B6FD4`") — an OKLab delta-E backend query with its own index and
+  migration.
+- Keyboard shortcuts, recently-viewed (`localStorage`), palette-in-a-mock-UI preview, and OG images
+  for the palette page (needs SSR or a dedicated endpoint).
+
 ## v4.9.3 — Second Review Pass
 
 Status: completed.

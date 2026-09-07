@@ -71,7 +71,7 @@ export const card = style({
   padding: "28px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: "rgba(255, 250, 242, 0.88)",
+  background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
 });
 
