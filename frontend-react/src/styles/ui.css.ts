@@ -286,16 +286,6 @@ export const paletteGrid = style({
   },
 });
 
-export const toolbar = style({
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) 210px",
-  gap: "14px",
-  marginBottom: "16px",
-  "@media": {
-    "(max-width: 680px)": { gridTemplateColumns: "1fr" },
-  },
-});
-
 /** Read-only tag pill on a palette card. `tagButton` below is the interactive filter. */
 export const tag = style({
   display: "inline-flex",

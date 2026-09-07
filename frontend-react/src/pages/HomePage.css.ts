@@ -86,10 +86,53 @@ export const toolbarSection = style({
   padding: "16px 0 36px",
 });
 
+// The whole search station — field, sort/format selects and the tag filters — sits on one framed
+// surface so it reads as a single tool rather than three loose controls floating on the page.
+export const searchPanel = style({
+  display: "grid",
+  gap: "16px",
+  padding: "20px",
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.lg,
+  background: vars.color.surfaceGlass,
+  boxShadow: vars.shadow.soft,
+  "@media": {
+    "(max-width: 680px)": { padding: "16px" },
+  },
+});
+
+// The search field grows; the two selects hold a fixed size on the right and wrap under the field
+// on a phone. (The old grid put three controls in a two-column track, dropping the format select
+// onto its own full-width row.)
+export const toolbarRow = style({
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "12px",
+});
+
+export const searchGrow = style({
+  flex: "1 1 320px",
+  minWidth: 0,
+});
+
+export const toolbarControls = style({
+  display: "grid",
+  gridTemplateColumns: "180px 128px",
+  gap: "10px",
+  flexShrink: 0,
+  "@media": {
+    "(max-width: 680px)": { gridTemplateColumns: "1fr 1fr", width: "100%" },
+  },
+});
+
 export const tagFilters = style({
   display: "flex",
   flexWrap: "wrap",
   gap: "10px",
+  // A hairline separates the filters from the field/selects above within the shared panel.
+  paddingTop: "16px",
+  borderTop: `1px solid ${vars.color.border}`,
 });
 
 export const tagButton = style({

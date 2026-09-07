@@ -136,15 +136,6 @@ describe("HomePage interactions", () => {
     );
   });
 
-  it("opens a random palette's page when clicking Random palette", async () => {
-    const user = userEvent.setup();
-    renderHome();
-    await screen.findByRole("link", { name: "Sea Breeze" });
-    await user.click(screen.getByRole("button", { name: "Random palette" }));
-    // The single fixture palette is owned by the curator, so its page is /u/palette/sea-breeze.
-    expect(screen.getByTestId("loc")).toHaveTextContent("/u/palette/sea-breeze");
-  });
-
   it("shows an API-error state when the backend fails", async () => {
     vi.mocked(palettesApi.listPalettes).mockRejectedValue(new ApiError("down", 500));
     renderHome();

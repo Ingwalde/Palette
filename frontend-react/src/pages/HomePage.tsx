@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { usePalettesInfinite, useTags } from "../api/hooks";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { usePalettes, usePalettesInfinite, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
@@ -43,7 +43,6 @@ export function HomePage() {
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
   const [params, setParams] = useSearchParams();
-  const navigate = useNavigate();
   const location = useLocation();
   const q = params.get("q") ?? "";
   const tag = params.get("tag") ?? "all";
@@ -109,9 +108,9 @@ export function HomePage() {
       return next;
     });
 
-  // Only the debounce effect above writes `q`, so clearing (and Random below) just empties the
-  // draft and lets that one path carry it to the URL — writing `q` here as well would race the
-  // still-pending debounced value and get clobbered by it.
+  // Only the debounce effect above writes `q`, so clearing just empties the draft and lets that one
+  // path carry it to the URL — writing `q` here as well would race the still-pending debounced
+  // value and get clobbered by it.
   const clearSearch = () => setDraft("");
 
   const { data: tags } = useTags();
@@ -167,17 +166,19 @@ export function HomePage() {
   });
   const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const total = data?.pages[0]?.total ?? 0;
-  // The hero preview shows a real palette — the first result — instead of four painted rectangles.
-  const featured = palettes[0];
 
-  // Random opens a random palette's page (it used to write a name into the search box, which was
-  // not a random palette but a filter over the already-filtered set). The current query string
-  // rides along as `from`, so the back link returns to this exact catalogue view.
-  const randomPalette = () => {
-    if (palettes.length === 0) return;
-    const pick = palettes[Math.floor(Math.random() * palettes.length)];
-    navigate(palettePath(pick), { state: { from: location.search } });
-  };
+  // The hero preview shows a real palette — a fresh random one on each visit, drawn from a small
+  // pool that is independent of the catalogue's current search/tag filter (so filtering the grid
+  // does not swap the decorative preview). Only palettes with four or more colours qualify, since
+  // the preview is a 2x2 grid. `heroSeed` is fixed once per mount, so the pick is stable across
+  // re-renders (typing, scrolling) but new the next time the page is opened.
+  const { data: heroPool } = usePalettes({ sort: "popular", limit: 48 });
+  const heroSeed = useMemo(() => Math.random(), []);
+  const featured = useMemo(() => {
+    const pool = (heroPool?.items ?? []).filter((p) => p.colors.length >= 4);
+    if (pool.length === 0) return undefined;
+    return pool[Math.floor(heroSeed * pool.length)];
+  }, [heroPool, heroSeed]);
 
   return (
     <>
@@ -193,13 +194,6 @@ export function HomePage() {
             <a className={buttonClass("primary")} href="#palettes">
               Browse palettes
             </a>
-            <button
-              className={buttonClass("secondary")}
-              type="button"
-              onClick={randomPalette}
-            >
-              Random palette
-            </button>
           </div>
           <Link className={styles.heroWhatsNew} to="/changelog">
             What's new in v5.0
@@ -240,72 +234,79 @@ export function HomePage() {
         className={`${ui.section} ${styles.toolbarSection}`}
         aria-label="Palette tools"
       >
-        <div className={ui.toolbar}>
-          <label className={ui.searchField} htmlFor="searchInput">
-            <span className={ui.visuallyHidden}>Search palettes</span>
-            <input
-              id="searchInput"
-              type="search"
-              placeholder="Search by name, description or tag..."
-              autoComplete="off"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <button
-              type="button"
-              className={ui.searchClear}
-              aria-label="Clear search"
-              onClick={clearSearch}
-            ></button>
-          </label>
-
-          <CustomSelect
-            options={SORT_OPTIONS}
-            value={sort}
-            onChange={(v) => selectSort(v as FeedSort)}
-            ariaLabel="Sort palettes"
-          />
-          <CustomSelect
-            options={FORMAT_OPTIONS}
-            value={format}
-            onChange={(v) => setFormat(v as ColorFormat)}
-            ariaLabel="Color format"
-          />
-        </div>
-
-        {/* role="group" so the label is announced: an aria-label on a bare div is dropped. */}
-        <div
-          className={styles.tagFilters}
-          role="group"
-          aria-label="Filter palettes by tag"
-        >
-          <button
-            type="button"
-            className={`${styles.tagButton}${tag === "all" ? ` ${styles.tagButtonActive}` : ""}`}
-            aria-pressed={tag === "all"}
-            data-tag="all"
-            onClick={() => selectTag("all")}
-          >
-            All
-          </button>
-          {visibleTags.map(tagChip)}
-
-          {overflowTags.length > 0 && (
-            <button
-              type="button"
-              className={styles.moreTags}
-              aria-expanded={showAllTags}
-              aria-controls="more-tags"
-              onClick={() => setShowAllTags((v) => !v)}
+        <div className={styles.searchPanel}>
+          <div className={styles.toolbarRow}>
+            <label
+              className={`${ui.searchField} ${styles.searchGrow}`}
+              htmlFor="searchInput"
             >
-              {showAllTags ? "Fewer tags" : "More tags"}
-            </button>
-          )}
+              <span className={ui.visuallyHidden}>Search palettes</span>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Search by name, description or tag..."
+                autoComplete="off"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              <button
+                type="button"
+                className={ui.searchClear}
+                aria-label="Clear search"
+                onClick={clearSearch}
+              ></button>
+            </label>
 
-          {/* Kept in the DOM and toggled with `hidden` so the More tags button genuinely controls
+            <div className={styles.toolbarControls}>
+              <CustomSelect
+                options={SORT_OPTIONS}
+                value={sort}
+                onChange={(v) => selectSort(v as FeedSort)}
+                ariaLabel="Sort palettes"
+              />
+              <CustomSelect
+                options={FORMAT_OPTIONS}
+                value={format}
+                onChange={(v) => setFormat(v as ColorFormat)}
+                ariaLabel="Color format"
+              />
+            </div>
+          </div>
+
+          {/* role="group" so the label is announced: an aria-label on a bare div is dropped. */}
+          <div
+            className={styles.tagFilters}
+            role="group"
+            aria-label="Filter palettes by tag"
+          >
+            <button
+              type="button"
+              className={`${styles.tagButton}${tag === "all" ? ` ${styles.tagButtonActive}` : ""}`}
+              aria-pressed={tag === "all"}
+              data-tag="all"
+              onClick={() => selectTag("all")}
+            >
+              All
+            </button>
+            {visibleTags.map(tagChip)}
+
+            {overflowTags.length > 0 && (
+              <button
+                type="button"
+                className={styles.moreTags}
+                aria-expanded={showAllTags}
+                aria-controls="more-tags"
+                onClick={() => setShowAllTags((v) => !v)}
+              >
+                {showAllTags ? "Fewer tags" : "More tags"}
+              </button>
+            )}
+
+            {/* Kept in the DOM and toggled with `hidden` so the More tags button genuinely controls
               a region a screen reader can find. */}
-          <div id="more-tags" className={styles.moreTagsList} hidden={!showAllTags}>
-            {overflowTags.map(tagChip)}
+            <div id="more-tags" className={styles.moreTagsList} hidden={!showAllTags}>
+              {overflowTags.map(tagChip)}
+            </div>
           </div>
         </div>
       </section>
