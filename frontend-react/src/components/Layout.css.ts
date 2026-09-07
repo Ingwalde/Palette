@@ -93,18 +93,21 @@ export const mobileActions = style({
   },
 });
 
-// The account as a round avatar (its initial) linking to the profile page.
-export const avatar = style({
+// The account as a round avatar (its initial); it is the button that opens the phone menu.
+export const avatarButton = style({
   display: "grid",
   placeItems: "center",
   width: "40px",
   height: "40px",
   flexShrink: 0,
+  border: "none",
   borderRadius: "50%",
+  cursor: "pointer",
   color: vars.color.onPrimary,
   background: vars.color.primary,
+  fontFamily: "inherit",
   fontWeight: 700,
-  textDecoration: "none",
+  fontSize: "1rem",
 });
 
 /**
