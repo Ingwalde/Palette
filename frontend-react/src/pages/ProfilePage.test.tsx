@@ -28,6 +28,11 @@ vi.mock("../api/auth", () => ({
   changePassword: vi.fn(() => Promise.resolve({ message: "ok" })),
   resendVerification: vi.fn(() => Promise.resolve({ message: "sent" })),
   deleteAccount: vi.fn(() => Promise.resolve()),
+  setAvatar: vi.fn(() => Promise.resolve(user)),
+  clearAvatar: vi.fn(() => Promise.resolve()),
+}));
+vi.mock("../lib/avatar", () => ({
+  fileToAvatarDataUrl: vi.fn(() => Promise.resolve("data:image/jpeg;base64,ZZZZ")),
 }));
 
 function renderProfile() {
@@ -149,5 +154,17 @@ describe("ProfilePage", () => {
 
     expect(authApi.logoutEverywhere).toHaveBeenCalledTimes(1);
     expect(await screen.findByText("HOME PAGE")).toBeInTheDocument();
+  });
+
+  it("uploads a downscaled avatar and toasts", async () => {
+    const u = userEvent.setup();
+    const { container } = renderProfile();
+    await screen.findByRole("heading", { name: "demo" });
+
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await u.upload(input, new File(["x"], "me.png", { type: "image/png" }));
+
+    expect(authApi.setAvatar).toHaveBeenCalledWith("data:image/jpeg;base64,ZZZZ");
+    expect(await screen.findByText("Profile photo updated")).toBeInTheDocument();
   });
 });

@@ -63,6 +63,16 @@ export function resetPassword(payload: ResetPasswordPayload): Promise<MessageRes
   });
 }
 
+// Set the signed-in user's avatar to an image data URL (the client downscales it first). Returns
+// the updated user so the /auth/me cache can be refreshed.
+export function setAvatar(avatar: string): Promise<User> {
+  return request<User>("/users/me/avatar", { method: "PUT", ...json({ avatar }) });
+}
+
+export function clearAvatar(): Promise<void> {
+  return request<void>("/users/me/avatar", { method: "DELETE" });
+}
+
 export function changePassword(payload: PasswordChangePayload): Promise<MessageResponse> {
   return request<MessageResponse>("/auth/password", { method: "PUT", ...json(payload) });
 }

@@ -173,6 +173,9 @@ class User(Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # A small, downscaled profile image stored as a data: URL (there is no object storage on the
+    # deploy target). Null until the user sets one; the UI falls back to the username initial.
+    avatar: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )

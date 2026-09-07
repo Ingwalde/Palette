@@ -6,6 +6,7 @@ import * as styles from "./Layout.css";
 interface MobileMenuProps {
   isAdmin: boolean;
   username: string;
+  avatarUrl?: string | null;
 }
 
 /**
@@ -14,7 +15,7 @@ interface MobileMenuProps {
  * The whole nav collapses in here because it does not fit a narrow header — Home lives on the logo
  * too, but is repeated here for reach.
  */
-export function MobileMenu({ isAdmin, username }: MobileMenuProps) {
+export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -57,7 +58,11 @@ export function MobileMenu({ isAdmin, username }: MobileMenuProps) {
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
       >
-        {username.charAt(0).toUpperCase()}
+        {avatarUrl ? (
+          <img className={styles.avatarImage} src={avatarUrl} alt="" />
+        ) : (
+          username.charAt(0).toUpperCase()
+        )}
       </button>
 
       {/* A disclosure of links, not an ARIA menu widget (which would demand arrow-key roving) — a

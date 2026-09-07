@@ -102,12 +102,19 @@ export const avatarButton = style({
   flexShrink: 0,
   border: "none",
   borderRadius: "50%",
+  overflow: "hidden",
   cursor: "pointer",
   color: vars.color.onPrimary,
   background: vars.color.primary,
   fontFamily: "inherit",
   fontWeight: 700,
   fontSize: "1rem",
+});
+
+export const avatarImage = style({
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
 });
 
 /**

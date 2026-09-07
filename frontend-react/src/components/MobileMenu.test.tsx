@@ -5,11 +5,15 @@ import { describe, it, expect } from "vitest";
 import { MobileMenu } from "./MobileMenu";
 import { ThemeProvider } from "./ThemeContext";
 
-function renderMenu(props: { isAdmin: boolean; username?: string }) {
+function renderMenu(props: { isAdmin: boolean; username?: string; avatarUrl?: string }) {
   return render(
     <ThemeProvider>
       <MemoryRouter>
-        <MobileMenu isAdmin={props.isAdmin} username={props.username ?? "ann"} />
+        <MobileMenu
+          isAdmin={props.isAdmin}
+          username={props.username ?? "ann"}
+          avatarUrl={props.avatarUrl}
+        />
       </MemoryRouter>
     </ThemeProvider>,
   );
@@ -33,6 +37,15 @@ describe("MobileMenu", () => {
       expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
     }
     expect(within(menu).getByRole("group", { name: "Theme" })).toBeInTheDocument();
+  });
+
+  it("shows the avatar image on the trigger when one is set", () => {
+    renderMenu({ isAdmin: false, avatarUrl: "data:image/png;base64,AAAA" });
+    const trigger = screen.getByRole("button", { name: /Account menu/ });
+    // alt="" makes it presentational, so query the element directly rather than by role.
+    const img = trigger.querySelector("img");
+    expect(img).toHaveAttribute("src", "data:image/png;base64,AAAA");
+    expect(trigger).not.toHaveTextContent("A");
   });
 
   it("omits Admin for a non-admin", async () => {

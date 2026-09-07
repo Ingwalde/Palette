@@ -337,9 +337,33 @@ class UserRead(UserBase):
     email: str
     is_admin: bool
     email_verified: bool
+    # A data: URL for the profile image, or null to fall back to the username initial.
+    avatar: str | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# An avatar is stored as a data: URL. Capped so the row (and every /auth/me response) stays small;
+# the client downscales to ~128px first, which lands far under this.
+_AVATAR_MAX_LEN = 700_000
+_AVATAR_PREFIXES = (
+    "data:image/png;base64,",
+    "data:image/jpeg;base64,",
+    "data:image/webp;base64,",
+    "data:image/gif;base64,",
+)
+
+
+class AvatarUpdate(BaseModel):
+    avatar: str = Field(min_length=1, max_length=_AVATAR_MAX_LEN)
+
+    @field_validator("avatar")
+    @classmethod
+    def _validate_data_url(cls, avatar: str) -> str:
+        if not avatar.startswith(_AVATAR_PREFIXES):
+            raise ValueError("avatar must be a base64 PNG, JPEG, WebP or GIF data URL")
+        return avatar
 
 
 class ResendVerificationRequest(BaseModel):

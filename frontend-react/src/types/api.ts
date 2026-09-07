@@ -90,6 +90,8 @@ export interface User {
   email: string;
   is_admin: boolean;
   email_verified: boolean;
+  // A data: URL for the profile image, or null/absent to fall back to the username initial.
+  avatar?: string | null;
   created_at: string;
 }
 

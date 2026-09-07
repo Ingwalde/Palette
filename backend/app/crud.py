@@ -590,6 +590,13 @@ async def set_email_verified(db: AsyncSession, user: models.User) -> models.User
     return user
 
 
+async def set_user_avatar(db: AsyncSession, user: models.User, avatar: str | None) -> models.User:
+    user.avatar = avatar
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def is_only_admin(db: AsyncSession, user: models.User) -> bool:
     if not user.is_admin:
         return False

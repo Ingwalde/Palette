@@ -23,7 +23,7 @@ import { buttonClass } from "../styles/ui";
 import * as styles from "./ImportPage.css";
 
 const DEFAULT_COUNT = 6;
-const MIN_COUNT = 3;
+const MIN_COUNT = 2;
 const MAX_COUNT = 8;
 
 export function ImportPage() {
