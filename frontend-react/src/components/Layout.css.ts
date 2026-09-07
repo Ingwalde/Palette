@@ -26,6 +26,9 @@ export const header = style({
   // anything behind it.
   background: `color-mix(in srgb, ${vars.color.surface} 94%, transparent)`,
   boxShadow: vars.shadow.soft,
+  // Safari (including iOS) still needs the -webkit- prefix — without it the blur never applies, and
+  // the unblurred translucent sticky header over the scrolling page leaves a 1px seam on iOS.
+  WebkitBackdropFilter: "blur(18px)",
   backdropFilter: "blur(18px)",
   "@media": {
     // The phone header is just the logo and the compact actions on one row, so it stays a pill.
@@ -234,6 +237,7 @@ export const footerPanel = style({
   borderRadius: vars.radius.lg,
   background: vars.color.surfaceGlass,
   boxShadow: vars.shadow.soft,
+  WebkitBackdropFilter: "blur(16px)",
   backdropFilter: "blur(16px)",
   "@media": {
     [NARROW]: {
@@ -422,6 +426,7 @@ export const mobileMenuPanel = style({
   borderRadius: vars.radius.md,
   background: `color-mix(in srgb, ${vars.color.surface} 97%, transparent)`,
   boxShadow: vars.shadow.soft,
+  WebkitBackdropFilter: "blur(18px)",
   backdropFilter: "blur(18px)",
   selectors: {
     // `display: flex` above beats the user-agent `[hidden] { display: none }`, so the panel would
