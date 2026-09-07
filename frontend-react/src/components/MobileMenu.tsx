@@ -65,6 +65,12 @@ export function MobileMenu({ isAuthenticated, isAdmin }: MobileMenuProps) {
         aria-label="More"
         hidden={!open}
       >
+        <NavLink to="/" end className={itemClass}>
+          Home
+        </NavLink>
+        <NavLink to="/favorites" className={itemClass}>
+          Favorites
+        </NavLink>
         <NavLink to="/export" className={itemClass}>
           Export
         </NavLink>

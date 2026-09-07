@@ -25,19 +25,21 @@ describe("MobileMenu", () => {
     await u.click(button);
     expect(button).toHaveAttribute("aria-expanded", "true");
     const menu = screen.getByRole("navigation", { name: "More" });
-    expect(within(menu).getByRole("link", { name: "Export" })).toBeInTheDocument();
-    expect(within(menu).getByRole("link", { name: "Create" })).toBeInTheDocument();
-    expect(within(menu).getByRole("link", { name: "Admin" })).toBeInTheDocument();
+    for (const name of ["Home", "Favorites", "Export", "Create", "Admin"]) {
+      expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
+    }
     // The theme control rides along in the menu.
     expect(within(menu).getByRole("group", { name: "Theme" })).toBeInTheDocument();
   });
 
-  it("omits Create and Admin for a guest", async () => {
+  it("shows the shared tabs but omits Create and Admin for a guest", async () => {
     const u = userEvent.setup();
     renderMenu({ isAuthenticated: false, isAdmin: false });
     await u.click(screen.getByRole("button", { name: "Menu" }));
     const menu = screen.getByRole("navigation", { name: "More" });
-    expect(within(menu).getByRole("link", { name: "Export" })).toBeInTheDocument();
+    for (const name of ["Home", "Favorites", "Export"]) {
+      expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
+    }
     expect(within(menu).queryByRole("link", { name: "Create" })).not.toBeInTheDocument();
     expect(within(menu).queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
   });
