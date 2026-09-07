@@ -58,13 +58,17 @@ export const modePill = style({
   top: "5px",
   bottom: "5px",
   left: "5px",
-  width: "calc(50% - 5px)",
+  // Three equal tabs (palettes/tags/reports): one third of the inner width each. The thumb is one
+  // button wide and slides by whole buttons — the old `calc(50% - 5px)` was built for two tabs and
+  // overhung "Tags".
+  width: "calc((100% - 10px) / 3)",
   borderRadius: "999px",
   background: vars.color.primary,
   boxShadow: "0 10px 24px rgba(47, 45, 42, 0.14)",
-  transition: "left 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+  transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
   selectors: {
-    '[data-active="tags"] &': { left: "50%" },
+    '[data-active="tags"] &': { transform: "translateX(100%)" },
+    '[data-active="reports"] &': { transform: "translateX(200%)" },
   },
   "@media": {
     "(prefers-reduced-motion: reduce)": { transition: "none" },

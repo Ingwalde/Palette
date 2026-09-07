@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import type { CSSProperties } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import * as styles from "./CreateTabs.css";
 
 const TABS = [
@@ -10,9 +11,21 @@ const TABS = [
  * top of both pages so they read as a single "Create" flow. */
 export function CreateTabs() {
   // Route links, not in-page tabs — a labelled nav, so no ARIA tab/tabpanel roles (which axe would
-  // flag without a matching panel). The active link carries aria-current from NavLink.
+  // flag without a matching panel). The active link carries aria-current from NavLink; the index
+  // also drives the sliding thumb below.
+  const { pathname } = useLocation();
+  const activeIndex = Math.max(
+    0,
+    TABS.findIndex((tab) => pathname === tab.to),
+  );
+
   return (
-    <nav className={styles.tabs} aria-label="Create a palette">
+    <nav
+      className={styles.tabs}
+      aria-label="Create a palette"
+      style={{ "--tab-count": TABS.length, "--tab-active": activeIndex } as CSSProperties}
+    >
+      <span className={styles.thumb} aria-hidden="true" />
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}
