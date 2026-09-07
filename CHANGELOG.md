@@ -1,5 +1,15 @@
 # Changelog
 
+## v5.0.1 — Two-colour imports and profile photos
+
+- **Two-colour imports** — the image extractor's colour count can now go as low as two (the slider
+  minimum dropped from three); the backend and the editor already accepted a two-colour palette.
+- **Profile photos** — a user can upload a profile image on the account page. It is downscaled to
+  128px on the client and stored as a capped data URL on the user (`avatar`), served back on
+  `/auth/me`; the profile page and the mobile menu's avatar show it, falling back to the username
+  initial. New `PUT` / `DELETE /api/v1/users/me/avatar` endpoints (rate-limited, data-URL validated)
+  and migration `0011_user_avatar`.
+
 ## v5.0.0 — Palette becomes a community
 
 Palette stops being a read-only catalogue and becomes a place people contribute to: accounts own

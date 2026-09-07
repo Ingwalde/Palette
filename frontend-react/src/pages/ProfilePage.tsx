@@ -6,7 +6,14 @@ import { useModal } from "../components/modal/ModalProvider";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
 import { queryKeys } from "../api/queryKeys";
-import { changePassword, resendVerification, deleteAccount } from "../api/auth";
+import {
+  changePassword,
+  resendVerification,
+  deleteAccount,
+  setAvatar,
+  clearAvatar,
+} from "../api/auth";
+import { fileToAvatarDataUrl } from "../lib/avatar";
 import { ApiError } from "../lib/http";
 import * as ui from "../styles/ui.css";
 import { buttonClass } from "../styles/ui";
@@ -46,6 +53,31 @@ export function ProfilePage() {
   const err = (e: unknown) =>
     e instanceof ApiError ? e.message : "Something went wrong";
   const initial = user.username.charAt(0).toUpperCase() || "U";
+
+  const onAvatarFile = async (e: FormEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    input.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      await setAvatar(dataUrl);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auth });
+      showToast("Profile photo updated");
+    } catch (e) {
+      showToast(err(e), "error");
+    }
+  };
+
+  const onRemoveAvatar = async () => {
+    try {
+      await clearAvatar();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.auth });
+      showToast("Profile photo removed");
+    } catch (e) {
+      showToast(err(e), "error");
+    }
+  };
 
   const onResend = async () => {
     setResending(true);
@@ -145,11 +177,35 @@ export function ProfilePage() {
         <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div className={styles.avatar} aria-hidden="true">
-              {initial}
+              {user.avatar ? (
+                <img className={styles.avatarImage} src={user.avatar} alt="" />
+              ) : (
+                initial
+              )}
             </div>
-            <div>
+            <div className={styles.identity}>
               <p className={ui.eyebrow}>Logged in as</p>
               <h2>{user.username}</h2>
+              <div className={styles.avatarActions}>
+                <label className={buttonClass("secondary")}>
+                  {user.avatar ? "Change photo" : "Add photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => void onAvatarFile(e)}
+                  />
+                </label>
+                {user.avatar && (
+                  <button
+                    type="button"
+                    className={buttonClass("ghost")}
+                    onClick={() => void onRemoveAvatar()}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

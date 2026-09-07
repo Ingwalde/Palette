@@ -44,11 +44,31 @@ export const avatar = style({
   flex: "0 0 72px",
   placeItems: "center",
   borderRadius: "50%",
+  overflow: "hidden",
   color: vars.color.onPrimary,
   background: vars.color.primary,
   fontSize: "1.6rem",
   fontWeight: 700,
-  boxShadow: "0 14px 32px rgba(47, 45, 42, 0.18)",
+  boxShadow: vars.shadow.soft,
+});
+
+export const avatarImage = style({
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+});
+
+export const identity = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+});
+
+export const avatarActions = style({
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+  marginTop: "6px",
 });
 
 export const detail = style({

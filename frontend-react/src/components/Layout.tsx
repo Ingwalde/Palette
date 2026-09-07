@@ -115,7 +115,11 @@ export function Layout() {
             a Login link. */}
         <div className={styles.mobileActions}>
           {isAuthenticated ? (
-            <MobileMenu isAdmin={isAdmin} username={user?.username ?? "?"} />
+            <MobileMenu
+              isAdmin={isAdmin}
+              username={user?.username ?? "?"}
+              avatarUrl={user?.avatar}
+            />
           ) : (
             <NavLink
               to="/login"

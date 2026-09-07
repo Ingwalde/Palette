@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.0.1",
+    title: "Two-colour imports and profile photos",
+    items: [
+      "Import a palette with as few as two colours — the extractor's minimum dropped from three.",
+      "Set a profile photo: upload an image on your account page and it appears as your avatar; the mobile menu opens from it.",
+    ],
+  },
+  {
     version: "v5.0",
     title: "Palette becomes a community",
     items: [
