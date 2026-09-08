@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { usePalettes, usePalettesInfinite, useTags } from "../api/hooks";
+import { Link, useSearchParams } from "react-router-dom";
+import { useFavorites, usePalettes, usePalettesInfinite, useTags } from "../api/hooks";
+import { useAuth } from "../auth/AuthContext";
 import { useDebounce } from "../lib/useDebounce";
-import { palettePath } from "../lib/palettePath";
 import { PaletteCard } from "../components/PaletteCard";
 import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
+import { HeroPaletteWidget } from "../components/HeroPaletteWidget";
+import { TaskRouter } from "../components/TaskRouter";
 import { CustomSelect } from "../components/CustomSelect";
 import { useColorFormat } from "../components/ColorFormatContext";
 import type { ColorFormat } from "../lib/color";
@@ -43,7 +45,6 @@ export function HomePage() {
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
   const [params, setParams] = useSearchParams();
-  const location = useLocation();
   const q = params.get("q") ?? "";
   const tag = params.get("tag") ?? "all";
   const rawSort = params.get("sort");
@@ -167,55 +168,81 @@ export function HomePage() {
   const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const total = data?.pages[0]?.total ?? 0;
 
-  // The hero preview shows a real palette — a fresh random one on each visit, drawn from a small
-  // pool that is independent of the catalogue's current search/tag filter (so filtering the grid
-  // does not swap the decorative preview). Only palettes with four or more colours qualify, since
-  // the preview is a 2x2 grid. `heroSeed` is fixed once per mount, so the pick is stable across
-  // re-renders (typing, scrolling) but new the next time the page is opened.
+  // The hero shows a real featured palette, drawn from a small pool independent of the catalogue's
+  // current search/tag filter (so filtering the grid never swaps it). Only palettes with four or
+  // more colours qualify. `heroSeed` is state, not a memo, so the Shuffle button can draw a new one
+  // without a navigation; it still starts fresh on each mount, so a new visit shows a different one.
   const { data: heroPool } = usePalettes({ sort: "popular", limit: 48 });
-  const heroSeed = useMemo(() => Math.random(), []);
+  const [heroSeed, setHeroSeed] = useState(() => Math.random());
+  const reshuffle = () => setHeroSeed(Math.random());
   const featured = useMemo(() => {
     const pool = (heroPool?.items ?? []).filter((p) => p.colors.length >= 4);
     if (pool.length === 0) return undefined;
     return pool[Math.floor(heroSeed * pool.length)];
   }, [heroPool, heroSeed]);
 
+  // Micro-proof under the hero CTA: the live catalogue size and tag count, so the page reads as
+  // active rather than a static landing. `total` is the full public count from the pool query.
+  const { isAuthenticated, user } = useAuth();
+  const { data: favorites } = useFavorites();
+  const favoriteCount = favorites?.length ?? 0;
+  const paletteTotal = heroPool?.total ?? 0;
+  const tagTotal = tags?.length ?? 0;
+  const statsLine =
+    paletteTotal > 0
+      ? `${paletteTotal} palette${paletteTotal === 1 ? "" : "s"} · ${tagTotal} tag${tagTotal === 1 ? "" : "s"}`
+      : "";
+
   return (
     <>
       <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
         <div>
-          <p className={ui.eyebrow}>Curated color palettes</p>
-          <h1 id="hero-title">Find the right colors for your space</h1>
-          <p className={ui.heroText}>
-            Search by name, tag or color. Check contrast before you commit. Export to CSS,
-            JSON or PNG, and save what you like to your account.
-          </p>
-          <div className={styles.heroActions}>
-            <a className={buttonClass("primary")} href="#palettes">
-              Browse palettes
-            </a>
-          </div>
+          {isAuthenticated ? (
+            <>
+              <p className={ui.eyebrow}>Welcome back</p>
+              <h1 id="hero-title">{user?.username ?? "Your palettes"}</h1>
+              <p className={ui.heroText}>
+                Pick up where you left off, or start something new.
+              </p>
+              <div className={styles.heroActions}>
+                <Link className={buttonClass("primary")} to="/palettes/new">
+                  Create palette
+                </Link>
+                <Link className={buttonClass("secondary")} to="/favorites">
+                  Your favorites{favoriteCount > 0 ? ` (${favoriteCount})` : ""}
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className={ui.eyebrow}>Curated color palettes</p>
+              <h1 id="hero-title">Copy-ready color palettes, tested for contrast.</h1>
+              <p className={ui.heroText}>
+                Search the community's palettes, check their accessibility, and make them
+                your own.
+              </p>
+              <div className={styles.heroActions}>
+                <a className={buttonClass("primary")} href="#palettes">
+                  Browse palettes
+                </a>
+                <Link className={buttonClass("secondary")} to="/login">
+                  Create free account
+                </Link>
+              </div>
+            </>
+          )}
+          {statsLine && (
+            <p className={styles.heroStats} aria-live="polite">
+              {statsLine}
+            </p>
+          )}
           <Link className={styles.heroWhatsNew} to="/changelog">
-            What's new in v5.0
+            What's new in v5.1
           </Link>
         </div>
 
         {featured ? (
-          <Link
-            to={palettePath(featured)}
-            state={{ from: location.search }}
-            className={styles.heroPreview}
-            aria-label={`Featured palette: ${featured.name}`}
-          >
-            <div className={styles.heroPreviewWindow}>
-              <div className={styles.heroPreviewTop}></div>
-              <div className={styles.heroPreviewGrid}>
-                {featured.colors.slice(0, 4).map((color, i) => (
-                  <span key={i} style={{ background: color }} />
-                ))}
-              </div>
-            </div>
-          </Link>
+          <HeroPaletteWidget palette={featured} onShuffle={reshuffle} />
         ) : (
           <div className={styles.heroPreview} aria-hidden="true">
             <div className={styles.heroPreviewWindow}>
@@ -228,6 +255,13 @@ export function HomePage() {
             </div>
           </div>
         )}
+      </section>
+
+      <section
+        className={`${ui.section} ${styles.routerSection}`}
+        aria-label="Get started"
+      >
+        <TaskRouter />
       </section>
 
       <section
@@ -319,7 +353,7 @@ export function HomePage() {
         <div className={ui.sectionHeading}>
           <div>
             <p className={ui.eyebrow}>Browse</p>
-            <h2 id="palettes-title">All palettes</h2>
+            <h2 id="palettes-title">Explore the community</h2>
           </div>
           <p className={styles.resultCount} aria-live="polite">
             {isLoading

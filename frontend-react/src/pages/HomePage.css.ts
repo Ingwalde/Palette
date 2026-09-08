@@ -22,15 +22,28 @@ export const heroActions = style({
   marginTop: "28px",
 });
 
+// Live catalogue counts under the CTA — proof the page is active, not a static landing.
+export const heroStats = style({
+  margin: "18px 0 0",
+  color: vars.color.muted,
+  fontSize: "0.9rem",
+  fontWeight: 600,
+});
+
 export const heroWhatsNew = style({
   display: "inline-block",
-  marginTop: "16px",
+  marginTop: "12px",
   color: vars.color.muted,
   fontSize: "0.9rem",
   textDecoration: "underline",
   textUnderlineOffset: "3px",
   transition: vars.motion.transition,
   ":hover": { color: vars.color.text },
+});
+
+// The three-entry task router sits between the hero and the search feed.
+export const routerSection = style({
+  padding: "8px 0 20px",
 });
 
 export const heroPreview = style({
