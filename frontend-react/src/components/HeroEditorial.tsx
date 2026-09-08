@@ -38,6 +38,23 @@ const ShuffleIcon = (
   </svg>
 );
 
+// A double chevron pointing at the catalogue below the fold.
+const ChevronsDown = (
+  <svg
+    className={styles.observeIcon}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="m7 6 5 5 5-5" />
+    <path d="m7 13 5 5 5-5" />
+  </svg>
+);
+
 /** The artwork field — one of the ten approved compositions, drawn from the scene's colours. */
 function Artwork({ scene }: { scene: HeroScene }) {
   const template = TEMPLATES[scene.count][scene.variant === "A" ? 0 : 1];
@@ -147,7 +164,9 @@ export function HeroEditorial() {
               <span key={i} style={{ background: color } as CSSProperties} />
             ))}
           </div>
-          <span className={styles.bottomLabel}>A palette. A starting point.</span>
+          <a className={styles.bottomLabel} href="#palettes">
+            Observe {ChevronsDown}
+          </a>
           <button type="button" className={styles.shuffle} onClick={cycle}>
             {ShuffleIcon} Another combination
           </button>

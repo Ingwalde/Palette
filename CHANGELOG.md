@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.2.1 — Home polish
+
+- **Full-height hero** — the home hero now fills the first screen, so a fresh load shows only the
+  hero and the search station sits just below the fold, reached with a small scroll.
+- **Light / Dark theme toggle** — the header switch drops "Auto" for a two-state Light/Dark control
+  with sun and moon icons; a visitor who has not chosen still follows their system theme.
+- **Readable filter controls** — the sort and colour-format selects are wide enough to show their
+  longest options in full ("Most popular", "OKLCH") instead of clipping to an ellipsis.
+- The under-hero label is now an **"Observe"** scroll cue that links to the catalogue, and the
+  sticky header no longer paints a faint full-width seam while the page scrolls.
+
 ## v5.2.0 — A random colour study on every visit
 
 - **Random hero composition** — every visit to the home page picks, at random and independently, a

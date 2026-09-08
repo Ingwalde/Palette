@@ -200,13 +200,27 @@ for (const { name, path, fullPage = true } of ADMIN_ROUTES) {
 // commit that moves its component.
 
 test("state: sort select open", async ({ page }) => {
-  await open(page, "/");
+  await freezeRandom(page);
+  await stub(page, { loggedIn: false });
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.evaluate(() => document.fonts.ready);
+  await unstick(page);
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = "auto";
+  });
+  // The search station now sits below the full-height hero, so scroll it into view rather than
+  // pinning to the top (where the open list would be off-screen). Park the control at a fixed
+  // offset from the top so the capture is deterministic.
   const sort = page.getByRole("button", { name: "Sort palettes" });
+  await sort.scrollIntoViewIfNeeded();
   await sort.click();
   await expect(sort).toHaveAttribute("aria-expanded", "true");
-  // The control sits at the bottom of the fold and its open list runs past it, so the click
-  // itself scrolls the page. settle() puts it back.
-  await settle(page);
+  const y = await page.evaluate(() => {
+    const el = document.querySelector('[aria-label="Sort palettes"]');
+    return el ? window.scrollY + el.getBoundingClientRect().top - 40 : 0;
+  });
+  await page.evaluate((top) => window.scrollTo(0, top), y);
+  await page.waitForTimeout(300);
   await expect(page).toHaveScreenshot("state-select-open.png");
 });
 
