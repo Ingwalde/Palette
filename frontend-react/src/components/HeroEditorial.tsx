@@ -1,14 +1,7 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { usePalettes } from "../api/hooks";
-import type { Palette } from "../types/api";
+import { useState, type CSSProperties } from "react";
 import * as ui from "../styles/ui.css";
 import * as styles from "./HeroEditorial.css";
-
-// Shown until the real palettes load, so the artwork is never blank on first paint.
-const FALLBACK: Pick<Palette, "name" | "colors"> = {
-  name: "Earth & air",
-  colors: ["#D56F51", "#ECD9B9", "#697657", "#BFC8AE", "#30372F"],
-};
+import { createHeroScene, TEMPLATES, type HeroScene } from "./heroScene";
 
 const ArrowUpRight = (
   <svg
@@ -45,58 +38,62 @@ const ShuffleIcon = (
   </svg>
 );
 
+/** The artwork field — one of the ten approved compositions, drawn from the scene's colours. */
+function Artwork({ scene }: { scene: HeroScene }) {
+  const template = TEMPLATES[scene.count][scene.variant === "A" ? 0 : 1];
+  return (
+    // The art field keeps the approved 1.18 aspect ratio so circles stay circular; the paper card
+    // around it fills any spare space with the same background colour.
+    <div
+      className={styles.artField}
+      style={{ background: scene.colors[0] } as CSSProperties}
+    >
+      {template.shapes.map(([colorIndex, x, y, w, h, radius], i) => (
+        <span
+          key={i}
+          className={styles.shape}
+          style={
+            {
+              background: scene.colors[colorIndex],
+              left: `${x}%`,
+              top: `${y}%`,
+              width: `${w}%`,
+              height: `${h}%`,
+              borderRadius: radius,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
+}
+
 /**
- * The homepage hero — the approved "Editorial" composition, but its palette is a real one from the
- * catalogue rather than a fixed preset. The real header, navigation, auth and the catalogue below
- * are untouched; "Explore palettes" scrolls to the real `#palettes` anchor, and "Another
- * combination" picks another random published palette (from a small popular-sorted pool), driving
- * the artwork, the swatches, the print title and the HEX label from one piece of state.
+ * The homepage hero — the approved "Editorial" composition (02). On every visit it picks, at
+ * random and independently, a colour count (2–6), a palette of that size, and one of the two
+ * approved artworks for that count. The real header, navigation, auth and the catalogue below are
+ * untouched; "Explore palettes" scrolls to the real `#palettes` anchor, and "Another combination"
+ * re-rolls all three choices. Ordinary re-renders, theme changes, resize and catalogue work keep
+ * the current scene; only a fresh visit or the button changes it.
  */
 export function HeroEditorial() {
-  const { data } = usePalettes({ sort: "popular", limit: 48 });
-  // Any real palette with at least two colours can be featured; the artwork adapts to the count
-  // (see below), so nothing is faked by repeating a colour.
-  const pool = (data?.items ?? []).filter((p) => p.colors.length >= 2);
-
-  const [current, setCurrent] = useState<Pick<Palette, "name" | "colors"> | null>(null);
+  // Lazy initialiser: one scene per mount. React Router remounts HomePage on a fresh entry, so a
+  // new visit re-rolls; ordinary re-renders and theme changes reuse the stored scene.
+  const [scene, setScene] = useState<HeroScene>(() => createHeroScene(Math.random));
   const [announcement, setAnnouncement] = useState("");
 
-  // Pick a random palette once the pool arrives (a fresh mount shows a different one).
-  useEffect(() => {
-    if (!current && pool.length > 0) {
-      setCurrent(pool[Math.floor(Math.random() * pool.length)]);
-    }
-  }, [current, pool]);
-
-  const shown = current ?? FALLBACK;
-  const colors = shown.colors;
-
   const cycle = () => {
-    if (pool.length === 0) return;
-    let pick = pool[Math.floor(Math.random() * pool.length)];
-    // Avoid landing on the same palette twice in a row when there is a choice.
-    if (pool.length > 1) {
-      let guard = 0;
-      while (pick.name === shown.name && guard < 8) {
-        pick = pool[Math.floor(Math.random() * pool.length)];
-        guard += 1;
-      }
-    }
-    setCurrent(pick);
-    setAnnouncement(`${pick.name} palette.`);
+    const next = createHeroScene(Math.random);
+    setScene(next);
+    setAnnouncement(`${next.paletteName} palette, ${next.count} colours.`);
   };
 
-  const swatchVars = {
-    "--s0": colors[0 % colors.length],
-    "--s1": colors[1 % colors.length],
-    "--s2": colors[2 % colors.length],
-    "--s3": colors[3 % colors.length],
-    "--s4": colors[4 % colors.length],
-  } as CSSProperties;
+  const { colors, paletteName, count } = scene;
+  const chip = colors[1];
 
   return (
     <section className={`${ui.section} ${styles.heroWrap}`} aria-labelledby="hero-title">
-      <div className={styles.hero} style={swatchVars}>
+      <div className={styles.hero}>
         <div className={styles.grid}>
           <div>
             <p className={styles.eyebrow}>For the love of color</p>
@@ -118,37 +115,21 @@ export function HeroEditorial() {
           <div
             className={styles.stage}
             role="img"
-            aria-label={`Abstract color composition — the ${shown.name} palette on overlapping printed swatches`}
+            aria-label={`Abstract color composition — the ${paletteName} palette, ${count} colors`}
           >
             <div className={styles.print}>
               <div className={styles.printArt}>
-                {colors.length === 5 ? (
-                  // The approved editorial composition is a five-colour design, so use it only for a
-                  // five-colour palette (each shape a distinct colour).
-                  <>
-                    <div className={styles.circle} />
-                    <div className={styles.archShape} />
-                    <div className={styles.square} />
-                  </>
-                ) : (
-                  // Any other count gets a clean band print — one band per colour, so the palette's
-                  // real colours show without being repeated or dropped.
-                  <div className={styles.bands}>
-                    {colors.map((color, i) => (
-                      <span key={i} style={{ background: color } as CSSProperties} />
-                    ))}
-                  </div>
-                )}
+                <Artwork scene={scene} />
               </div>
-              <div className={styles.printTitle}>{shown.name}</div>
+              <div className={styles.printTitle}>{paletteName}</div>
               <div className={styles.printCaption}>
                 <span>Color study</span>
                 <span>Palette</span>
               </div>
             </div>
             <div className={styles.chip}>
-              <div className={styles.chipColor} />
-              <span className={styles.chipHex}>{colors[0]}</span>
+              <div className={styles.chipColor} style={{ background: chip } as CSSProperties} />
+              <span className={styles.chipHex}>{chip}</span>
             </div>
           </div>
         </div>
@@ -157,7 +138,7 @@ export function HeroEditorial() {
           <div
             className={styles.swatches}
             role="img"
-            aria-label={`Colors in the ${shown.name} palette`}
+            aria-label={`Colors in the ${paletteName} palette`}
           >
             {colors.map((color, i) => (
               <span key={i} style={{ background: color } as CSSProperties} />

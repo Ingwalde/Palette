@@ -431,3 +431,14 @@ Status: completed.
   unchanged; the hero follows the app's light and dark themes.
 - Count-aware artwork: a five-colour palette uses the geometric print; any other count uses a band
   print (one band per colour), and the swatch row shows every colour.
+
+## v5.2 — Random colour studies
+
+Status: completed.
+
+- Every visit picks, at random and independently, a colour count (2–6), a curated palette of that
+  size, and one of two approved artworks for that count — ten compositions in all.
+- "Another combination" re-rolls all three choices; ordinary browsing, theme changes and resize keep
+  the current scene, which is never persisted across visits.
+- Each colour is visible in the artwork itself; the chip shows the accent and the swatch row shows
+  exactly N swatches. The approved editorial hero layout is unchanged.

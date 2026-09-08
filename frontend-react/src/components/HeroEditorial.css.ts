@@ -201,55 +201,36 @@ export const print = style({
   },
 });
 
+// Fixed-height letterbox that holds the art field. The field itself paints the artwork background;
+// this wrapper centres it and matches that background so any spare space is seamless.
 export const printArt = style({
   position: "relative",
   height: "212px",
   overflow: "hidden",
-  background: "var(--s1)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   "@container": {
     "heroEd (max-width: 760px)": { height: "177px" },
     "heroEd (max-width: 620px)": { height: "112px" },
   },
 });
 
-export const circle = style({
-  position: "absolute",
-  width: "55%",
-  aspectRatio: "1",
-  borderRadius: "50%",
-  background: "var(--s0)",
-  top: "10%",
-  left: "24%",
-});
-export const archShape = style({
-  position: "absolute",
-  width: "68%",
-  height: "63%",
-  borderRadius: "100px 100px 0 0",
-  background: "var(--s2)",
-  left: "-10%",
-  bottom: 0,
-});
-export const square = style({
-  position: "absolute",
-  width: "49%",
-  height: "46%",
-  borderRadius: "100px 0 0 0",
-  background: "var(--s4)",
-  right: 0,
-  bottom: 0,
+// The approved colour studies are authored for a 1.18 art field, so the field keeps that ratio
+// (width derived from the fixed height). Circles stay circular across every colour count, and the
+// field clips shapes that run past its edge — the paper card and its shadow are never clipped.
+export const artField = style({
+  position: "relative",
+  height: "100%",
+  aspectRatio: "1.18",
+  maxWidth: "100%",
+  overflow: "hidden",
 });
 
-// Non-five-colour palettes drop the geometric print for one clean band per colour, filling the
-// same art area — the real N colours, none repeated or lost.
-export const bands = style({
+// Every artwork shape: position, size and radius come inline from the template tuple, colour from
+// the scene palette.
+export const shape = style({
   position: "absolute",
-  inset: 0,
-  display: "flex",
-});
-globalStyle(`${bands} span`, {
-  flex: 1,
-  minWidth: 0,
 });
 
 export const printTitle = style({
@@ -299,7 +280,6 @@ export const chip = style({
 
 export const chipColor = style({
   height: "100px",
-  background: "var(--s0)",
   "@container": {
     "heroEd (max-width: 760px)": { height: "80px" },
     "heroEd (max-width: 620px)": { height: "76px" },
@@ -372,9 +352,9 @@ export const shuffle = style({
 
 export const shuffleIcon = style({ width: "14px", height: "14px" });
 
-// Only the decorative shapes ease between palettes, and only when motion is allowed.
+// Only the decorative colours ease between scenes, and only when motion is allowed.
 globalStyle(
-  [circle, archShape, square, chipColor, `${swatches} span`, printArt].join(", "),
+  [shape, chipColor, `${swatches} span`].join(", "),
   {
     "@media": {
       "(prefers-reduced-motion: no-preference)": {
