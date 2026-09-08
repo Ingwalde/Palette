@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.1.0 — An editorial home page
+
+- **New hero** — the home page opens with an editorial hero: a large "Color with _character._"
+  headline, warm paper surfaces, and a printed-swatch artwork (an arch backdrop, a rotated print
+  card and a colour chip) instead of the old two-column preview.
+- **Another combination** — the hero cycles three illustrative palette presets (Earth & air, Sea &
+  sky, Wine & roses); the artwork, the five swatches, the print title and the HEX label all change
+  together. Decorative only — nothing is saved.
+- **Explore palettes** scrolls to the real catalogue below; the header, navigation, sign-in state
+  and the search/feed are unchanged. The hero follows the app's light and dark themes.
+
 ## v5.0.3 — Review fixes: favorites, contrast, SSRF and deploys
 
 - **Favorites no longer leak a hidden palette** — saving a palette and reading your favorites now
