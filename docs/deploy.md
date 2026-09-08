@@ -13,7 +13,11 @@ Playwright e2e and axe suite, and the screenshot baselines in a pinned container
    whatever `main` points at by the time the deploy runs;
 2. decrypts `secrets/prod.enc.env` into `backend/.env`, refusing to overwrite unless the
    decrypt produced a real `SECRET_KEY`;
-3. pulls the CI-built frontend image and builds the backend;
+3. pulls the CI-built frontend image **for that exact commit** and builds the backend. CI tags the
+   image `ghcr.io/ingwalde/palette-frontend:<sha>` as well as `:latest`; the deploy exports
+   `FRONTEND_IMAGE_TAG=$DEPLOY_SHA` and `docker-compose.yml` reads it, so a near-simultaneous build
+   can't hand the server a frontend from a different commit. If that image is missing the pull
+   fails and `set -e` aborts the deploy — there is no silent fall back to `latest`;
 4. **takes a database backup** via `scripts/backup-db.sh`, because migrations run
    automatically in the app lifespan and `up -d` is the point of no return;
 5. brings the stack up with `docker-compose.prod.yml` layered on, which blanks the dev-only

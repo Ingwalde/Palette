@@ -702,7 +702,12 @@ async def get_user_favorite_palettes(db: AsyncSession, user: models.User) -> lis
         .where(models.Favorite.user_id == user.id)
         .order_by(models.Favorite.created_at.desc())
     )
-    return list((await db.execute(stmt)).scalars().all())
+    palettes = list((await db.execute(stmt)).scalars().all())
+    # A palette saved while public can later be made private by its owner or removed by a moderator.
+    # Reading favorites is a read like any other, so it applies the same visibility policy: a
+    # stranger stops seeing the palette's data, while its owner or an admin still does. The favorite
+    # row itself stays (so the user can still un-save it) — only the hidden palette is withheld.
+    return [p for p in palettes if palette_visible_to(p, user)]
 
 
 async def is_user_favorite(db: AsyncSession, user: models.User, palette: models.Palette) -> bool:

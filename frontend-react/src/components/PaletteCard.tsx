@@ -3,7 +3,12 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
 import { CURATOR_HANDLE } from "../lib/constants";
-import { copyToClipboard, formatColor, getPaletteContrastStatus } from "../lib/color";
+import {
+  copyToClipboard,
+  formatColor,
+  formatContrastRatio,
+  getPaletteContrastStatus,
+} from "../lib/color";
 import { useColorFormat } from "./ColorFormatContext";
 import { useAuth } from "../auth/AuthContext";
 import { useFavorites, useToggleFavorite } from "../api/hooks";
@@ -143,7 +148,7 @@ export function PaletteCard({ palette }: { palette: Palette }) {
           className={styles.contrastBadge}
           title={`Between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors.`}
         >
-          {contrast.label} · {contrast.ratio}:1
+          {contrast.label} · {formatContrastRatio(contrast.ratio)}:1
           <span className={ui.visuallyHidden}>
             {` — between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors`}
           </span>

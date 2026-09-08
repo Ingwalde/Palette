@@ -124,12 +124,23 @@ export function getRelativeLuminance(hex: string): number {
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
+// Full precision, deliberately not rounded: the WCAG level thresholds below compare against this,
+// and rounding first mislabels a pair that sits just under a threshold. #777 on #fff is ~4.478,
+// which is not AA — but rounded to 4.5 it would read as AA. Round only when displaying the number
+// (formatContrastRatio), never before the comparison.
 export function getContrastRatio(first: string, second: string): number {
   const a = getRelativeLuminance(first);
   const b = getRelativeLuminance(second);
   const lighter = Math.max(a, b);
   const darker = Math.min(a, b);
-  return Number(((lighter + 0.05) / (darker + 0.05)).toFixed(1));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+// The ratio as shown to a reader: one decimal, with no trailing ".0" — the way it has always been
+// displayed ("21:1", "4.5:1", "3.2:1"). Separate from getContrastRatio so the level thresholds
+// always compare the exact value and only the printed number is rounded.
+export function formatContrastRatio(ratio: number): string {
+  return String(Number(ratio.toFixed(1)));
 }
 
 // WCAG level for normal-size text: AAA at 7:1, AA at 4.5:1, otherwise a dash. The label a

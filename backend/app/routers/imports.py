@@ -12,6 +12,7 @@ redirects are not followed (a public URL could 302 to an internal one), the resp
 image, and both the declared and the actual body size are capped.
 """
 
+import asyncio
 import ipaddress
 import socket
 
@@ -56,34 +57,54 @@ _MAX_BYTES = 8 * 1024 * 1024
 _ALLOWED_SCHEMES = frozenset({"http", "https"})
 
 
-def _is_public_address(host: str) -> bool:
-    """True only if every address the host resolves to is a routable, public one.
+def _is_forbidden_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    """A non-routable or otherwise dangerous address — loopback, private, link-local (which is what
+    blocks 169.254.169.254 cloud metadata), multicast, reserved or unspecified."""
+    return (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    )
 
-    Resolving here (rather than trusting the literal in the URL) closes the DNS-rebinding gap: a
-    hostname that resolves to 169.254.169.254 or 10.x is rejected the same as the literal would be.
+
+async def _getaddrinfo(host: str) -> list:
+    """Resolve `host` off the event loop (getaddrinfo is blocking). A thin, patchable seam so tests
+    can substitute DNS for this proxy alone without touching the process-wide socket.getaddrinfo the
+    database driver also uses."""
+    loop = asyncio.get_running_loop()
+    return await loop.getaddrinfo(host, None, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
+
+
+async def _resolve_public_ip(host: str) -> str | None:
+    """Resolve `host` and return one address to connect to, but only if EVERY address it resolves to
+    is a routable public one; otherwise None (unknown host, or any private/reserved answer — a
+    partly-internal round-robin must not slip a single internal address through).
+
+    Returning the concrete IP is what actually closes the DNS-rebinding gap: the caller connects to
+    this validated address directly, instead of validating the name here and letting the HTTP client
+    resolve it again — possibly to a different, internal address — a moment later.
     """
     try:
-        infos = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+        infos = await _getaddrinfo(host)
     except socket.gaierror:
-        return False
+        return None
     if not infos:
-        return False
+        return None
+    chosen: str | None = None
     for info in infos:
-        addr = info[4][0]
+        addr = str(info[4][0]).split("%", 1)[0]  # drop any IPv6 zone id
         try:
             ip = ipaddress.ip_address(addr)
         except ValueError:
-            return False
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_multicast
-            or ip.is_reserved
-            or ip.is_unspecified
-        ):
-            return False
-    return True
+            return None
+        if _is_forbidden_ip(ip):
+            return None
+        if chosen is None:
+            chosen = addr
+    return chosen
 
 
 @router.get("/fetch")
@@ -98,12 +119,31 @@ async def fetch_image(
     if parsed.scheme not in _ALLOWED_SCHEMES:
         raise HTTPException(status_code=422, detail="Only http and https URLs are allowed")
     host = parsed.host
-    if not host or not _is_public_address(host):
+    if not host:
         raise HTTPException(status_code=422, detail="That host cannot be fetched")
+
+    ip = await _resolve_public_ip(host)
+    if ip is None:
+        raise HTTPException(status_code=422, detail="That host cannot be fetched")
+
+    # Connect straight to the validated IP so a second, unvalidated DNS lookup by the HTTP client
+    # cannot swap in an internal address between the check and the connection (DNS rebinding). The
+    # original host is preserved as the Host header and the TLS SNI / certificate hostname, so
+    # virtual hosting and certificate verification still work — TLS verification is never weakened.
+    connect_url = parsed.copy_with(host=ip)
+    bracketed = f"[{host}]" if ":" in host else host
+    host_header = bracketed if parsed.port is None else f"{bracketed}:{parsed.port}"
+    request_headers = {"Host": host_header}
+    request_extensions = {"sni_hostname": host}
 
     client = httpx.AsyncClient(follow_redirects=False, timeout=httpx.Timeout(10.0))
     try:
-        async with client, client.stream("GET", url) as response:
+        async with (
+            client,
+            client.stream(
+                "GET", connect_url, headers=request_headers, extensions=request_extensions
+            ) as response,
+        ):
             if response.status_code >= 400:
                 raise HTTPException(status_code=502, detail="The image could not be fetched")
 

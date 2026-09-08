@@ -69,6 +69,14 @@ than parsing in Python. Trigram indexes from `0008` back the `?search=` query.
 arrived in `0006`; before that, deleting a palette someone had favorited raised a foreign-key
 violation and returned 500.
 
+`palettes.favorites_count` (which the `sort=popular` feed reads) is kept in step with this table by
+a database trigger, `favorites_count_sync`, added in `0012`. It fires on every insert and delete —
+API writes, `Clear favorites`, account deletion, and the `ON DELETE CASCADE` above, which
+application code never sees — and adjusts the counter atomically in the same transaction. The unique
+constraint stops a double-save double-counting, and `GREATEST(count - 1, 0)` keeps it non-negative.
+The trigger SQL lives in `app/db_triggers.py` so the migration and the test schema (built with
+`create_all`, not migrations) install the same object.
+
 ### refresh_tokens
 
 | Column       | Purpose                                    |
@@ -117,16 +125,20 @@ migrate step, and starting the new backend is the point of no return. That is wh
 
 The chain, oldest first:
 
-| Revision                  | What it does                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------- |
-| `0001_initial`            | users, palettes, favorites                                                            |
-| `0002_email_verified`     | `users.email_verified` + `email_verified_at`                                          |
-| `0003_jsonb_arrays`       | palette colors/tags to JSONB, GIN index on tags                                       |
-| `0004_refresh_tokens`     | refresh token table                                                                   |
-| `0005_tags_catalog`       | the tags catalog table                                                                |
-| `0006_fk_cascades`        | `ON DELETE CASCADE` on favorites and refresh tokens                                   |
-| `0007_user_token_version` | `users.token_version`, so access tokens can be revoked                                |
-| `0008_search_indexes`     | `pg_trgm` + trigram indexes for `?search=`, and repairs the GIN index 0003 could skip |
+| Revision                       | What it does                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `0001_initial`                 | users, palettes, favorites                                                            |
+| `0002_email_verified`          | `users.email_verified` + `email_verified_at`                                          |
+| `0003_jsonb_arrays`            | palette colors/tags to JSONB, GIN index on tags                                       |
+| `0004_refresh_tokens`          | refresh token table                                                                   |
+| `0005_tags_catalog`            | the tags catalog table                                                                |
+| `0006_fk_cascades`             | `ON DELETE CASCADE` on favorites and refresh tokens                                   |
+| `0007_user_token_version`      | `users.token_version`, so access tokens can be revoked                                |
+| `0008_search_indexes`          | `pg_trgm` + trigram indexes for `?search=`, and repairs the GIN index 0003 could skip |
+| `0009_palette_owner`           | `palettes.owner_id` — the ownership model                                             |
+| `0010_community_model`         | visibility/status/counters/lineage for the community feed                             |
+| `0011_user_avatar`             | `users.avatar` (profile image as a data: URL)                                         |
+| `0012_favorites_count_trigger` | trigger keeping `palettes.favorites_count` exact, plus a one-time recount             |
 
 Two conventions worth keeping:
 

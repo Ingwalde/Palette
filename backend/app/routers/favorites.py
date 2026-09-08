@@ -30,7 +30,10 @@ async def add_favorite(
 ):
     palette = await crud.get_palette_by_slug(db, slug)
 
-    if palette is None:
+    # A 404 (not a 403) when the palette is missing OR not visible to this user, so saving cannot be
+    # used to confirm a private or moderation-removed palette exists — and the PaletteRead response
+    # never carries hidden palette data back to a stranger.
+    if palette is None or not crud.palette_visible_to(palette, current_user):
         raise HTTPException(status_code=404, detail="Palette not found")
 
     return await crud.add_user_favorite(db, current_user, palette)
