@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.1",
+    title: "A home page that tells you where to start",
+    items: [
+      "A clearer hero with one main action — and, once you're signed in, a greeting with shortcuts to create a palette or open your favorites.",
+      "The featured palette is now live: hover to see each colour's hex and contrast grade, or hit Shuffle for another; the whole card opens the palette.",
+      "Three 'get started' cards — browse, import from an image, or create your own — so it's obvious where to go first.",
+    ],
+  },
+  {
     version: "v5.0.3",
     title: "Review fixes: favorites, contrast and security",
     items: [

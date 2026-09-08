@@ -1,5 +1,19 @@
 # Changelog
 
+## v5.1.0 — A home page that tells you where to start
+
+- **Reworked hero** — a clear, single promise and one primary action instead of a feature list. A
+  signed-out visitor gets "Browse palettes" plus a "Create free account" hook; a signed-in one is
+  greeted by name with "Create palette" and a shortcut to their favorites. Live counts
+  (palettes · tags) sit under the call to action so the page reads as active.
+- **Live featured palette** — the hero preview is now a real palette you can act on: hover or focus
+  reveals each swatch's hex and the contrast grade, a Shuffle button draws another, and the card
+  links straight to the palette. (Replaces the decorative four-square mock.)
+- **Task router** — three entry cards (Browse & search · Import from image · Create your own) make
+  the main jobs visible at a glance instead of hidden in copy.
+- **Feed heading** — "All palettes" becomes "Explore the community"; the search panel and grid are
+  unchanged.
+
 ## v5.0.3 — Review fixes: favorites, contrast, SSRF and deploys
 
 - **Favorites no longer leak a hidden palette** — saving a palette and reading your favorites now

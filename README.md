@@ -1,4 +1,4 @@
-# Palette v5.0 — Full-Stack Color Palette App
+# Palette v5.1 — Full-Stack Color Palette App
 
 [![Live demo](https://img.shields.io/badge/live%20demo-palettes--app.com-2ea44f)](https://palettes-app.com)
 [![CI](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml/badge.svg)](https://github.com/Ingwalde/Palette/actions/workflows/ci.yml)
@@ -126,13 +126,13 @@ flowchart LR
 
 ## Built with
 
-| Layer            | Stack                                                                               |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| **Backend**      | FastAPI · async SQLAlchemy 2.0 (asyncpg) · Pydantic v2 · Alembic · Argon2 · slowapi |
-| **Data**         | PostgreSQL 16 (JSONB + GIN) · Redis                                                 |
-| **Frontend**     | Vite · React 19 · TypeScript · React Router · TanStack Query                        |
-| **Infra**        | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age                  |
-| **Styling**      | vanilla-extract (typed, zero-runtime CSS-in-TS)                                     |
+| Layer            | Stack                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| **Backend**      | FastAPI · async SQLAlchemy 2.0 (asyncpg) · Pydantic v2 · Alembic · Argon2 · slowapi                 |
+| **Data**         | PostgreSQL 16 (JSONB + GIN) · Redis                                                                 |
+| **Frontend**     | Vite · React 19 · TypeScript · React Router · TanStack Query                                        |
+| **Infra**        | Docker Compose · Caddy · Cloudflare · Oracle Cloud VM · SOPS + age                                  |
+| **Styling**      | vanilla-extract (typed, zero-runtime CSS-in-TS)                                                     |
 | **Quality / CI** | GitHub Actions · CodeQL · ruff · mypy · pytest · Vitest · Playwright + axe · Lighthouse CI · Sentry |
 
 ---
@@ -370,7 +370,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v5.0.0
+v5.1.0
 ```
 
 ## License

@@ -418,3 +418,14 @@ Status: completed.
 - Restored the export page's two-column layout (regressed in v4.4.2); export palette list flows
   into the page (no nested scroll).
 - Removed the redundant admin logout button and the TXT export format.
+
+## v5.1 — Home page redesign
+
+Status: completed.
+
+- Reworked hero: one clear promise and a single primary action; live palette/tag counts; a
+  signed-in visitor is greeted by name with create/favorites shortcuts.
+- The featured palette is a live, interactive card (hover reveals hex + contrast grade, Shuffle
+  draws another, the card opens the palette) instead of a decorative mock.
+- A three-entry task router (browse · import from image · create) makes the core jobs obvious.
+- Feed heading renamed to "Explore the community"; search panel and grid unchanged.

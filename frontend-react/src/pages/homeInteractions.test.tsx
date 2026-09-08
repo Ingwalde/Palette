@@ -73,6 +73,25 @@ beforeEach(() => {
 });
 
 describe("HomePage interactions", () => {
+  it("shows the guest hero CTAs and the task router", async () => {
+    renderHome();
+    // Primary browse action plus the account hook for a signed-out visitor.
+    expect(await screen.findByRole("link", { name: "Browse palettes" })).toHaveAttribute(
+      "href",
+      "#palettes",
+    );
+    expect(screen.getByRole("link", { name: "Create free account" })).toHaveAttribute(
+      "href",
+      "/login",
+    );
+    // The three-entry router orients a first-time visitor.
+    expect(screen.getByRole("navigation", { name: "Get started" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Import from image/i })).toHaveAttribute(
+      "href",
+      "/import",
+    );
+  });
+
   it("activates a tag chip on click", async () => {
     const user = userEvent.setup();
     renderHome();
