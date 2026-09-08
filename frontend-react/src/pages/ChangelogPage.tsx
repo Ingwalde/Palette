@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.0",
+    title: "A random colour study on every visit",
+    items: [
+      "Every visit picks a random colour count (2–6), a random palette of that size, and one of two approved artworks — ten compositions in all.",
+      "'Another combination' now re-rolls the count, the palette and the artwork together; browsing, theme changes and resize keep the current one.",
+      "The chip shows the palette's accent and the swatch row shows exactly as many swatches as the palette has colours.",
+    ],
+  },
+  {
     version: "v5.1.2",
     title: "Artwork that fits the palette",
     items: [

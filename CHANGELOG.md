@@ -1,5 +1,17 @@
 # Changelog
 
+## v5.2.0 — A random colour study on every visit
+
+- **Random hero composition** — every visit to the home page picks, at random and independently, a
+  colour count (2–6), a palette of that size, and one of two approved artworks for that count. Ten
+  hand-built compositions in all; each colour is visible in the artwork itself.
+- **Another combination** now re-rolls all three choices (count, palette and artwork), not just the
+  colours of a fixed five-colour print. Ordinary browsing, theme changes and resize keep the current
+  scene; only a fresh visit or the button changes it.
+- The foreground chip shows the palette's accent colour, and the swatch row shows exactly as many
+  swatches as the palette has colours. The approved editorial hero — typography, paper cards, tilts,
+  spacing and light/dark theme — is unchanged.
+
 ## v5.1.2 — Artwork that fits the palette
 
 - **Count-aware hero artwork** — a featured palette with exactly five colours keeps the geometric
