@@ -63,7 +63,7 @@ describe("App shell", () => {
   it("renders the home hero and main navigation", () => {
     renderAt("/");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      /find the right colors/i,
+      /color with\s*character/i,
     );
     expect(
       screen.getByRole("navigation", { name: /main navigation/i }),
