@@ -45,28 +45,8 @@ export function PalettePage() {
   // Colour-vision simulation is an inspection mode over the swatches — local, never persisted.
   const [sim, setSim] = useState("none");
   const simOptionsRef = useRef<HTMLDivElement>(null);
-  const matrixScrollRef = useRef<HTMLDivElement>(null);
 
   const { data: palette, isLoading, error } = usePalette(handle, slug);
-
-  // Fade the contrast matrix's right edge while there is more table to scroll to, and drop the fade
-  // once it reaches the end (or when it already fits) — otherwise a scrolled-off column just looked
-  // like a broken, cut-off table on a phone.
-  useLayoutEffect(() => {
-    const el = matrixScrollRef.current;
-    if (!el) return;
-    const update = () => {
-      const max = el.scrollWidth - el.clientWidth;
-      el.style.setProperty("--fade-r", el.scrollLeft < max - 1 ? "24px" : "0px");
-    };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      el.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, [palette]);
 
   // Slide the thumb to sit exactly under the active choice by measuring that button, rather than
   // assuming four equal columns — the labels differ in width ("None" vs "Deuteranopia"), so a fixed
@@ -376,7 +356,7 @@ export function PalettePage() {
             <h2 id="contrast-title">Contrast</h2>
           </div>
         </div>
-        <div className={styles.matrixScroll} ref={matrixScrollRef}>
+        <div className={styles.matrixScroll}>
           <table className={styles.matrix}>
             <caption className={ui.visuallyHidden}>
               WCAG contrast ratio between each pair of colors in this palette.
@@ -391,7 +371,7 @@ export function PalettePage() {
                       style={{ background: color } as CSSProperties}
                       aria-hidden="true"
                     />
-                    {color}
+                    <span className={styles.matrixHex}>{color}</span>
                   </th>
                 ))}
               </tr>
@@ -405,7 +385,7 @@ export function PalettePage() {
                       style={{ background: palette.colors[i] } as CSSProperties}
                       aria-hidden="true"
                     />
-                    {palette.colors[i]}
+                    <span className={styles.matrixHex}>{palette.colors[i]}</span>
                   </th>
                   {row.map((cell, j) => (
                     <td key={`${i}-${j}`} className={styles.matrixCell}>

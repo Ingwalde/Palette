@@ -182,21 +182,26 @@ export const contrastSection = style({
   paddingTop: "12px",
 });
 
-// The matrix scrolls sideways when it has more columns than fit. On a phone that looked like the
-// table was simply cut off, so fade the right edge to signal "there's more" — `--fade-r` is set to
-// 0 by JS (see PalettePage) once scrolled to the end, and stays 0 when the whole table already fits.
+// A safety valve for an unusually large palette; ordinary palettes fit whole without scrolling —
+// on a phone the table drops its header hex labels (the swatch identifies the colour) and lays the
+// columns out to fill the width (see the phone rules on `matrix`), so nothing is cut off.
 export const matrixScroll = style({
   overflowX: "auto",
-  WebkitMaskImage:
-    "linear-gradient(to right, #000 calc(100% - var(--fade-r, 24px)), transparent)",
-  maskImage:
-    "linear-gradient(to right, #000 calc(100% - var(--fade-r, 24px)), transparent)",
 });
 
 export const matrix = style({
   borderCollapse: "collapse",
   fontSize: "0.85rem",
   minWidth: "min-content",
+  "@media": {
+    [PHONE]: {
+      // Fixed layout + full width makes the whole matrix fit the screen instead of overflowing.
+      width: "100%",
+      tableLayout: "fixed",
+      minWidth: 0,
+      fontSize: "0.8rem",
+    },
+  },
 });
 
 export const matrixCorner = style({
@@ -214,6 +219,18 @@ export const matrixHead = style({
   textAlign: "left",
   color: vars.color.text,
   borderBottom: `1px solid ${vars.color.border}`,
+  "@media": {
+    // Header is just the swatch on a phone (the hex is hidden), so centre it and tighten the gaps.
+    [PHONE]: { padding: "8px 2px", textAlign: "center" },
+  },
+});
+
+// The colour's hex in a matrix header. Hidden on a phone, where the swatch alone labels the column
+// and keeping the hex would force the table wider than the screen.
+export const matrixHex = style({
+  "@media": {
+    [PHONE]: { display: "none" },
+  },
 });
 
 // The first column (each row's colour) stays put while the ratio grid scrolls horizontally, so you
@@ -236,6 +253,10 @@ export const matrixSwatch = style({
   marginRight: "6px",
   verticalAlign: "middle",
   border: `1px solid ${vars.color.border}`,
+  "@media": {
+    // Larger and centred (no hex beside it) so it still reads as the column's colour on a phone.
+    [PHONE]: { width: "18px", height: "18px", marginRight: 0 },
+  },
 });
 
 export const matrixCell = style({
@@ -244,7 +265,7 @@ export const matrixCell = style({
   borderBottom: `1px solid ${vars.color.border}`,
   color: vars.color.muted,
   "@media": {
-    [PHONE]: { padding: "6px 8px" },
+    [PHONE]: { padding: "6px 3px" },
   },
 });
 
@@ -252,6 +273,7 @@ export const matrixRatio = style({
   display: "block",
   color: vars.color.text,
   fontWeight: 600,
+  whiteSpace: "nowrap",
 });
 
 export const matrixLevel = style({
