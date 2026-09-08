@@ -20,12 +20,12 @@ const FIRST = [0.5, 0.1, 0.1];
 const SECOND = [0.7, 0.5, 0.9];
 
 describe("HeroEditorial", () => {
-  it("points Explore palettes at the real catalogue anchor", () => {
+  it("points Observe at the search station just below the fold", () => {
     mockRandom(...FIRST);
     render(<HeroEditorial />);
-    expect(screen.getByRole("link", { name: /explore palettes/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /observe/i })).toHaveAttribute(
       "href",
-      "#palettes",
+      "#find",
     );
   });
 

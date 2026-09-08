@@ -14,6 +14,9 @@ export const heroActions = style({
 // little air above the framed search panel that follows it.
 export const toolbarSection = style({
   padding: "24px 0 36px",
+  // The hero's "Observe" cue jumps here (the tools just below the fold), not all the way to the
+  // catalogue — so offset the landing from the sticky header.
+  scrollMarginTop: "96px",
 });
 
 // The whole search station — field, sort/format selects and the tag filters — sits on one framed

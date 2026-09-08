@@ -132,39 +132,6 @@ export const copy = style({
   },
 });
 
-export const actions = style({
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: "22px",
-  marginTop: "25px",
-  "@container": {
-    "heroEd (max-width: 620px)": { marginTop: "18px" },
-  },
-});
-
-export const primary = style({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  minHeight: "44px",
-  padding: "12px 19px",
-  border: `1px solid ${ink}`,
-  borderRadius: "999px",
-  background: ink,
-  color: onInk,
-  fontWeight: 500,
-  fontSize: "12px",
-  lineHeight: 1.5,
-  textDecoration: "none",
-  selectors: {
-    "&:hover": { textDecoration: "underline", textUnderlineOffset: "4px" },
-  },
-});
-
-export const primaryIcon = style({ width: "16px", height: "16px" });
-
 // --- right-hand artwork ---------------------------------------------------------------------
 export const stage = style({
   position: "relative",
@@ -313,7 +280,7 @@ export const chipHex = style({
 
 // --- under-hero row -------------------------------------------------------------------------
 export const bottom = style({
-  marginTop: "27px",
+  marginTop: "52px",
   paddingTop: "15px",
   borderTop: `1px solid ${line}`,
   display: "flex",
@@ -321,7 +288,7 @@ export const bottom = style({
   justifyContent: "space-between",
   gap: "12px",
   "@container": {
-    "heroEd (max-width: 620px)": { marginTop: "15px", flexWrap: "wrap" },
+    "heroEd (max-width: 620px)": { marginTop: "28px", flexWrap: "wrap" },
   },
 });
 

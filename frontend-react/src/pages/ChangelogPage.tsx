@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.2",
+    title: "Observe lands on the tools",
+    items: [
+      "The hero's 'Observe' cue now scrolls to the search station just below the fold, instead of jumping past it to the catalogue grid.",
+      "Dropped the separate 'Explore palettes' button — 'Observe' is the single scroll cue now.",
+    ],
+  },
+  {
     version: "v5.2.1",
     title: "Home polish",
     items: [

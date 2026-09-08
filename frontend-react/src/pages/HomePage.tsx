@@ -171,6 +171,7 @@ export function HomePage() {
       <HeroEditorial />
 
       <section
+        id="find"
         className={`${ui.section} ${styles.toolbarSection}`}
         aria-label="Palette tools"
       >
