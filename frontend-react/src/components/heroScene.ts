@@ -131,9 +131,33 @@ interface Family {
 }
 
 export const FAMILIES: readonly Family[] = [
-  { name: "Earth & air", paper: "#ECD9B9", accent: "#D56F51", olive: "#697657", ink: "#30372F", sage: "#BFC8AE", gold: "#C49B64" },
-  { name: "Sea & sky", paper: "#EADAD4", accent: "#C7D9EB", olive: "#607F97", ink: "#304349", sage: "#ADC5BD", gold: "#B68D68" },
-  { name: "Wine & roses", paper: "#F1DFCA", accent: "#A95D70", olive: "#7C6B89", ink: "#3E2D37", sage: "#C8B7C7", gold: "#B89461" },
+  {
+    name: "Earth & air",
+    paper: "#ECD9B9",
+    accent: "#D56F51",
+    olive: "#697657",
+    ink: "#30372F",
+    sage: "#BFC8AE",
+    gold: "#C49B64",
+  },
+  {
+    name: "Sea & sky",
+    paper: "#EADAD4",
+    accent: "#C7D9EB",
+    olive: "#607F97",
+    ink: "#304349",
+    sage: "#ADC5BD",
+    gold: "#B68D68",
+  },
+  {
+    name: "Wine & roses",
+    paper: "#F1DFCA",
+    accent: "#A95D70",
+    olive: "#7C6B89",
+    ink: "#3E2D37",
+    sage: "#C8B7C7",
+    gold: "#B89461",
+  },
 ];
 
 export const COLOR_COUNTS: readonly ColorCount[] = [2, 3, 4, 5, 6];
@@ -153,7 +177,14 @@ export function buildPalette(family: Family, count: ColorCount): string[] {
     case 5:
       return [family.paper, family.accent, family.olive, family.ink, family.sage];
     case 6:
-      return [family.paper, family.accent, family.olive, family.ink, family.sage, family.gold];
+      return [
+        family.paper,
+        family.accent,
+        family.olive,
+        family.ink,
+        family.sage,
+        family.gold,
+      ];
   }
 }
 
@@ -163,8 +194,12 @@ export function buildPalette(family: Family, count: ColorCount): string[] {
  * and the artwork is chosen without regard to which palette was picked.
  */
 export function createHeroScene(rng: () => number): HeroScene {
-  const count = COLOR_COUNTS[Math.min(COLOR_COUNTS.length - 1, Math.floor(rng() * COLOR_COUNTS.length))];
-  const family = FAMILIES[Math.min(FAMILIES.length - 1, Math.floor(rng() * FAMILIES.length))];
+  const count =
+    COLOR_COUNTS[
+      Math.min(COLOR_COUNTS.length - 1, Math.floor(rng() * COLOR_COUNTS.length))
+    ];
+  const family =
+    FAMILIES[Math.min(FAMILIES.length - 1, Math.floor(rng() * FAMILIES.length))];
   const variantIndex = Math.min(1, Math.floor(rng() * 2));
 
   const template = TEMPLATES[count][variantIndex];

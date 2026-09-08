@@ -18,9 +18,10 @@ function rngOf(...values: number[]): () => number {
 
 describe("createHeroScene", () => {
   it("reaches every colour count from 2 to 6", () => {
-    const counts = COLOR_COUNTS.map((_, i) =>
-      // rng for count = (i + 0.5) / 5 lands squarely in bucket i.
-      createHeroScene(rngOf((i + 0.5) / 5, 0.1, 0.1)).count,
+    const counts = COLOR_COUNTS.map(
+      (_, i) =>
+        // rng for count = (i + 0.5) / 5 lands squarely in bucket i.
+        createHeroScene(rngOf((i + 0.5) / 5, 0.1, 0.1)).count,
     );
     expect(counts).toEqual([2, 3, 4, 5, 6]);
   });
@@ -31,7 +32,9 @@ describe("createHeroScene", () => {
   });
 
   it("reaches all three palette families", () => {
-    const names = FAMILIES.map((_, i) => createHeroScene(rngOf(0.5, (i + 0.5) / 3, 0.1)).paletteName);
+    const names = FAMILIES.map(
+      (_, i) => createHeroScene(rngOf(0.5, (i + 0.5) / 3, 0.1)).paletteName,
+    );
     expect(names).toEqual(["Earth & air", "Sea & sky", "Wine & roses"]);
   });
 

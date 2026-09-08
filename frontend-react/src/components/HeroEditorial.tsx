@@ -128,7 +128,10 @@ export function HeroEditorial() {
               </div>
             </div>
             <div className={styles.chip}>
-              <div className={styles.chipColor} style={{ background: chip } as CSSProperties} />
+              <div
+                className={styles.chipColor}
+                style={{ background: chip } as CSSProperties}
+              />
               <span className={styles.chipHex}>{chip}</span>
             </div>
           </div>

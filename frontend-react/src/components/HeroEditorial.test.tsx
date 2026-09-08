@@ -35,7 +35,9 @@ describe("HeroEditorial", () => {
 
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
 
-    const swatches = screen.getByRole("img", { name: /colors in the Earth & air palette/i });
+    const swatches = screen.getByRole("img", {
+      name: /colors in the Earth & air palette/i,
+    });
     // Exactly N=4 swatches, in palette order (paper, accent, sage, olive).
     expect(swatches.querySelectorAll("span")).toHaveLength(4);
 
@@ -50,14 +52,18 @@ describe("HeroEditorial", () => {
 
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
     expect(
-      screen.getByRole("img", { name: /colors in the Earth & air palette/i }).querySelectorAll("span"),
+      screen
+        .getByRole("img", { name: /colors in the Earth & air palette/i })
+        .querySelectorAll("span"),
     ).toHaveLength(4);
 
     await user.click(screen.getByRole("button", { name: /another combination/i }));
 
     // New scene: Sea & sky, five colours.
     expect(screen.getByText("Sea & sky")).toBeInTheDocument();
-    const swatches = screen.getByRole("img", { name: /colors in the Sea & sky palette/i });
+    const swatches = screen.getByRole("img", {
+      name: /colors in the Sea & sky palette/i,
+    });
     expect(swatches.querySelectorAll("span")).toHaveLength(5);
 
     const status = await screen.findByRole("status");

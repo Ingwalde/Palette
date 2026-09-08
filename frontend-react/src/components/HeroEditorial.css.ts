@@ -353,16 +353,13 @@ export const shuffle = style({
 export const shuffleIcon = style({ width: "14px", height: "14px" });
 
 // Only the decorative colours ease between scenes, and only when motion is allowed.
-globalStyle(
-  [shape, chipColor, `${swatches} span`].join(", "),
-  {
-    "@media": {
-      "(prefers-reduced-motion: no-preference)": {
-        transition: "background-color 0.22s ease",
-      },
+globalStyle([shape, chipColor, `${swatches} span`].join(", "), {
+  "@media": {
+    "(prefers-reduced-motion: no-preference)": {
+      transition: "background-color 0.22s ease",
     },
   },
-);
+});
 
 export const srOnly = style({
   position: "absolute",
