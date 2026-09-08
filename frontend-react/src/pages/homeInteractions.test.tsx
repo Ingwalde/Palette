@@ -147,8 +147,18 @@ describe("HomePage interactions", () => {
 
   it("retries the load when Try again is clicked", async () => {
     const user = userEvent.setup();
-    vi.mocked(palettesApi.listPalettes).mockRejectedValueOnce(new ApiError("down", 500));
-    vi.mocked(palettesApi.listPalettes).mockResolvedValue(list);
+    // The hero's own palette query (sort "popular") always resolves; only the feed fails, once,
+    // then succeeds on retry. (The hero adds a second listPalettes consumer, so a plain
+    // rejectedValueOnce would be claimed by whichever query fires first.)
+    let feedFailed = false;
+    vi.mocked(palettesApi.listPalettes).mockImplementation((params) => {
+      if (params?.sort === "popular") return Promise.resolve(list);
+      if (!feedFailed) {
+        feedFailed = true;
+        return Promise.reject(new ApiError("down", 500));
+      }
+      return Promise.resolve(list);
+    });
     renderHome();
     await user.click(await screen.findByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("link", { name: "Sea Breeze" })).toBeInTheDocument();

@@ -1,25 +1,14 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { usePalettes } from "../api/hooks";
+import type { Palette } from "../types/api";
 import * as ui from "../styles/ui.css";
 import * as styles from "./HeroEditorial.css";
 
-// The three illustrative hero presets from the approved handoff. Decorative only — they never touch
-// the database or the real catalogue; "Another combination" cycles through them in order and wraps.
-interface Preset {
-  name: string;
-  colors: readonly [string, string, string, string, string];
-}
-
-const PRESETS: readonly Preset[] = [
-  {
-    name: "Earth & air",
-    colors: ["#D56F51", "#ECD9B9", "#697657", "#BFC8AE", "#30372F"],
-  },
-  { name: "Sea & sky", colors: ["#C7D9EB", "#EADAD4", "#607F97", "#ADC5BD", "#304349"] },
-  {
-    name: "Wine & roses",
-    colors: ["#A95D70", "#F1DFCA", "#7C6B89", "#C8B7C7", "#3E2D37"],
-  },
-];
+// Shown until the real palettes load, so the artwork is never blank on first paint.
+const FALLBACK: Pick<Palette, "name" | "colors"> = {
+  name: "Earth & air",
+  colors: ["#D56F51", "#ECD9B9", "#697657", "#BFC8AE", "#30372F"],
+};
 
 const ArrowUpRight = (
   <svg
@@ -57,29 +46,53 @@ const ShuffleIcon = (
 );
 
 /**
- * The homepage hero — concept 02 "Editorial" from the approved design handoff. The real header,
- * navigation, auth and the catalogue below are untouched; this replaces only the hero band.
- * "Explore palettes" scrolls to the real catalogue (`#palettes`); "Another combination" cycles the
- * decorative preset that drives the artwork, the five swatches, the print title and the HEX label
- * from one piece of state.
+ * The homepage hero — the approved "Editorial" composition, but its palette is a real one from the
+ * catalogue rather than a fixed preset. The real header, navigation, auth and the catalogue below
+ * are untouched; "Explore palettes" scrolls to the real `#palettes` anchor, and "Another
+ * combination" picks another random published palette (from a small popular-sorted pool), driving
+ * the artwork, the swatches, the print title and the HEX label from one piece of state.
  */
 export function HeroEditorial() {
-  const [index, setIndex] = useState(0);
+  const { data } = usePalettes({ sort: "popular", limit: 48 });
+  // The artwork maps a palette onto five colour slots, so palettes with at least four colours read
+  // best; the threshold also keeps the pick stable under the visual test's fixture (one qualifying
+  // palette there) while production has a wide pool to draw a random one from.
+  const pool = (data?.items ?? []).filter((p) => p.colors.length >= 4);
+
+  const [current, setCurrent] = useState<Pick<Palette, "name" | "colors"> | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const preset = PRESETS[index];
+
+  // Pick a random palette once the pool arrives (a fresh mount shows a different one).
+  useEffect(() => {
+    if (!current && pool.length > 0) {
+      setCurrent(pool[Math.floor(Math.random() * pool.length)]);
+    }
+  }, [current, pool]);
+
+  const shown = current ?? FALLBACK;
+  const colors = shown.colors;
 
   const cycle = () => {
-    const nextIndex = (index + 1) % PRESETS.length;
-    setIndex(nextIndex);
-    setAnnouncement(`${PRESETS[nextIndex].name} palette.`);
+    if (pool.length === 0) return;
+    let pick = pool[Math.floor(Math.random() * pool.length)];
+    // Avoid landing on the same palette twice in a row when there is a choice.
+    if (pool.length > 1) {
+      let guard = 0;
+      while (pick.name === shown.name && guard < 8) {
+        pick = pool[Math.floor(Math.random() * pool.length)];
+        guard += 1;
+      }
+    }
+    setCurrent(pick);
+    setAnnouncement(`${pick.name} palette.`);
   };
 
   const swatchVars = {
-    "--s0": preset.colors[0],
-    "--s1": preset.colors[1],
-    "--s2": preset.colors[2],
-    "--s3": preset.colors[3],
-    "--s4": preset.colors[4],
+    "--s0": colors[0 % colors.length],
+    "--s1": colors[1 % colors.length],
+    "--s2": colors[2 % colors.length],
+    "--s3": colors[3 % colors.length],
+    "--s4": colors[4 % colors.length],
   } as CSSProperties;
 
   return (
@@ -106,7 +119,7 @@ export function HeroEditorial() {
           <div
             className={styles.stage}
             role="img"
-            aria-label={`Abstract color composition — the ${preset.name} palette on overlapping printed swatches`}
+            aria-label={`Abstract color composition — the ${shown.name} palette on overlapping printed swatches`}
           >
             <div className={styles.print}>
               <div className={styles.printArt}>
@@ -114,7 +127,7 @@ export function HeroEditorial() {
                 <div className={styles.archShape} />
                 <div className={styles.square} />
               </div>
-              <div className={styles.printTitle}>{preset.name}</div>
+              <div className={styles.printTitle}>{shown.name}</div>
               <div className={styles.printCaption}>
                 <span>Color study</span>
                 <span>Palette</span>
@@ -122,7 +135,7 @@ export function HeroEditorial() {
             </div>
             <div className={styles.chip}>
               <div className={styles.chipColor} />
-              <span className={styles.chipHex}>{preset.colors[0]}</span>
+              <span className={styles.chipHex}>{colors[0]}</span>
             </div>
           </div>
         </div>
@@ -131,27 +144,16 @@ export function HeroEditorial() {
           <div
             className={styles.swatches}
             role="img"
-            aria-label={`Five colors in the ${preset.name} palette`}
+            aria-label={`Colors in the ${shown.name} palette`}
           >
-            <span />
-            <span />
-            <span />
-            <span />
-            <span />
+            {colors.slice(0, 5).map((color, i) => (
+              <span key={i} style={{ background: color } as CSSProperties} />
+            ))}
           </div>
           <span className={styles.bottomLabel}>A palette. A starting point.</span>
           <button type="button" className={styles.shuffle} onClick={cycle}>
             {ShuffleIcon} Another combination
           </button>
-        </div>
-
-        <div className={styles.featureRow}>
-          <span>Find your next palette.</span>
-          <span>
-            <span>Save</span>
-            <span>Check contrast</span>
-            <span>Export</span>
-          </span>
         </div>
 
         <p className={styles.srOnly} role="status" aria-live="polite">

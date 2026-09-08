@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.1.1",
+    title: "The hero shows real palettes",
+    items: [
+      "The home hero now features a random palette from the catalogue; 'Another combination' shuffles to another one.",
+      "Removed the slim 'Find your next palette' line under the hero.",
+    ],
+  },
+  {
     version: "v5.1",
     title: "An editorial home page",
     items: [
