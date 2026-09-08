@@ -27,7 +27,7 @@ if not _test_db_url or not _test_db_url.startswith("postgresql"):
 os.environ["DATABASE_URL"] = _test_db_url
 
 import pytest_asyncio
-from app import crud, schemas
+from app import crud, db_triggers, schemas
 from app.database import Base, get_db
 from app.main import app
 from app.rate_limit import limiter
@@ -62,6 +62,11 @@ async def _reset_database():
         await conn.execute(sa_text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        # create_all builds tables but not the triggers migration 0012 adds, so install the
+        # favorites_count trigger here too — otherwise the counter tests would pass against a schema
+        # missing the very thing they check. Same source as the migration (app.db_triggers).
+        for statement in db_triggers.INSTALL_STATEMENTS:
+            await conn.execute(sa_text(statement))
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

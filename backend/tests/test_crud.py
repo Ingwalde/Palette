@@ -62,6 +62,10 @@ async def _user(db, is_admin=False):
 async def test_favorites_add_idempotent_and_remove(db_session):
     user = await _user(db_session)
     palette = await crud.create_palette(db_session, _palette("Favable"))
+    # Favorites are saved on public palettes; get_user_favorite_palettes withholds ones the caller
+    # cannot see, so this fixture must be published for the round-trip to return it.
+    palette.visibility = "public"
+    await db_session.commit()
 
     await crud.add_user_favorite(db_session, user, palette)
     await crud.add_user_favorite(db_session, user, palette)  # duplicate is ignored
@@ -101,6 +105,8 @@ async def test_favorite_add_survives_a_lost_race(db_session):
 
     user = await _user(db_session)
     palette = await crud.create_palette(db_session, _palette("Contested"))
+    palette.visibility = "public"
+    await db_session.commit()
 
     async def add() -> None:
         async with TestingSessionLocal() as session:

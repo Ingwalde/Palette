@@ -45,6 +45,12 @@ jobs:
             set -e
             cd ~/Palette
             : "${DEPLOY_SHA:?workflow_run did not supply head_sha; refusing to deploy}"
+            # Pin the frontend image to this exact commit's CI build. The compose file reads
+            # FRONTEND_IMAGE_TAG (default `latest`); setting it to DEPLOY_SHA means the server pulls
+            # ghcr.io/.../palette-frontend:<sha>, so a near-simultaneous build can't hand us a
+            # frontend from a different commit. If CI didn't publish that tag, the pull below fails
+            # and `set -e` aborts the deploy — no silent fall back to another version.
+            export FRONTEND_IMAGE_TAG="$DEPLOY_SHA"
             # Production overrides the dev-only CSP connect-src; see docker-compose.prod.yml.
             COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
             git fetch --quiet origin

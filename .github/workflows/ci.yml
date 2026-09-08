@@ -245,7 +245,12 @@ jobs:
         with:
           context: frontend-react
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/ingwalde/palette-frontend:latest
+          # Tag by commit SHA as well as latest, so production can pull the exact image CI built for
+          # this commit (deploy.yml pins FRONTEND_IMAGE_TAG to the same SHA). `latest` stays for
+          # local convenience and as a human-readable "current" pointer.
+          tags: |
+            ghcr.io/ingwalde/palette-frontend:latest
+            ghcr.io/ingwalde/palette-frontend:${{ github.sha }}
           # Public frontend DSN, safe to inline in the client bundle. Unset repo variable = off.
           #
           # SENTRY_ORG/PROJECT are not secret; the release is the commit, so a stack trace

@@ -19,6 +19,7 @@ import { useModal } from "../components/modal/ModalProvider";
 import {
   copyToClipboard,
   formatColor,
+  formatContrastRatio,
   getContrastMatrix,
   readableTextOn,
   toHslString,
@@ -391,7 +392,9 @@ export function PalettePage() {
                     <td key={`${i}-${j}`} className={styles.matrixCell}>
                       {cell ? (
                         <>
-                          <span className={styles.matrixRatio}>{cell.ratio}:1</span>
+                          <span className={styles.matrixRatio}>
+                            {formatContrastRatio(cell.ratio)}:1
+                          </span>
                           <span className={styles.matrixLevel}>{cell.level}</span>
                         </>
                       ) : null}

@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import {
   formatColor,
+  formatContrastRatio,
+  getContrastLevel,
   getContrastMatrix,
+  getContrastRatio,
   getPaletteContrastStatus,
   toHslString,
   toOklchString,
@@ -54,6 +57,55 @@ describe("getContrastMatrix", () => {
   it("marks a low-contrast pair with a dash", () => {
     const m = getContrastMatrix(["#777777", "#808080"]);
     expect(m[0][1]?.level).toBe("—");
+  });
+
+  it("does not round a ~4.478 pair up to AA", () => {
+    // #777 on #fff is ~4.478:1 — just under the 4.5 AA threshold. The old code rounded the ratio to
+    // 4.5 before levelling and wrongly labelled it AA.
+    const m = getContrastMatrix(["#777777", "#FFFFFF"]);
+    expect(m[0][1]?.ratio).toBeCloseTo(4.478, 2);
+    expect(m[0][1]?.level).toBe("—");
+  });
+});
+
+describe("getContrastRatio + getContrastLevel", () => {
+  it("keeps full precision for the AA threshold comparison", () => {
+    const ratio = getContrastRatio("#777777", "#FFFFFF");
+    expect(ratio).toBeCloseTo(4.478, 2);
+    expect(ratio).toBeLessThan(4.5);
+    expect(getContrastLevel(ratio)).toBe("—");
+  });
+
+  it("is symmetric in its two colours", () => {
+    expect(getContrastRatio("#777777", "#FFFFFF")).toBeCloseTo(
+      getContrastRatio("#FFFFFF", "#777777"),
+      10,
+    );
+  });
+
+  it("levels by the exact 4.5 and 7 thresholds", () => {
+    expect(getContrastLevel(4.49)).toBe("—");
+    expect(getContrastLevel(4.5)).toBe("AA");
+    expect(getContrastLevel(6.99)).toBe("AA");
+    expect(getContrastLevel(7)).toBe("AAA");
+    expect(getContrastLevel(21)).toBe("AAA");
+  });
+});
+
+describe("formatContrastRatio", () => {
+  it("rounds to one decimal for display, dropping a trailing zero", () => {
+    expect(formatContrastRatio(4.478089)).toBe("4.5");
+    expect(formatContrastRatio(21)).toBe("21");
+    expect(formatContrastRatio(7)).toBe("7");
+    expect(formatContrastRatio(3.24)).toBe("3.2");
+  });
+});
+
+describe("getPaletteContrastStatus levelling", () => {
+  it("calls a ~4.478 darkest/lightest pair Medium, not Good", () => {
+    const status = getPaletteContrastStatus(["#777777", "#FFFFFF"]);
+    expect(status.ratio).toBeLessThan(4.5);
+    expect(status.label).toBe("Medium contrast");
   });
 });
 

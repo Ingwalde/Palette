@@ -158,6 +158,13 @@ async def test_admin_delete_palette_that_someone_favorited(admin_client, admin_c
     assert created.status_code == 201
     palette_id, slug = created.json()["id"], created.json()["slug"]
 
+    # Publish it: a favorite may only be saved on a palette the user can see, and a fresh palette is
+    # private until published.
+    published = await admin_client.put(
+        f"/api/v1/palettes/{palette_id}", headers=admin_csrf, json={"visibility": "public"}
+    )
+    assert published.status_code == 200
+
     await admin_client.post(
         "/api/v1/auth/register",
         json={"username": "fan", "email": "fan@test.com", "password": "strong-password"},

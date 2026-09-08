@@ -84,7 +84,9 @@ services:
     # React + TypeScript app (frontend-react/), served by nginx from a multi-stage image.
     # In production the image is built in CI and pulled from GHCR (the ~1 GB VM must not build it);
     # `build:` is the local-dev fallback (`docker compose build`/`up --build` builds it locally).
-    image: ghcr.io/ingwalde/palette-frontend:latest
+    # FRONTEND_IMAGE_TAG lets the deploy pin the exact commit's image (deploy.yml sets it to the
+    # CI-validated SHA); unset — as in local dev — it defaults to `latest`, which `build:` produces.
+    image: ghcr.io/ingwalde/palette-frontend:${FRONTEND_IMAGE_TAG:-latest}
     mem_limit: 64m
     restart: unless-stopped
     build:

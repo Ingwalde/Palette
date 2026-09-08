@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.0.3",
+    title: "Review fixes: favorites, contrast and security",
+    items: [
+      "Your favorites now hide a palette that was made private or removed after you saved it, while still letting you un-save it.",
+      "Contrast AA/AAA badges are judged on the exact ratio, so a pair just under 4.5:1 is no longer marked AA.",
+      "The 'Most popular' sort stays accurate as palettes are saved and unsaved, and the image importer and deploys got safer under the hood.",
+    ],
+  },
+  {
     version: "v5.0.2",
     title: "A sharper import and a tidier search",
     items: [

@@ -1,5 +1,24 @@
 # Changelog
 
+## v5.0.3 — Review fixes: favorites, contrast, SSRF and deploys
+
+- **Favorites no longer leak a hidden palette** — saving a palette and reading your favorites now
+  apply the same visibility rules as every other read. A palette that went private or was removed by
+  moderation after you saved it is withheld from a stranger (its owner and admins still see it), and
+  you can still un-save it without its data coming back. Saving one you cannot see returns 404.
+- **Correct AA/AAA contrast levels** — the WCAG level is computed from the full-precision ratio
+  instead of a value rounded to one decimal first, so a pair at ~4.478:1 (e.g. `#777` on `#fff`) is
+  no longer mislabelled AA. Only the displayed number is rounded.
+- **`favorites_count` stays exact** — a database trigger keeps it in step with every add, remove,
+  clear, account deletion and cascade, atomically and without going negative, so the "Most popular"
+  sort is accurate. A migration recounts values that had drifted.
+- **Import proxy closes a DNS-rebinding gap** — the fetch now connects to the exact address it
+  validated (preserving Host, TLS SNI and certificate checks) rather than validating a name and
+  letting the client re-resolve it, and the DNS lookup no longer blocks the event loop.
+- **Deploys pin the frontend image to the CI-built commit** — production pulls
+  `palette-frontend:<sha>` for the commit CI validated, instead of a moving `latest` tag, so a
+  near-simultaneous build cannot ship a frontend from a different commit.
+
 ## v5.0.2 — A sharper import and a tidier search
 
 - **Faithful image extraction** — the image→palette extractor now uses a popularity pass instead of
