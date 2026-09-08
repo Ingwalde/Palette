@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { usePalettes, usePalettesInfinite, useTags } from "../api/hooks";
+import { useSearchParams } from "react-router-dom";
+import { usePalettesInfinite, useTags } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
-import { palettePath } from "../lib/palettePath";
+import { HeroEditorial } from "../components/HeroEditorial";
 import { PaletteCard } from "../components/PaletteCard";
 import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
 import { CustomSelect } from "../components/CustomSelect";
@@ -43,7 +43,6 @@ export function HomePage() {
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
   const [params, setParams] = useSearchParams();
-  const location = useLocation();
   const q = params.get("q") ?? "";
   const tag = params.get("tag") ?? "all";
   const rawSort = params.get("sort");
@@ -167,68 +166,9 @@ export function HomePage() {
   const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const total = data?.pages[0]?.total ?? 0;
 
-  // The hero preview shows a real palette — a fresh random one on each visit, drawn from a small
-  // pool that is independent of the catalogue's current search/tag filter (so filtering the grid
-  // does not swap the decorative preview). Only palettes with four or more colours qualify, since
-  // the preview is a 2x2 grid. `heroSeed` is fixed once per mount, so the pick is stable across
-  // re-renders (typing, scrolling) but new the next time the page is opened.
-  const { data: heroPool } = usePalettes({ sort: "popular", limit: 48 });
-  const heroSeed = useMemo(() => Math.random(), []);
-  const featured = useMemo(() => {
-    const pool = (heroPool?.items ?? []).filter((p) => p.colors.length >= 4);
-    if (pool.length === 0) return undefined;
-    return pool[Math.floor(heroSeed * pool.length)];
-  }, [heroPool, heroSeed]);
-
   return (
     <>
-      <section className={`${ui.section} ${styles.hero}`} aria-labelledby="hero-title">
-        <div>
-          <p className={ui.eyebrow}>Curated color palettes</p>
-          <h1 id="hero-title">Find the right colors for your space</h1>
-          <p className={ui.heroText}>
-            Search by name, tag or color. Check contrast before you commit. Export to CSS,
-            JSON or PNG, and save what you like to your account.
-          </p>
-          <div className={styles.heroActions}>
-            <a className={buttonClass("primary")} href="#palettes">
-              Browse palettes
-            </a>
-          </div>
-          <Link className={styles.heroWhatsNew} to="/changelog">
-            What's new in v5.0
-          </Link>
-        </div>
-
-        {featured ? (
-          <Link
-            to={palettePath(featured)}
-            state={{ from: location.search }}
-            className={styles.heroPreview}
-            aria-label={`Featured palette: ${featured.name}`}
-          >
-            <div className={styles.heroPreviewWindow}>
-              <div className={styles.heroPreviewTop}></div>
-              <div className={styles.heroPreviewGrid}>
-                {featured.colors.slice(0, 4).map((color, i) => (
-                  <span key={i} style={{ background: color }} />
-                ))}
-              </div>
-            </div>
-          </Link>
-        ) : (
-          <div className={styles.heroPreview} aria-hidden="true">
-            <div className={styles.heroPreviewWindow}>
-              <div className={styles.heroPreviewTop}></div>
-              <div className={styles.heroPreviewGrid}>
-                {[0, 1, 2, 3].map((i) => (
-                  <span key={i} className={styles.heroPreviewSwatchPlaceholder} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
+      <HeroEditorial />
 
       <section
         className={`${ui.section} ${styles.toolbarSection}`}

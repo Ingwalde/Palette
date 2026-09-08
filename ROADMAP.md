@@ -418,3 +418,13 @@ Status: completed.
 - Restored the export page's two-column layout (regressed in v4.4.2); export palette list flows
   into the page (no nested scroll).
 - Removed the redundant admin logout button and the TXT export format.
+
+## v5.1 — Editorial home page
+
+Status: completed.
+
+- New editorial hero on the home page: a large "Color with character." headline, warm paper
+  surfaces, and a printed-swatch artwork (arch backdrop, rotated print card, colour chip).
+- "Another combination" cycles three decorative palette presets from one piece of state.
+- "Explore palettes" scrolls to the real catalogue; header, navigation, auth and search/feed are
+  unchanged; the hero follows the app's light and dark themes.

@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.1",
+    title: "An editorial home page",
+    items: [
+      "A new hero: a big 'Color with character.' headline, warm paper tones, and a printed-swatch artwork instead of the old preview.",
+      "'Another combination' cycles three illustrative palettes — the artwork, swatches, title and HEX label all change together.",
+      "'Explore palettes' jumps to the catalogue below; the header, sign-in and search are unchanged, in both light and dark.",
+    ],
+  },
+  {
     version: "v5.0.3",
     title: "Review fixes: favorites, contrast and security",
     items: [

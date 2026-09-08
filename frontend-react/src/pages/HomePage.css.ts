@@ -1,20 +1,8 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
 
-const NARROW = "(max-width: 920px)";
-
-export const hero = style({
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.8fr)",
-  gap: "34px",
-  alignItems: "center",
-  padding: "84px 0 54px",
-  "@media": {
-    [NARROW]: { gridTemplateColumns: "1fr" },
-    "(max-width: 680px)": { paddingTop: "56px" },
-  },
-});
-
+// A wrapped row of actions. The homepage hero no longer uses it, but the 404 page's button pair
+// still does (NotFoundPage), so it stays here.
 export const heroActions = style({
   display: "flex",
   flexWrap: "wrap",
@@ -22,68 +10,10 @@ export const heroActions = style({
   marginTop: "28px",
 });
 
-export const heroWhatsNew = style({
-  display: "inline-block",
-  marginTop: "16px",
-  color: vars.color.muted,
-  fontSize: "0.9rem",
-  textDecoration: "underline",
-  textUnderlineOffset: "3px",
-  transition: vars.motion.transition,
-  ":hover": { color: vars.color.text },
-});
-
-export const heroPreview = style({
-  display: "flex",
-  justifyContent: "flex-end",
-  // It is a link to the featured palette now, so reset the anchor styling.
-  textDecoration: "none",
-  color: "inherit",
-  "@media": {
-    [NARROW]: { justifyContent: "flex-start" },
-  },
-});
-
-export const heroPreviewWindow = style({
-  width: "min(420px, 100%)",
-  padding: "18px",
-  border: `1px solid ${vars.color.border}`,
-  borderRadius: "34px",
-  background: vars.color.surfaceGlass,
-  boxShadow: vars.shadow.soft,
-});
-
-/** The mock browser chrome above the sample swatches. */
-export const heroPreviewTop = style({
-  height: "54px",
-  marginBottom: "16px",
-  borderRadius: "20px",
-  background: vars.color.primary,
-});
-
-export const heroPreviewGrid = style({
-  display: "grid",
-  gridTemplateColumns: "repeat(2, 1fr)",
-  gap: "14px",
-});
-
-// The swatches show the featured palette's real colours now, so the colour comes from an inline
-// style in the markup; only the shared shape lives here.
-globalStyle(`${heroPreviewGrid} span`, {
-  minHeight: "120px",
-  borderRadius: "24px",
-  "@media": {
-    "(max-width: 680px)": { minHeight: "88px" },
-  },
-});
-
-// A neutral fill for the placeholder shown while the list loads, so the layout does not jump.
-export const heroPreviewSwatchPlaceholder = style({
-  background: vars.color.surfaceStrong,
-});
-
+// The editorial hero (components/HeroEditorial) already spaces itself; the toolbar just needs a
+// little air above the framed search panel that follows it.
 export const toolbarSection = style({
-  padding: "16px 0 36px",
+  padding: "24px 0 36px",
 });
 
 // The whole search station — field, sort/format selects and the tag filters — sits on one framed
