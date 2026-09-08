@@ -425,6 +425,9 @@ Status: completed.
 
 - New editorial hero on the home page: a large "Color with character." headline, warm paper
   surfaces, and a printed-swatch artwork (arch backdrop, rotated print card, colour chip).
-- "Another combination" cycles three decorative palette presets from one piece of state.
+- "Another combination" shuffles to a random published palette from the catalogue; the artwork,
+  swatches, title and HEX label all follow it.
 - "Explore palettes" scrolls to the real catalogue; header, navigation, auth and search/feed are
   unchanged; the hero follows the app's light and dark themes.
+- Count-aware artwork: a five-colour palette uses the geometric print; any other count uses a band
+  print (one band per colour), and the swatch row shows every colour.

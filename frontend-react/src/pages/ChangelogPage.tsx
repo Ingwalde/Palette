@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.1.2",
+    title: "Artwork that fits the palette",
+    items: [
+      "A five-colour palette keeps the geometric print; any other colour count gets a band print — one band per colour.",
+      "The swatch row under the hero shows every colour in the featured palette, and the hero can now feature palettes with as few as two colours.",
+    ],
+  },
+  {
     version: "v5.1.1",
     title: "The hero shows real palettes",
     items: [

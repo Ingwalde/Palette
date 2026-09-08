@@ -54,10 +54,9 @@ const ShuffleIcon = (
  */
 export function HeroEditorial() {
   const { data } = usePalettes({ sort: "popular", limit: 48 });
-  // The artwork maps a palette onto five colour slots, so palettes with at least four colours read
-  // best; the threshold also keeps the pick stable under the visual test's fixture (one qualifying
-  // palette there) while production has a wide pool to draw a random one from.
-  const pool = (data?.items ?? []).filter((p) => p.colors.length >= 4);
+  // Any real palette with at least two colours can be featured; the artwork adapts to the count
+  // (see below), so nothing is faked by repeating a colour.
+  const pool = (data?.items ?? []).filter((p) => p.colors.length >= 2);
 
   const [current, setCurrent] = useState<Pick<Palette, "name" | "colors"> | null>(null);
   const [announcement, setAnnouncement] = useState("");
@@ -123,9 +122,23 @@ export function HeroEditorial() {
           >
             <div className={styles.print}>
               <div className={styles.printArt}>
-                <div className={styles.circle} />
-                <div className={styles.archShape} />
-                <div className={styles.square} />
+                {colors.length === 5 ? (
+                  // The approved editorial composition is a five-colour design, so use it only for a
+                  // five-colour palette (each shape a distinct colour).
+                  <>
+                    <div className={styles.circle} />
+                    <div className={styles.archShape} />
+                    <div className={styles.square} />
+                  </>
+                ) : (
+                  // Any other count gets a clean band print — one band per colour, so the palette's
+                  // real colours show without being repeated or dropped.
+                  <div className={styles.bands}>
+                    {colors.map((color, i) => (
+                      <span key={i} style={{ background: color } as CSSProperties} />
+                    ))}
+                  </div>
+                )}
               </div>
               <div className={styles.printTitle}>{shown.name}</div>
               <div className={styles.printCaption}>
@@ -146,7 +159,7 @@ export function HeroEditorial() {
             role="img"
             aria-label={`Colors in the ${shown.name} palette`}
           >
-            {colors.slice(0, 5).map((color, i) => (
+            {colors.map((color, i) => (
               <span key={i} style={{ background: color } as CSSProperties} />
             ))}
           </div>

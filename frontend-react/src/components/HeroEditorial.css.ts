@@ -240,6 +240,18 @@ export const square = style({
   bottom: 0,
 });
 
+// Non-five-colour palettes drop the geometric print for one clean band per colour, filling the
+// same art area — the real N colours, none repeated or lost.
+export const bands = style({
+  position: "absolute",
+  inset: 0,
+  display: "flex",
+});
+globalStyle(`${bands} span`, {
+  flex: 1,
+  minWidth: 0,
+});
+
 export const printTitle = style({
   fontFamily: "Georgia, serif",
   fontSize: "24px",

@@ -1,5 +1,13 @@
 # Changelog
 
+## v5.1.2 — Artwork that fits the palette
+
+- **Count-aware hero artwork** — a featured palette with exactly five colours keeps the geometric
+  print (circle, arch and square); any other colour count now gets a clean band print instead —
+  one band per colour, so the real colours show without a colour being repeated or dropped.
+- The under-hero swatch row shows every colour in the featured palette (not just the first five),
+  and the pool the hero draws from now includes palettes with as few as two colours.
+
 ## v5.1.1 — The hero shows real palettes
 
 - **Real featured palette** — the editorial hero now draws a random published palette from the
