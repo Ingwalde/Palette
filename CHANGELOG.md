@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.2.2 — Observe lands on the tools
+
+- The hero's **"Observe"** cue now scrolls to the search station just below the fold, instead of
+  jumping past it all the way to the catalogue grid.
+- Dropped the separate **"Explore palettes"** button — "Observe" is the one scroll cue now, so the
+  hero keeps a single, clear call to look further down.
+
 ## v5.2.1 — Home polish
 
 - **Full-height hero** — the home hero now fills the first screen, so a fresh load shows only the

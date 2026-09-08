@@ -3,22 +3,6 @@ import * as ui from "../styles/ui.css";
 import * as styles from "./HeroEditorial.css";
 import { createHeroScene, TEMPLATES, type HeroScene } from "./heroScene";
 
-const ArrowUpRight = (
-  <svg
-    className={styles.primaryIcon}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M7 7h10v10" />
-    <path d="M7 17 17 7" />
-  </svg>
-);
-
 const ShuffleIcon = (
   <svg
     className={styles.shuffleIcon}
@@ -89,9 +73,9 @@ function Artwork({ scene }: { scene: HeroScene }) {
  * The homepage hero — the approved "Editorial" composition (02). On every visit it picks, at
  * random and independently, a colour count (2–6), a palette of that size, and one of the two
  * approved artworks for that count. The real header, navigation, auth and the catalogue below are
- * untouched; "Explore palettes" scrolls to the real `#palettes` anchor, and "Another combination"
- * re-rolls all three choices. Ordinary re-renders, theme changes, resize and catalogue work keep
- * the current scene; only a fresh visit or the button changes it.
+ * untouched; the "Observe" cue scrolls to the search station just below the fold (`#find`), and
+ * "Another combination" re-rolls all three choices. Ordinary re-renders, theme changes, resize and
+ * catalogue work keep the current scene; only a fresh visit or the button changes it.
  */
 export function HeroEditorial() {
   // Lazy initialiser: one scene per mount. React Router remounts HomePage on a fresh entry, so a
@@ -122,11 +106,6 @@ export function HeroEditorial() {
               Unexpected combinations. Beautiful beginnings. Find the colors for whatever
               comes next.
             </p>
-            <div className={styles.actions}>
-              <a className={styles.primary} href="#palettes">
-                Explore palettes {ArrowUpRight}
-              </a>
-            </div>
           </div>
 
           <div
@@ -164,7 +143,7 @@ export function HeroEditorial() {
               <span key={i} style={{ background: color } as CSSProperties} />
             ))}
           </div>
-          <a className={styles.bottomLabel} href="#palettes">
+          <a className={styles.bottomLabel} href="#find">
             Observe {ChevronsDown}
           </a>
           <button type="button" className={styles.shuffle} onClick={cycle}>
