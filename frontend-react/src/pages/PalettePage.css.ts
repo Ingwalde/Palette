@@ -182,8 +182,15 @@ export const contrastSection = style({
   paddingTop: "12px",
 });
 
+// The matrix scrolls sideways when it has more columns than fit. On a phone that looked like the
+// table was simply cut off, so fade the right edge to signal "there's more" — `--fade-r` is set to
+// 0 by JS (see PalettePage) once scrolled to the end, and stays 0 when the whole table already fits.
 export const matrixScroll = style({
   overflowX: "auto",
+  WebkitMaskImage:
+    "linear-gradient(to right, #000 calc(100% - var(--fade-r, 24px)), transparent)",
+  maskImage:
+    "linear-gradient(to right, #000 calc(100% - var(--fade-r, 24px)), transparent)",
 });
 
 export const matrix = style({
