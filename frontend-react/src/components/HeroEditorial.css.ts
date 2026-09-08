@@ -324,16 +324,12 @@ export const swatches = style({
   alignItems: "center",
   gap: "6px",
 });
+// The swatch colours are the featured palette's real colours, set inline in the markup.
 globalStyle(`${swatches} span`, {
   width: "26px",
   height: "26px",
   borderRadius: "50%",
 });
-globalStyle(`${swatches} span:nth-child(1)`, { background: "var(--s0)" });
-globalStyle(`${swatches} span:nth-child(2)`, { background: "var(--s1)" });
-globalStyle(`${swatches} span:nth-child(3)`, { background: "var(--s2)" });
-globalStyle(`${swatches} span:nth-child(4)`, { background: "var(--s3)" });
-globalStyle(`${swatches} span:nth-child(5)`, { background: "var(--s4)" });
 
 export const bottomLabel = style({
   color: muted,
@@ -364,25 +360,7 @@ export const shuffle = style({
 
 export const shuffleIcon = style({ width: "14px", height: "14px" });
 
-// The reference's slim feature line, kept as a quiet transition into the real catalogue below.
-export const featureRow = style({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: "12px",
-  marginTop: "18px",
-  paddingTop: "19px",
-  borderTop: `1px solid ${line}`,
-  color: muted,
-  fontSize: "11px",
-});
-globalStyle(`${hero} ${featureRow} > span:last-child`, {
-  display: "flex",
-  gap: "20px",
-});
-
-// Only the decorative shapes ease between presets, and only when motion is allowed.
+// Only the decorative shapes ease between palettes, and only when motion is allowed.
 globalStyle(
   [circle, archShape, square, chipColor, `${swatches} span`, printArt].join(", "),
   {

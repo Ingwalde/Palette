@@ -1,5 +1,12 @@
 # Changelog
 
+## v5.1.1 — The hero shows real palettes
+
+- **Real featured palette** — the editorial hero now draws a random published palette from the
+  catalogue (rather than a fixed decorative preset); "Another combination" shuffles to another one,
+  and the artwork, swatches, title and HEX label all follow it.
+- Dropped the slim "Find your next palette" strip under the hero.
+
 ## v5.1.0 — An editorial home page
 
 - **New hero** — the home page opens with an editorial hero: a large "Color with _character._"
