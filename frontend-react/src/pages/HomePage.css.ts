@@ -48,7 +48,9 @@ export const searchGrow = style({
 
 export const toolbarControls = style({
   display: "grid",
-  gridTemplateColumns: "180px 128px",
+  // Wide enough that the longest options ("Most popular", "OKLCH") show in full — the old
+  // 180/128 track clipped the sort to an ellipsis and the format to "H…".
+  gridTemplateColumns: "200px 160px",
   gap: "10px",
   flexShrink: 0,
   "@media": {

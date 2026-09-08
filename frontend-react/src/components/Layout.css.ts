@@ -20,16 +20,13 @@ export const header = style({
   padding: "12px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
-  // Nearly opaque, not the 0.80 surfaceGlass the cards use: the header is sticky and scrolls over
-  // the page's content, and a palette's large vivid swatches bled through the glass enough to wash
-  // out the muted nav labels. 94% keeps a hint of the frosted look while staying legible over
-  // anything behind it.
-  background: `color-mix(in srgb, ${vars.color.surface} 94%, transparent)`,
+  // Fully opaque. It used to be 94%-opaque with a backdrop blur, but a sticky element with
+  // `backdrop-filter` makes Chromium paint a faint full-width seam across the page while scrolling
+  // (the backdrop root's edge). At 94% the frost was barely visible anyway, so an opaque surface
+  // drops the artifact on every browser while keeping the muted nav labels legible over any
+  // content that scrolls behind the pill.
+  background: vars.color.surface,
   boxShadow: vars.shadow.soft,
-  // Safari (including iOS) still needs the -webkit- prefix — without it the blur never applies, and
-  // the unblurred translucent sticky header over the scrolling page leaves a 1px seam on iOS.
-  WebkitBackdropFilter: "blur(18px)",
-  backdropFilter: "blur(18px)",
   "@media": {
     // The phone header is just the logo and the compact actions on one row, so it stays a pill.
     [PHONE]: {
@@ -347,9 +344,12 @@ export const themeToggle = style({
 });
 
 export const themeOption = style({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "6px",
   border: "none",
   cursor: "pointer",
-  padding: "6px 10px",
+  padding: "6px 12px",
   borderRadius: "999px",
   fontSize: "0.78rem",
   fontWeight: 600,
@@ -362,8 +362,15 @@ export const themeOption = style({
     '&[aria-pressed="true"]': {
       color: vars.color.onPrimary,
       background: vars.color.primary,
+      boxShadow: vars.shadow.soft,
     },
   },
+});
+
+export const themeOptionIcon = style({
+  width: "14px",
+  height: "14px",
+  flexShrink: 0,
 });
 
 export const mobileMenuRoot = style({

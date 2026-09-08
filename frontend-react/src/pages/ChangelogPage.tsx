@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.1",
+    title: "Home polish",
+    items: [
+      "The home hero fills the first screen, so the search station starts just below the fold and a small scroll reveals it.",
+      "The header theme switch is now Light / Dark only (with sun and moon icons); a visitor who hasn't chosen still follows their system theme.",
+      "The sort and colour-format selects show their longest options in full instead of clipping, and the sticky header no longer leaves a faint seam while scrolling.",
+    ],
+  },
+  {
     version: "v5.2.0",
     title: "A random colour study on every visit",
     items: [

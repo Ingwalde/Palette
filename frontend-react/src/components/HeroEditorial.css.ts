@@ -1,4 +1,10 @@
-import { createVar, globalStyle, style } from "@vanilla-extract/css";
+import { createVar, globalStyle, keyframes, style } from "@vanilla-extract/css";
+
+// A gentle downward bob on the "Observe" chevron, hinting at the catalogue below.
+const nudge = keyframes({
+  "0%, 100%": { transform: "translateY(0)" },
+  "50%": { transform: "translateY(3px)" },
+});
 
 // Editorial hero — concept 02 from the approved handoff. Its surfaces are a touch warmer than the
 // app's global tokens (paper #FFFDF7 vs #fffaf2, ink #292D28), so they live as local vars and flip
@@ -41,6 +47,14 @@ const DARK = {
 export const heroWrap = style({
   containerType: "inline-size",
   containerName: "heroEd",
+  // Fill the first screen so the catalogue's search station always starts just below the fold — on
+  // a fresh load the visitor sees only the hero, and a small scroll reveals the tools. `svh` keeps
+  // this honest on mobile (where the URL bar changes the viewport); the offset is the sticky
+  // header's flow height plus its top margin.
+  minHeight: "calc(100svh - 92px)",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
 });
 
 export const hero = style({
@@ -323,11 +337,32 @@ globalStyle(`${swatches} span`, {
   borderRadius: "50%",
 });
 
+// A quiet scroll cue in the middle of the under-hero row: "Observe" with a double chevron, linking
+// to the catalogue anchor below the fold.
 export const bottomLabel = style({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "6px",
   color: muted,
   fontSize: "11px",
+  fontWeight: 500,
+  textDecoration: "none",
+  selectors: {
+    "&:hover": { color: text },
+    "&:focus-visible": { outline: `2px solid ${ink}`, outlineOffset: "2px" },
+  },
   "@container": {
     "heroEd (max-width: 620px)": { display: "none" },
+  },
+});
+
+export const observeIcon = style({
+  width: "13px",
+  height: "13px",
+  "@media": {
+    "(prefers-reduced-motion: no-preference)": {
+      animation: `${nudge} 1.8s ease-in-out infinite`,
+    },
   },
 });
 
