@@ -50,6 +50,25 @@ async def test_create_many_if_empty_is_noop_when_populated(db_session):
     assert second == 0
 
 
+async def test_create_missing_default_palettes_adds_only_new_names(db_session):
+    defaults = [_palette("Keep One"), _palette("Keep Two")]
+    # Seed a populated table via create_many_if_empty.
+    assert await crud.create_many_if_empty(db_session, defaults) == 2
+
+    # Same two names + one new: only the new name is inserted.
+    added = await crud.create_missing_default_palettes(
+        db_session, [*defaults, _palette("Brand New")]
+    )
+    assert added == 1
+    assert await crud.get_palette_by_slug(db_session, "brand-new") is not None
+
+    # Running again with the same set is a no-op — no duplicates.
+    assert (
+        await crud.create_missing_default_palettes(db_session, [*defaults, _palette("Brand New")])
+        == 0
+    )
+
+
 async def _user(db, is_admin=False):
     return await crud.create_user(
         db,

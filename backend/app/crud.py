@@ -537,6 +537,45 @@ async def create_many_if_empty(db: AsyncSession, palettes: Iterable[schemas.Pale
     return len(rows)
 
 
+async def create_missing_default_palettes(
+    db: AsyncSession, palettes: Iterable[schemas.PaletteCreate]
+) -> int:
+    """Insert any default palette whose name is not already present.
+
+    `create_many_if_empty` seeds a fresh database once. This top-up is for a database that is
+    already populated (production): adding new entries to `seed_palettes.json` should surface
+    them on the next deploy without duplicating the ones already there. Match is by exact name,
+    so editing an existing entry's colours or description here does not re-insert it — only new
+    names are added. The rows are created ownerless; the curator backfill that runs next adopts
+    them, exactly as it does the first-run seed.
+    """
+    existing_names = set((await db.execute(select(models.Palette.name))).scalars().all())
+    missing = [p for p in palettes if p.name not in existing_names]
+    if not missing:
+        return 0
+
+    now = datetime.now(UTC)
+    created = 0
+    for palette_data in missing:
+        slug = await get_unique_slug(db, palette_data.slug or palette_data.name)
+        db.add(
+            models.Palette(
+                slug=slug,
+                name=palette_data.name,
+                description=palette_data.description,
+                colors=palette_data.colors,
+                tags=palette_data.tags,
+                visibility="public",
+                is_featured=True,
+                published_at=now,
+            )
+        )
+        created += 1
+
+    await db.commit()
+    return created
+
+
 async def get_user(db: AsyncSession, user_id: int) -> models.User | None:
     return await db.get(models.User, user_id)
 
