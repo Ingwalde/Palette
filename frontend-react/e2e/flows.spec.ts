@@ -60,11 +60,13 @@ test("navigating to Login shows both auth forms", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
 });
 
-test("favorites prompts a logged-out visitor to log in", async ({ page }) => {
+test("favorites shows a logged-out visitor their on-device list with a log-in offer", async ({
+  page,
+}) => {
   await page.goto("/favorites");
-  await expect(
-    page.getByRole("heading", { name: /log in to view favorites/i }),
-  ).toBeVisible();
+  // No login wall: an empty on-device list with a Log in call-to-action.
+  await expect(page.getByRole("heading", { name: /no favorites yet/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Log in" })).toBeVisible();
 });
 
 test("changelog renders version history", async ({ page }) => {
