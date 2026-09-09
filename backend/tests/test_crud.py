@@ -63,9 +63,10 @@ async def test_create_missing_default_palettes_adds_only_new_names(db_session):
     assert await crud.get_palette_by_slug(db_session, "brand-new") is not None
 
     # Running again with the same set is a no-op — no duplicates.
-    assert await crud.create_missing_default_palettes(
-        db_session, [*defaults, _palette("Brand New")]
-    ) == 0
+    assert (
+        await crud.create_missing_default_palettes(db_session, [*defaults, _palette("Brand New")])
+        == 0
+    )
 
 
 async def _user(db, is_admin=False):

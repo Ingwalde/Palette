@@ -549,9 +549,7 @@ async def create_missing_default_palettes(
     names are added. The rows are created ownerless; the curator backfill that runs next adopts
     them, exactly as it does the first-run seed.
     """
-    existing_names = set(
-        (await db.execute(select(models.Palette.name))).scalars().all()
-    )
+    existing_names = set((await db.execute(select(models.Palette.name))).scalars().all())
     missing = [p for p in palettes if p.name not in existing_names]
     if not missing:
         return 0
