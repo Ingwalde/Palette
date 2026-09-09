@@ -34,12 +34,15 @@ function renderFavorites() {
 }
 
 describe("FavoritesPage", () => {
-  it("prompts a logged-out visitor to log in", async () => {
+  it("shows a logged-out visitor their (empty) on-device favorites, not a login wall", async () => {
     renderFavorites();
     expect(
-      await screen.findByRole("heading", { name: /log in to view favorites/i }),
+      await screen.findByRole("heading", { name: /no favorites yet/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Login required")).toBeInTheDocument();
+    // The count is the on-device tally, and Clear is disabled while the list is empty.
+    expect(screen.getByText(/0 saved palettes · on this device/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Clear favorites" })).toBeDisabled();
+    // A Log in call-to-action is still offered.
+    expect(screen.getByRole("link", { name: "Log in" })).toBeInTheDocument();
   });
 });

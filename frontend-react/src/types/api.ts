@@ -26,6 +26,13 @@ export interface Palette {
   updated_at: string;
 }
 
+export interface PublicProfile {
+  handle: string;
+  has_avatar: boolean;
+  created_at: string;
+  palette_count: number;
+}
+
 export type PaletteVisibility = "private" | "public";
 export type PaletteStatus = "active" | "removed";
 

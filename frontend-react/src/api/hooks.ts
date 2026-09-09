@@ -4,11 +4,16 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { getPalette, listPalettes } from "./palettes";
+import { getPalette, getPublicProfile, listPalettes, listUserPalettes } from "./palettes";
 import { listTags } from "./tags";
 import { listFavorites, addFavorite, removeFavorite, clearFavorites } from "./favorites";
 import { queryKeys } from "./queryKeys";
 import { useAuth } from "../auth/AuthContext";
+import {
+  clearGuestFavorites,
+  getGuestFavorites,
+  toggleGuestFavorite,
+} from "../lib/guestFavorites";
 import type { Palette, PaletteList, PaletteListParams } from "../types/api";
 
 // The home grid pages in 24 at a time — a multiple of the three-column grid, so the last row is
@@ -35,6 +40,33 @@ export function usePalettesInfinite(params: PaletteListParams = {}) {
     // query key, so pagination resets on its own — no separate reset logic.
     getNextPageParam: (last) =>
       last.offset + last.items.length < last.total ? last.offset + PAGE_SIZE : undefined,
+    staleTime: 60_000,
+  });
+}
+
+// A public profile header (/u/:handle). `retry: false` so a 404 (unknown handle) surfaces at once
+// rather than after the default retries.
+export function useUserProfile(handle: string) {
+  return useQuery({
+    queryKey: queryKeys.userProfile(handle),
+    queryFn: () => getPublicProfile(handle),
+    enabled: handle !== "",
+    retry: false,
+    staleTime: 60_000,
+  });
+}
+
+// The profile's own palette grid, paged like the home feed.
+export function useUserPalettesInfinite(handle: string) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.userPalettes(handle),
+    queryFn: ({ pageParam }) =>
+      listUserPalettes(handle, { limit: PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (last) =>
+      last.offset + last.items.length < last.total ? last.offset + PAGE_SIZE : undefined,
+    enabled: handle !== "",
+    retry: false,
     staleTime: 60_000,
   });
 }
@@ -77,30 +109,53 @@ export function useTags() {
   });
 }
 
-// Favorites are per-user; only fetched when signed in.
+// The favorites cache key is split by auth state: the server list and the on-device guest list are
+// genuinely different data, and keying them apart makes React Query refetch the moment auth flips
+// (same-key/different-queryFn would keep serving the stale one). Both start with `queryKeys.favorites`,
+// so an invalidate or teardown on that prefix still clears both.
+function favoritesKey(isAuthenticated: boolean) {
+  return [...queryKeys.favorites, isAuthenticated ? "user" : "guest"] as const;
+}
+
+// Favorites: the signed-in user's from the server, or the logged-out visitor's from this device.
 export function useFavorites() {
   const { isAuthenticated } = useAuth();
   return useQuery({
-    queryKey: queryKeys.favorites,
-    queryFn: listFavorites,
-    enabled: isAuthenticated,
+    queryKey: favoritesKey(isAuthenticated),
+    queryFn: isAuthenticated ? listFavorites : async () => getGuestFavorites(),
     staleTime: 30_000,
   });
 }
 
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
+  const key = favoritesKey(isAuthenticated);
   return useMutation({
-    mutationFn: ({ slug, saved }: { slug: string; saved: boolean; palette?: Palette }) =>
-      saved ? removeFavorite(slug) : addFavorite(slug),
+    mutationFn: async ({
+      slug,
+      saved,
+      palette,
+    }: {
+      slug: string;
+      saved: boolean;
+      palette?: Palette;
+    }) => {
+      // Logged out: keep it on this device (merged into the account on sign-in).
+      if (!isAuthenticated) {
+        if (palette) toggleGuestFavorite(palette, saved);
+        return;
+      }
+      return saved ? removeFavorite(slug) : addFavorite(slug);
+    },
     // Flip the heart before the round trip. The favorites list is the single source the card
     // reads its saved state from, so editing the cache updates every card showing this palette
     // at once; the request then confirms it. The `palette` argument is what a re-add needs to
     // put the row back — remove/add both return void, so the cache cannot recover it otherwise.
     onMutate: async ({ slug, saved, palette }) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-      const previous = queryClient.getQueryData<Palette[]>(queryKeys.favorites);
-      queryClient.setQueryData<Palette[]>(queryKeys.favorites, (current = []) =>
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<Palette[]>(key);
+      queryClient.setQueryData<Palette[]>(key, (current = []) =>
         saved
           ? current.filter((p) => p.slug !== slug)
           : palette && !current.some((p) => p.slug === slug)
@@ -112,18 +167,23 @@ export function useToggleFavorite() {
     // Put the real state back on failure: an optimistic flip that the server rejected must not
     // stick, or the card would claim a save that did not happen.
     onError: (_err, _vars, context) => {
-      if (context?.previous)
-        queryClient.setQueryData(queryKeys.favorites, context.previous);
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
     },
     // Reconcile with the server either way — order and any fields the optimistic copy lacked.
-    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.favorites }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
 }
 
 export function useClearFavorites() {
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
   return useMutation({
-    mutationFn: clearFavorites,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.favorites }),
+    mutationFn: isAuthenticated
+      ? clearFavorites
+      : async () => {
+          clearGuestFavorites();
+        },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: favoritesKey(isAuthenticated) }),
   });
 }

@@ -297,5 +297,5 @@ async def test_owner_palette_listing_and_avatar_flag(client, db_session):
     assert item["owner_handle"] == "artist"
     # No photo set, so the byline falls back to the initial rather than the avatar endpoint.
     assert item["owner_has_avatar"] is False
-    # A handle that owns nothing lists nothing.
-    assert (await client.get("/api/v1/users/nobody/palettes")).json()["total"] == 0
+    # A handle that does not exist is a not-found, not an empty listing.
+    assert (await client.get("/api/v1/users/nobody/palettes")).status_code == 404

@@ -9,6 +9,16 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.5",
+    title: "Real profiles, author discovery and favorites before sign-in",
+    items: [
+      "Profile pages at /u/:handle now have a header (avatar, palette count, member-since) and page through the owner's palettes; an unknown handle is a real 404.",
+      "A palette page shows more palettes by the same author, linking to their profile.",
+      "A logged-out visitor can save favorites (kept on the device); signing in merges them into the account.",
+      "The avatar endpoint answers 304 to a conditional request when the image hasn't changed.",
+    ],
+  },
+  {
     version: "v5.2.4",
     title: "Profile links, lighter avatars and self-healing loads",
     items: [

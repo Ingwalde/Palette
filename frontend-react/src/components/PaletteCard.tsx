@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
 import { CURATOR_HANDLE } from "../lib/constants";
@@ -21,7 +21,6 @@ import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { format } = useColorFormat();
   const { data: favorites } = useFavorites();
@@ -73,18 +72,19 @@ export function PaletteCard({ palette }: { palette: Palette }) {
   };
 
   const onToggleFavorite = () => {
-    if (!isAuthenticated) {
-      // Carry the intent to the login page rather than dying in a toast: after signing in the
-      // visitor lands back where they were and presses Save themselves (saving it for them
-      // unasked would be writing to their account without consent).
-      navigate("/login", { state: { from: location } });
-      return;
-    }
+    // Logged out, the save is kept on this device and merged into the account on sign-in, so a
+    // visitor can build a list before they have one — no redirect, no lost click.
     toggleFavorite.mutate(
       { slug: palette.slug, saved, palette },
       {
         onSuccess: () =>
-          showToast(saved ? "Removed from favorites" : "Added to favorites"),
+          showToast(
+            saved
+              ? "Removed from favorites"
+              : isAuthenticated
+                ? "Added to favorites"
+                : "Saved on this device",
+          ),
         onError: (error) =>
           showToast(
             error instanceof ApiError ? error.message : "Something went wrong",

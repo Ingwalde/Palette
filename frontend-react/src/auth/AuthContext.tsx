@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "../api/auth";
+import { addFavorite } from "../api/favorites";
 import { queryKeys } from "../api/queryKeys";
+import { clearGuestFavorites, getGuestFavorites } from "../lib/guestFavorites";
 import { ApiError, setUnauthorizedHandler } from "../lib/http";
 import type { LoginPayload, MessageResponse, RegisterPayload, User } from "../types/api";
 
@@ -50,7 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: (user) => setUser(user),
+    onSuccess: async (user) => {
+      setUser(user);
+      // Carry over anything the visitor saved while logged out: add each to the account (ignoring
+      // ones already there), clear the device list, then let the favorites query refetch.
+      const guests = getGuestFavorites();
+      if (guests.length > 0) {
+        await Promise.allSettled(guests.map((p) => addFavorite(p.slug)));
+        clearGuestFavorites();
+        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+      }
+    },
   });
   // Registration creates the account but does not start a session (the verification email
   // comes first), so it must not set the current user. Logging in is a separate call.

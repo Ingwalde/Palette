@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePalette, usePalettes, useFavorites, useToggleFavorite } from "../api/hooks";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PaletteCard } from "../components/PaletteCard";
@@ -9,7 +9,7 @@ import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
 import { CURATOR_HANDLE } from "../lib/constants";
 import { palettePath } from "../lib/palettePath";
-import { forkPalette } from "../api/palettes";
+import { forkPalette, listUserPalettes } from "../api/palettes";
 import { reportPalette } from "../api/reports";
 import { CVD_TYPES, cvdLabel, cvdNote } from "../lib/colorVision";
 
@@ -75,6 +75,16 @@ export function PalettePage() {
     firstTag ? { tag: firstTag, limit: 4 } : { limit: 4 },
   );
 
+  // "More from this author" — only for a real user's palette, not the seed catalogue's curator.
+  const authorHandle = palette?.owner_handle;
+  const showAuthorList = !!authorHandle && authorHandle !== CURATOR_HANDLE;
+  const { data: authorList } = useQuery({
+    queryKey: ["user", authorHandle ?? "", "palettes", "preview"],
+    queryFn: () => listUserPalettes(authorHandle as string, { limit: 5 }),
+    enabled: showAuthorList,
+    staleTime: 60_000,
+  });
+
   const matrix = useMemo(
     () => (palette ? getContrastMatrix(palette.colors) : []),
     [palette],
@@ -125,6 +135,9 @@ export function PalettePage() {
   const similarPalettes = (similar?.items ?? [])
     .filter((p) => p.slug !== palette.slug)
     .slice(0, 3);
+  const authorPalettes = (authorList?.items ?? [])
+    .filter((p) => p.slug !== palette.slug)
+    .slice(0, 3);
 
   const copyValue = async (text: string, success: string) => {
     try {
@@ -136,15 +149,19 @@ export function PalettePage() {
   };
 
   const onSave = () => {
-    if (!isAuthenticated) {
-      showToast("Log in to save favorites");
-      return;
-    }
+    // Logged out, the save is kept on this device and merged into the account on sign-in (same as
+    // a card's heart), so the detail page never dead-ends a guest.
     toggleFavorite.mutate(
       { slug: palette.slug, saved, palette },
       {
         onSuccess: () =>
-          showToast(saved ? "Removed from favorites" : "Added to favorites"),
+          showToast(
+            saved
+              ? "Removed from favorites"
+              : isAuthenticated
+                ? "Added to favorites"
+                : "Saved on this device",
+          ),
         onError: (e) =>
           showToast(e instanceof ApiError ? e.message : "Something went wrong", "error"),
       },
@@ -420,6 +437,32 @@ export function PalettePage() {
           </div>
           <div className={ui.paletteGrid}>
             {similarPalettes.map((p) => (
+              <PaletteCard key={p.id} palette={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {showAuthorList && authorPalettes.length > 0 && (
+        <section
+          className={`${ui.section} ${styles.similarSection}`}
+          aria-labelledby="author-title"
+        >
+          <div className={ui.sectionHeading}>
+            <div>
+              <p className={ui.eyebrow}>More from this author</p>
+              <h2 id="author-title">
+                <Link
+                  className={styles.owner}
+                  to={`/u/${encodeURIComponent(authorHandle!)}`}
+                >
+                  @{authorHandle}
+                </Link>
+              </h2>
+            </div>
+          </div>
+          <div className={ui.paletteGrid}>
+            {authorPalettes.map((p) => (
               <PaletteCard key={p.id} palette={p} />
             ))}
           </div>
