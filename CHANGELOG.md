@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.2.3 — Card bylines, an animated theme switch and tidier filters
+
+- **Author on every card** — a palette card now ends with its author: the owner's avatar (or an
+  initial, and the brand mark for the seed catalogue) and their handle.
+- **Animated theme switch** — the Light / Dark toggle slides its highlight between the two options
+  instead of snapping.
+- **Filters stay inside the frame** — the sort and format selects shrink rather than overflow, so
+  the tag divider no longer pokes past the panel's rounded edge on a narrow window.
+
 ## v5.2.2 — Observe lands on the tools
 
 - The hero's **"Observe"** cue now scrolls to the search station just below the fold, instead of

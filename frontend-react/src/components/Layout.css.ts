@@ -334,8 +334,8 @@ globalStyle(`${footerMeta} a:hover`, {
 });
 
 export const themeToggle = style({
+  position: "relative",
   display: "inline-flex",
-  gap: "2px",
   padding: "3px",
   borderRadius: "999px",
   border: `1px solid ${vars.color.border}`,
@@ -343,27 +343,47 @@ export const themeToggle = style({
   flexShrink: 0,
 });
 
+// The sliding highlight behind the active option. Its width is one option (half the track minus
+// the padding), and it translates by its own width to sit under Dark — the one moving part, so the
+// switch animates instead of snapping.
+export const themeIndicator = style({
+  position: "absolute",
+  top: "3px",
+  bottom: "3px",
+  left: "3px",
+  width: "calc(50% - 3px)",
+  borderRadius: "999px",
+  background: vars.color.primary,
+  boxShadow: vars.shadow.soft,
+  transition: "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+  pointerEvents: "none",
+  "@media": {
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+});
+
 export const themeOption = style({
+  position: "relative",
+  zIndex: 1,
+  flex: "1 1 0",
   display: "inline-flex",
   alignItems: "center",
+  justifyContent: "center",
   gap: "6px",
   border: "none",
   cursor: "pointer",
-  padding: "6px 12px",
+  padding: "6px 14px",
   borderRadius: "999px",
   fontSize: "0.78rem",
   fontWeight: 600,
+  whiteSpace: "nowrap",
   color: vars.color.muted,
   background: "transparent",
   fontFamily: "inherit",
-  transition: vars.motion.transition,
+  transition: `color ${vars.motion.transition}`,
   selectors: {
     "&:hover": { color: vars.color.text },
-    '&[aria-pressed="true"]': {
-      color: vars.color.onPrimary,
-      background: vars.color.primary,
-      boxShadow: vars.shadow.soft,
-    },
+    '&[aria-pressed="true"]': { color: vars.color.onPrimary },
   },
 });
 

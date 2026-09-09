@@ -11,6 +11,8 @@ export interface Palette {
   // The owner's handle — the curator handle ("palette") for a seed palette. The palette's URL,
   // /u/:owner_handle/:slug, is built from it; see lib/palettePath.
   owner_handle: string;
+  // The owner's avatar (a data: URL), or null/absent for a seed palette or a user with no photo.
+  owner_avatar?: string | null;
   // "private" (owner-only) until published, then "public".
   visibility: PaletteVisibility;
   // "active", or "removed" by moderation (the owner still sees a removed palette). Optional so

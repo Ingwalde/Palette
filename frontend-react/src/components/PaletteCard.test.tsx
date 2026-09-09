@@ -63,6 +63,31 @@ describe("PaletteCard", () => {
     expect(screen.getByText("Palette")).toBeInTheDocument();
   });
 
+  it("bylines a user-owned palette with an @handle and their avatar", () => {
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <AuthProvider>
+          <ToastProvider>
+            <MemoryRouter>
+              <PaletteCard
+                palette={{
+                  ...palette,
+                  owner_handle: "alice",
+                  owner_avatar: "data:image/png;base64,AAAA",
+                }}
+              />
+            </MemoryRouter>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("@alice")).toBeInTheDocument();
+    // The avatar renders as an image (decorative, so empty alt).
+    expect(document.querySelector('img[src^="data:image/png"]')).not.toBeNull();
+  });
+
   it("names the contrast pair in the badge and links to the table", () => {
     renderCard();
     const badge = screen.getByRole("link", { name: /Excellent contrast/i });

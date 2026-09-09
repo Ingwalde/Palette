@@ -58,13 +58,6 @@ export const titleLink = style({
   ":focus-visible": { textDecoration: "underline" },
 });
 
-export const byline = style({
-  margin: "0 0 4px",
-  color: vars.color.muted,
-  fontSize: "0.78rem",
-  fontWeight: 600,
-});
-
 export const meta = style({
   margin: 0,
   color: vars.color.muted,
@@ -176,4 +169,42 @@ export const contrastBadge = style({
   textDecoration: "none",
   transition: vars.motion.transition,
   ":hover": { background: vars.color.surfaceStrong },
+});
+
+// The author byline, at the very bottom of the card: a small avatar and the owner's handle.
+export const authorRow = style({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  paddingTop: "14px",
+  borderTop: `1px solid ${vars.color.border}`,
+});
+
+// Avatar image (a user who set a photo).
+export const authorAvatar = style({
+  width: "24px",
+  height: "24px",
+  flexShrink: 0,
+  borderRadius: "50%",
+  objectFit: "cover",
+});
+
+// Fallback avatar: the curator brand mark, or a user's initial, on the accent.
+export const authorMark = style({
+  display: "grid",
+  placeItems: "center",
+  width: "24px",
+  height: "24px",
+  flexShrink: 0,
+  borderRadius: "50%",
+  color: vars.color.onPrimary,
+  background: vars.color.primary,
+  fontSize: "0.72rem",
+  fontWeight: 700,
+});
+
+export const authorName = style({
+  color: vars.color.text,
+  fontSize: "0.82rem",
+  fontWeight: 600,
 });
