@@ -9,6 +9,15 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.3",
+    title: "Card bylines, an animated theme switch and tidier filters",
+    items: [
+      "Every palette card now ends with its author — an avatar (or initial, and the brand mark for the seed catalogue) and the handle.",
+      "The Light / Dark theme toggle slides its highlight between the options instead of snapping.",
+      "The sort and format selects shrink rather than overflow, so the tag divider stays inside the panel's rounded frame.",
+    ],
+  },
+  {
     version: "v5.2.2",
     title: "Observe lands on the tools",
     items: [

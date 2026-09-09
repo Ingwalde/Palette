@@ -68,6 +68,11 @@ export function ThemeToggle() {
 
   return (
     <div className={styles.themeToggle} role="group" aria-label="Theme">
+      <span
+        className={styles.themeIndicator}
+        style={{ transform: active === "dark" ? "translateX(100%)" : "translateX(0)" }}
+        aria-hidden="true"
+      />
       {OPTIONS.map((option) => (
         <button
           key={option.value}

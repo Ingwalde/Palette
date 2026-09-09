@@ -51,11 +51,12 @@ export const searchGrow = style({
 
 export const toolbarControls = style({
   display: "grid",
-  // Wide enough that the longest options ("Most popular", "OKLCH") show in full — the old
-  // 180/128 track clipped the sort to an ellipsis and the format to "H…".
-  gridTemplateColumns: "200px 160px",
+  // Prefer 200/160 (wide enough for "Most popular" and "OKLCH" in full), but let the tracks shrink
+  // rather than overflow the panel — a fixed 200/160 pushed past the rounded frame on a narrow
+  // window, dragging the tag divider out with it. minmax(0, …) keeps everything inside the card.
+  gridTemplateColumns: "minmax(0, 200px) minmax(0, 160px)",
   gap: "10px",
-  flexShrink: 0,
+  minWidth: 0,
   "@media": {
     "(max-width: 680px)": { gridTemplateColumns: "1fr 1fr", width: "100%" },
   },
