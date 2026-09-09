@@ -173,7 +173,10 @@ const GUEST_ROUTES: Route[] = [
 for (const { name, path, fullPage = true } of GUEST_ROUTES) {
   test(`guest ${name}`, async ({ page }) => {
     await open(page, path);
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage, mask: footerVersionMask(page) });
+    await expect(page).toHaveScreenshot(`${name}.png`, {
+      fullPage,
+      mask: footerVersionMask(page),
+    });
   });
 }
 
@@ -182,7 +185,10 @@ for (const { name, path, fullPage = true } of GUEST_ROUTES) {
 test("dark: home", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await open(page, "/");
-  await expect(page).toHaveScreenshot("dark-home.png", { fullPage: true, mask: footerVersionMask(page) });
+  await expect(page).toHaveScreenshot("dark-home.png", {
+    fullPage: true,
+    mask: footerVersionMask(page),
+  });
 });
 
 const ADMIN_ROUTES: Route[] = [
@@ -193,7 +199,10 @@ const ADMIN_ROUTES: Route[] = [
 for (const { name, path, fullPage = true } of ADMIN_ROUTES) {
   test(`admin ${name}`, async ({ page }) => {
     await open(page, path, true);
-    await expect(page).toHaveScreenshot(`${name}.png`, { fullPage, mask: footerVersionMask(page) });
+    await expect(page).toHaveScreenshot(`${name}.png`, {
+      fullPage,
+      mask: footerVersionMask(page),
+    });
   });
 }
 
@@ -252,7 +261,10 @@ test("state: home with no results", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await settle(page);
   await expect(page.getByRole("heading", { name: "No palettes found" })).toBeVisible();
-  await expect(page).toHaveScreenshot("state-home-empty.png", { fullPage: true, mask: footerVersionMask(page) });
+  await expect(page).toHaveScreenshot("state-home-empty.png", {
+    fullPage: true,
+    mask: footerVersionMask(page),
+  });
 });
 
 test("state: error toast", async ({ page }) => {
@@ -292,7 +304,10 @@ test("admin tags view", async ({ page }) => {
   await page.getByRole("tab", { name: "Tags" }).click();
   await expect(page.getByRole("heading", { name: /tags/i }).first()).toBeVisible();
   await settle(page);
-  await expect(page).toHaveScreenshot("admin-tags.png", { fullPage: true, mask: footerVersionMask(page) });
+  await expect(page).toHaveScreenshot("admin-tags.png", {
+    fullPage: true,
+    mask: footerVersionMask(page),
+  });
 });
 
 test("state: palette editor with colours", async ({ page }) => {
@@ -300,7 +315,10 @@ test("state: palette editor with colours", async ({ page }) => {
   await open(page, "/admin", true);
   await page.getByRole("button", { name: "Edit" }).first().click();
   await settle(page);
-  await expect(page).toHaveScreenshot("state-palette-editor.png", { fullPage: true, mask: footerVersionMask(page) });
+  await expect(page).toHaveScreenshot("state-palette-editor.png", {
+    fullPage: true,
+    mask: footerVersionMask(page),
+  });
 });
 
 test("state: confirm modal", async ({ page }) => {
@@ -321,5 +339,8 @@ test("state: empty list", async ({ page }) => {
   await page.goto("/favorites", { waitUntil: "networkidle" });
   await settle(page);
   await expect(page.getByRole("heading", { name: "No favorites yet" })).toBeVisible();
-  await expect(page).toHaveScreenshot("state-empty-list.png", { fullPage: true, mask: footerVersionMask(page) });
+  await expect(page).toHaveScreenshot("state-empty-list.png", {
+    fullPage: true,
+    mask: footerVersionMask(page),
+  });
 });
