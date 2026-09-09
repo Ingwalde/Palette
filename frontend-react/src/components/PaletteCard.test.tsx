@@ -88,6 +88,27 @@ describe("PaletteCard", () => {
     expect(document.querySelector('img[src^="data:image/png"]')).not.toBeNull();
   });
 
+  it("does not crash when owner_handle is missing (older fixtures)", () => {
+    // Some fixtures omit owner_handle; the byline must fall back to the curator, not read
+    // `undefined.charAt`.
+    const { owner_handle: _omit, ...rest } = palette;
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <AuthProvider>
+          <ToastProvider>
+            <MemoryRouter>
+              <PaletteCard palette={rest as typeof palette} />
+            </MemoryRouter>
+          </ToastProvider>
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Sea Breeze" })).toBeInTheDocument();
+    expect(screen.getByText("Palette")).toBeInTheDocument();
+  });
+
   it("names the contrast pair in the badge and links to the table", () => {
     renderCard();
     const badge = screen.getByRole("link", { name: /Excellent contrast/i });

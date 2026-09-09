@@ -41,8 +41,10 @@ export function PaletteCard({ palette }: { palette: Palette }) {
     [favorites, palette.slug],
   );
   // Seed palettes are owned by the curator account; show the brand mark and "Palette" for them
-  // rather than an "@palette" handle.
-  const isCurator = palette.owner_handle === CURATOR_HANDLE;
+  // rather than an "@palette" handle. Fall back to the curator when a handle is missing (older
+  // fixtures omit it) so the byline never reads an undefined.
+  const handle = palette.owner_handle || CURATOR_HANDLE;
+  const isCurator = handle === CURATOR_HANDLE;
 
   // navigator.clipboard.writeText rejects when the write is refused — a permission the user
   // declined, a page that lost focus, an insecure origin. Both call sites got that wrong in
@@ -174,12 +176,10 @@ export function PaletteCard({ palette }: { palette: Palette }) {
           <img className={styles.authorAvatar} src={palette.owner_avatar} alt="" />
         ) : (
           <span className={styles.authorMark} aria-hidden="true">
-            {palette.owner_handle.charAt(0).toUpperCase()}
+            {handle.charAt(0).toUpperCase()}
           </span>
         )}
-        <span className={styles.authorName}>
-          {isCurator ? "Palette" : `@${palette.owner_handle}`}
-        </span>
+        <span className={styles.authorName}>{isCurator ? "Palette" : `@${handle}`}</span>
       </div>
     </article>
   );
