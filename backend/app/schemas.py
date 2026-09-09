@@ -179,9 +179,10 @@ class PaletteRead(PaletteBase):
     # The owner's handle, read from the Palette.owner_handle property — the curator handle for a
     # seed palette. The frontend builds the /u/:handle/:slug URL from it, so it is always present.
     owner_handle: str
-    # The owner's avatar (a data: URL) for the card byline, or null for a seed palette or a user
-    # with no photo. Read from the selectin-loaded owner, so it costs no extra query.
-    owner_avatar: str | None = None
+    # Whether the owner has a profile photo. The card byline loads it from /users/:handle/avatar
+    # (cacheable) when true, so the list never embeds avatar data URLs. Read from the
+    # selectin-loaded owner, so it costs no extra query.
+    owner_has_avatar: bool = False
     visibility: str
     # "active" or "removed" (by moderation). A removed palette is hidden from everyone but its
     # owner, who sees the state on their own copy.

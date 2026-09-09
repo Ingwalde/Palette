@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
 import { CURATOR_HANDLE } from "../lib/constants";
+import { API_BASE_URL } from "../lib/apiBase";
 import {
   copyToClipboard,
   formatColor,
@@ -172,14 +173,26 @@ export function PaletteCard({ palette }: { palette: Palette }) {
           <span className={styles.authorMark} aria-hidden="true">
             P
           </span>
-        ) : palette.owner_avatar ? (
-          <img className={styles.authorAvatar} src={palette.owner_avatar} alt="" />
+        ) : palette.owner_has_avatar ? (
+          <img
+            className={styles.authorAvatar}
+            src={`${API_BASE_URL}/users/${encodeURIComponent(handle)}/avatar`}
+            alt=""
+            loading="lazy"
+          />
         ) : (
           <span className={styles.authorMark} aria-hidden="true">
             {handle.charAt(0).toUpperCase()}
           </span>
         )}
-        <span className={styles.authorName}>{isCurator ? "Palette" : `@${handle}`}</span>
+        {isCurator ? (
+          <span className={styles.authorName}>Palette</span>
+        ) : (
+          // A user's byline links to their public palettes.
+          <Link className={styles.authorLink} to={`/u/${encodeURIComponent(handle)}`}>
+            @{handle}
+          </Link>
+        )}
       </div>
     </article>
   );

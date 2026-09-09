@@ -85,11 +85,13 @@ async def lifespan(app: FastAPI):
 
     async with AsyncSessionLocal() as db:
         await seed_default_palettes(db)
-        # Top up an already-populated database with palettes added to the seed file since it was
-        # first seeded (a no-op on a fresh DB, which just got them all).
-        added = await seed_missing_default_palettes(db)
-        if added:
-            logging.getLogger("palette").info("Added %d new default palette(s).", added)
+        # Reconcile an already-populated database with the seed file: add new default palettes and
+        # refresh curator-owned ones whose content changed (a no-op on a fresh DB).
+        added, updated = await seed_missing_default_palettes(db)
+        if added or updated:
+            logging.getLogger("palette").info(
+                "Default palettes: %d added, %d updated.", added, updated
+            )
         await seed_default_tags(db)
         await seed_default_admin_user(db)
         # After the palettes and the admin exist: give every ownerless palette the curator owner
@@ -112,8 +114,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v5.2.3 with auth, favorites, PostgreSQL and Docker.",
-    version="5.2.3",
+    description="Backend API for Palette v5.2.4 with auth, favorites, PostgreSQL and Docker.",
+    version="5.2.4",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -261,7 +263,7 @@ async def _validation_exception_handler(request, exc: RequestValidationError) ->
 async def root():
     return {
         "name": "Palette API",
-        "version": "5.2.3",
+        "version": "5.2.4",
         # Only advertise the docs where they exist. With enable_api_docs off — the production
         # default — /api/docs is a 404, so linking to it sent anyone following the root response
         # to a dead end.

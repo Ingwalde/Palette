@@ -208,3 +208,16 @@ export const authorName = style({
   fontSize: "0.82rem",
   fontWeight: 600,
 });
+
+// A user byline links to their public palettes; the curator byline stays plain text.
+export const authorLink = style({
+  color: vars.color.text,
+  fontSize: "0.82rem",
+  fontWeight: 600,
+  textDecoration: "none",
+  transition: vars.motion.transition,
+  selectors: {
+    "&:hover": { color: vars.color.muted, textDecoration: "underline" },
+    "&:focus-visible": { textDecoration: "underline" },
+  },
+});

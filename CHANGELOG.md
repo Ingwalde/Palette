@@ -1,5 +1,18 @@
 # Changelog
 
+## v5.2.4 — Profile links, lighter avatars and self-healing loads
+
+- **Author links to a profile** — a card's `@handle` byline now opens that person's public
+  palettes at `/u/:handle`.
+- **Avatars served, not embedded** — the palette feed no longer inlines each owner's avatar as a
+  data URL; the card loads it from a cacheable `/users/:handle/avatar` endpoint instead, keeping
+  list responses small.
+- **Seed edits reach production** — editing a default palette's colours, description or tags in the
+  seed file now updates the live (curator-owned) palette on the next deploy, not just fresh
+  databases; a user's own palette that shares a name is never touched.
+- **Stale tab self-heals** — a tab left open across a deploy that hits a since-removed code chunk
+  now reloads once to pick up the new build instead of showing an error.
+
 ## v5.2.3 — Card bylines, an animated theme switch and tidier filters
 
 - **Author on every card** — a palette card now ends with its author: the owner's avatar (or an

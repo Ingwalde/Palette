@@ -108,7 +108,9 @@ def _like_pattern(search: str) -> str:
     return f"%{escaped}%"
 
 
-def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
+def _filtered_palettes_stmt(
+    search: str | None, tag: str | None, owner: str | None = None
+) -> Select:
     # The public list is the community feed: only published, un-removed palettes. Private drafts
     # and moderation-removed palettes never appear here — the owner sees a private one through
     # "your palettes", and a single palette through its own visibility-checked route.
@@ -116,6 +118,11 @@ def _filtered_palettes_stmt(search: str | None, tag: str | None) -> Select:
         models.Palette.visibility == "public",
         models.Palette.status == "active",
     )
+
+    if owner:
+        # Palettes owned by the account with this handle (a public profile listing). `.has()`
+        # scopes on the owner relationship without loading it.
+        stmt = stmt.where(models.Palette.owner.has(models.User.username == owner))
 
     if search:
         like = _like_pattern(search)
@@ -145,8 +152,9 @@ async def get_palettes(
     sort: str = "default",
     limit: int | None = None,
     offset: int = 0,
+    owner: str | None = None,
 ) -> list[models.Palette]:
-    stmt = _filtered_palettes_stmt(search, tag)
+    stmt = _filtered_palettes_stmt(search, tag, owner)
 
     if sort == "az":
         stmt = stmt.order_by(func.lower(models.Palette.name).asc())
@@ -184,9 +192,12 @@ async def get_palettes(
 
 
 async def count_palettes(
-    db: AsyncSession, search: str | None = None, tag: str | None = None
+    db: AsyncSession,
+    search: str | None = None,
+    tag: str | None = None,
+    owner: str | None = None,
 ) -> int:
-    stmt = select(func.count()).select_from(_filtered_palettes_stmt(search, tag).subquery())
+    stmt = select(func.count()).select_from(_filtered_palettes_stmt(search, tag, owner).subquery())
     return await db.scalar(stmt) or 0
 
 
@@ -574,6 +585,51 @@ async def create_missing_default_palettes(
 
     await db.commit()
     return created
+
+
+async def update_changed_default_palettes(
+    db: AsyncSession, palettes: Iterable[schemas.PaletteCreate]
+) -> int:
+    """Refresh the colours, description and tags of curator-owned default palettes whose content
+    has drifted from the seed file, matched by name.
+
+    Companion to `create_missing_default_palettes`: together they make `seed_palettes.json` the
+    source of truth, so editing an existing default's colours or description reaches an
+    already-populated database on the next deploy. Scope is deliberately narrow — only palettes
+    still owned by the curator (or not yet backfilled) are touched, so a user's own palette that
+    happens to share a name is never overwritten, and only the mutable content changes (never the
+    name or slug). Name is the key, so renaming a default here adds a new one rather than renaming.
+    """
+    by_name = {p.name: p for p in palettes}
+    if not by_name:
+        return 0
+
+    rows = (
+        (await db.execute(select(models.Palette).where(models.Palette.name.in_(by_name.keys()))))
+        .scalars()
+        .all()
+    )
+
+    updated = 0
+    for row in rows:
+        # Only curator-owned (or not-yet-adopted) seed palettes — never a user's palette.
+        if row.owner is not None and row.owner.username != models.CURATOR_HANDLE:
+            continue
+        want = by_name[row.name]
+        if (
+            row.colors == want.colors
+            and row.description == want.description
+            and row.tags == want.tags
+        ):
+            continue
+        row.colors = want.colors
+        row.description = want.description
+        row.tags = want.tags
+        updated += 1
+
+    if updated:
+        await db.commit()
+    return updated
 
 
 async def get_user(db: AsyncSession, user_id: int) -> models.User | None:

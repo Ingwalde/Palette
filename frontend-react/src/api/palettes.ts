@@ -14,6 +14,11 @@ export function listMyPalettes(): Promise<PaletteList> {
   return request<PaletteList>("/palettes/mine");
 }
 
+// The public palettes owned by a given handle — the profile listing linked from a card byline.
+export function listUserPalettes(handle: string): Promise<PaletteList> {
+  return request<PaletteList>(`/users/${encodeURIComponent(handle)}/palettes`);
+}
+
 export function getPalette(handle: string, slug: string): Promise<Palette> {
   return request<Palette>(
     `/users/${encodeURIComponent(handle)}/palettes/${encodeURIComponent(slug)}`,
