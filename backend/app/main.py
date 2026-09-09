@@ -36,6 +36,7 @@ from .seed import (
     seed_default_admin_user,
     seed_default_palettes,
     seed_default_tags,
+    seed_missing_default_palettes,
 )
 
 # Mutating requests must echo the csrf_token cookie in the X-CSRF-Token header (double-submit
@@ -84,6 +85,11 @@ async def lifespan(app: FastAPI):
 
     async with AsyncSessionLocal() as db:
         await seed_default_palettes(db)
+        # Top up an already-populated database with palettes added to the seed file since it was
+        # first seeded (a no-op on a fresh DB, which just got them all).
+        added = await seed_missing_default_palettes(db)
+        if added:
+            logging.getLogger("palette").info("Added %d new default palette(s).", added)
         await seed_default_tags(db)
         await seed_default_admin_user(db)
         # After the palettes and the admin exist: give every ownerless palette the curator owner
