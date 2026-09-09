@@ -57,11 +57,25 @@ const TAGS = [
   { name: "warm", kind: "purpose", count: 1 },
 ];
 
+const PROFILE = {
+  handle: "artist",
+  has_avatar: false,
+  created_at: "2026-01-01T00:00:00Z",
+  palette_count: 2,
+};
+
 async function stub(page: Page, { loggedIn }: { loggedIn: boolean }) {
   await page.route("**/api/v1/palettes*", (r) => r.fulfill({ json: PALETTES }));
   await page.route("**/api/v1/users/*/palettes/*", (r) =>
     r.fulfill({ json: PALETTES.items[0] }),
   );
+  // The profile's palette listing (with or without the ?limit/&offset query), then the profile
+  // header itself. A regex for the listing so it matches the query string but not the single-palette
+  // path (…/palettes/:slug), which the more specific glob above already handles.
+  await page.route(/\/api\/v1\/users\/[^/]+\/palettes(\?.*)?$/, (r) =>
+    r.fulfill({ json: PALETTES }),
+  );
+  await page.route("**/api/v1/users/*", (r) => r.fulfill({ json: PROFILE }));
   await page.route("**/api/v1/tags", (r) => r.fulfill({ json: TAGS }));
   await page.route("**/api/v1/favorites", (r) => r.fulfill({ json: PALETTES.items }));
   await page.route("**/api/v1/auth/verify*", (r) =>
@@ -168,6 +182,7 @@ const GUEST_ROUTES: Route[] = [
   { name: "reset-password", path: "/reset-password?token=baseline" },
   { name: "verify-failed", path: "/verify?token=baseline" },
   { name: "not-found", path: "/no-such-page" },
+  { name: "profile-user", path: "/u/artist" },
 ];
 
 for (const { name, path, fullPage = true } of GUEST_ROUTES) {

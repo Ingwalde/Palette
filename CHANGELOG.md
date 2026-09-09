@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.2.5 — Real profiles, author discovery and favorites before sign-in
+
+- **Profile pages** — `/u/:handle` now has a proper header (avatar, palette count, member-since) and
+  pages through the owner's palettes; an unknown handle is a genuine 404 rather than an empty list.
+- **More from this author** — a palette page shows a few other palettes by the same person, linking
+  to their profile.
+- **Favorites before you sign in** — a logged-out visitor can save palettes (kept on the device);
+  the favorites page shows them, and signing in merges them into the account.
+- **Lighter avatar revalidation** — the avatar endpoint answers a conditional request with `304`
+  when the image hasn't changed, skipping the transfer and the decode.
+
 ## v5.2.4 — Profile links, lighter avatars and self-healing loads
 
 - **Author links to a profile** — a card's `@handle` byline now opens that person's public

@@ -79,3 +79,31 @@ async def test_public_avatar_endpoint_serves_the_image(user_client, client):
 async def test_public_avatar_404_when_absent(client):
     assert (await client.get("/api/v1/users/normaluser/avatar")).status_code == 404
     assert (await client.get("/api/v1/users/nobody/avatar")).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_public_profile_and_404(user_client, client):
+    resp = await client.get("/api/v1/users/normaluser")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["handle"] == "normaluser"
+    assert body["has_avatar"] is False
+    assert body["palette_count"] == 0
+    assert "created_at" in body
+    # An unknown handle is a real not-found, not an empty profile.
+    assert (await client.get("/api/v1/users/nobody")).status_code == 404
+    assert (await client.get("/api/v1/users/nobody/palettes")).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_avatar_304_on_matching_etag(user_client, client):
+    await user_client.put(
+        "/api/v1/users/me/avatar", json={"avatar": _PNG}, headers=csrf_headers(user_client)
+    )
+    first = await client.get("/api/v1/users/normaluser/avatar")
+    assert first.status_code == 200
+    etag = first.headers["etag"]
+    # A conditional request with the same ETag gets 304 and no body.
+    again = await client.get("/api/v1/users/normaluser/avatar", headers={"If-None-Match": etag})
+    assert again.status_code == 304
+    assert again.content == b""

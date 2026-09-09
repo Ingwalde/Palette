@@ -40,6 +40,21 @@ async def read_palette_for_owner(
     return palette
 
 
+@router.get("/{handle}", response_model=schemas.PublicProfile)
+async def read_public_profile(handle: str, db: AsyncSession = Depends(get_db)):
+    """The public profile for `handle` — the header of the /u/:handle page. 404 for an account
+    that does not exist, so a stranger URL is a genuine not-found rather than an empty listing."""
+    user = await crud.get_user_by_username(db, handle)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return {
+        "handle": user.username,
+        "has_avatar": bool(user.avatar),
+        "created_at": user.created_at,
+        "palette_count": await crud.count_palettes(db=db, owner=handle),
+    }
+
+
 @router.get("/{handle}/palettes", response_model=schemas.PaletteList)
 async def read_palettes_for_owner(
     handle: str,
@@ -51,7 +66,9 @@ async def read_palettes_for_owner(
 ):
     """The public palettes owned by `handle` — the profile listing linked from a card's byline.
     Only public, active palettes appear (the same feed rules as the home catalogue), so this never
-    exposes a user's private drafts."""
+    exposes a user's private drafts. 404 when the account does not exist."""
+    if await crud.get_user_by_username(db, handle) is None:
+        raise HTTPException(status_code=404, detail="Profile not found")
     items = await crud.get_palettes(db=db, sort=sort, limit=limit, offset=offset, owner=handle)
     total = await crud.count_palettes(db=db, owner=handle)
     response.headers["X-Total-Count"] = str(total)
@@ -59,7 +76,7 @@ async def read_palettes_for_owner(
 
 
 @router.get("/{handle}/avatar")
-async def read_avatar(handle: str, db: AsyncSession = Depends(get_db)):
+async def read_avatar(handle: str, request: Request, db: AsyncSession = Depends(get_db)):
     """Serve a user's avatar as a real, cacheable image, so a card list can reference it by URL
     instead of embedding every avatar's data URL inline. 404 when the account or its photo is
     absent. The stored value is a validated `data:image/...;base64,` URL — decoded here."""
@@ -72,19 +89,20 @@ async def read_avatar(handle: str, db: AsyncSession = Depends(get_db)):
     if media_type is None:
         # A stored value that predates the current validator; nothing safe to serve.
         raise HTTPException(status_code=404, detail="Avatar not found")
+
+    # ETag from the stored data URL itself, so an unchanged avatar can answer a conditional
+    # request with 304 without decoding the image at all.
+    etag = f'"{hashlib.sha256(user.avatar.encode()).hexdigest()[:16]}"'
+    cache_headers = {"Cache-Control": "public, max-age=3600", "ETag": etag}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=cache_headers)
+
     try:
         data = base64.b64decode(encoded, validate=True)
     except (binascii.Error, ValueError):
         raise HTTPException(status_code=404, detail="Avatar not found") from None
 
-    # A short public cache with an ETag: avatars change rarely, and the ETag lets a browser
-    # revalidate cheaply when they do.
-    etag = f'"{hashlib.sha256(data).hexdigest()[:16]}"'
-    return Response(
-        content=data,
-        media_type=media_type,
-        headers={"Cache-Control": "public, max-age=3600", "ETag": etag},
-    )
+    return Response(content=data, media_type=media_type, headers=cache_headers)
 
 
 @router.put("/me/avatar", response_model=schemas.UserRead)

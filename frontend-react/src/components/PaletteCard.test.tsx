@@ -125,13 +125,14 @@ describe("PaletteCard", () => {
     expect(await screen.findByText("2 colors copied")).toBeInTheDocument();
   });
 
-  it("sends a logged-out visitor to /login when saving, carrying the intent", async () => {
+  it("saves a logged-out visitor's favorite on this device (no redirect)", async () => {
     const user = userEvent.setup();
     renderCard();
     expect(screen.getByTestId("loc")).toHaveTextContent("/");
     await user.click(screen.getByRole("button", { name: /Toggle favorite/i }));
-    // No toast into the void — the intent goes to the login page instead of dying.
-    expect(screen.getByTestId("loc")).toHaveTextContent("/login");
+    // Kept locally and acknowledged, rather than bounced to the login page.
+    expect(await screen.findByText("Saved on this device")).toBeInTheDocument();
+    expect(screen.getByTestId("loc")).toHaveTextContent("/");
   });
   it("says so when the clipboard refuses the write", async () => {
     // writeText rejects on a denied permission, an unfocused document or an insecure origin.

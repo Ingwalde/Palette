@@ -114,8 +114,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v5.2.4 with auth, favorites, PostgreSQL and Docker.",
-    version="5.2.4",
+    description="Backend API for Palette v5.2.5 with auth, favorites, PostgreSQL and Docker.",
+    version="5.2.5",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -263,7 +263,7 @@ async def _validation_exception_handler(request, exc: RequestValidationError) ->
 async def root():
     return {
         "name": "Palette API",
-        "version": "5.2.4",
+        "version": "5.2.5",
         # Only advertise the docs where they exist. With enable_api_docs off — the production
         # default — /api/docs is a 404, so linking to it sent anyone following the root response
         # to a dead end.

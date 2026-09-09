@@ -4,6 +4,7 @@ import type {
   PaletteList,
   PaletteListParams,
   PaletteVisibility,
+  PublicProfile,
 } from "../types/api";
 
 export function listPalettes(params: PaletteListParams = {}): Promise<PaletteList> {
@@ -15,8 +16,18 @@ export function listMyPalettes(): Promise<PaletteList> {
 }
 
 // The public palettes owned by a given handle — the profile listing linked from a card byline.
-export function listUserPalettes(handle: string): Promise<PaletteList> {
-  return request<PaletteList>(`/users/${encodeURIComponent(handle)}/palettes`);
+export function listUserPalettes(
+  handle: string,
+  params: { limit?: number; offset?: number } = {},
+): Promise<PaletteList> {
+  return request<PaletteList>(
+    `/users/${encodeURIComponent(handle)}/palettes${toQuery({ ...params })}`,
+  );
+}
+
+// The public profile header for a handle — 404s for an account that does not exist.
+export function getPublicProfile(handle: string): Promise<PublicProfile> {
+  return request<PublicProfile>(`/users/${encodeURIComponent(handle)}`);
 }
 
 export function getPalette(handle: string, slug: string): Promise<Palette> {

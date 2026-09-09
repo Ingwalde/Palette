@@ -359,6 +359,15 @@ _AVATAR_PREFIXES = (
 )
 
 
+class PublicProfile(BaseModel):
+    """The public face of an account, for the /u/:handle profile page: no email or admin flag."""
+
+    handle: str
+    has_avatar: bool
+    created_at: datetime
+    palette_count: int
+
+
 class AvatarUpdate(BaseModel):
     avatar: str = Field(min_length=1, max_length=_AVATAR_MAX_LEN)
 

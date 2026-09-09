@@ -9,6 +9,8 @@ export const queryKeys = {
   palettesInfinite: (params: PaletteListParams = {}) =>
     ["palettes", "infinite", params] as const,
   palette: (handle: string, slug: string) => ["palette", handle, slug] as const,
+  userProfile: (handle: string) => ["user", handle, "profile"] as const,
+  userPalettes: (handle: string) => ["user", handle, "palettes"] as const,
   tags: ["tags"] as const,
   favorites: ["favorites"] as const,
 };

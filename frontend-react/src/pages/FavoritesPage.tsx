@@ -36,13 +36,16 @@ export function FavoritesPage() {
   }, [isError, authError, error, showToast]);
 
   let count: string;
-  if (!isAuthenticated || authError) count = "Login required";
+  if (authError) count = "Login required";
   else if (isLoading) count = "Loading...";
   else if (isError) count = "API error";
-  else count = `${favorites.length} saved palette${favorites.length === 1 ? "" : "s"}`;
+  else
+    count = `${favorites.length} saved palette${favorites.length === 1 ? "" : "s"}${
+      isAuthenticated ? "" : " · on this device"
+    }`;
 
   const clearDisabled =
-    !isAuthenticated || isLoading || isError || favorites.length === 0 || clear.isPending;
+    !!authError || isLoading || isError || favorites.length === 0 || clear.isPending;
 
   const onClear = async () => {
     const ok = await confirm({
@@ -93,20 +96,14 @@ export function FavoritesPage() {
         </div>
 
         <div className={ui.paletteGrid}>
-          {!isAuthenticated ? (
-            <EmptyState
-              title="Log in to view favorites"
-              text="Log in to save palettes to your account and open them here any time."
-              action={{ label: "Log in", to: "/login" }}
-            />
-          ) : isLoading ? (
-            <PaletteCardSkeletonGrid />
-          ) : authError ? (
+          {authError ? (
             <EmptyState
               title="Please log in again"
               text="Your session has expired. Log in again to view and manage your saved palettes."
               action={{ label: "Log in", to: "/login" }}
             />
+          ) : isLoading ? (
+            <PaletteCardSkeletonGrid />
           ) : isError ? (
             <EmptyState
               title="Favorites are not available"
@@ -115,7 +112,12 @@ export function FavoritesPage() {
           ) : favorites.length === 0 ? (
             <EmptyState
               title="No favorites yet"
-              text="Go to the home page and save your first palette."
+              text={
+                isAuthenticated
+                  ? "Go to the home page and save your first palette."
+                  : "Save palettes and they'll appear here. Log in to keep them across devices."
+              }
+              action={isAuthenticated ? undefined : { label: "Log in", to: "/login" }}
             />
           ) : (
             favorites.map((palette) => <PaletteCard key={palette.id} palette={palette} />)
