@@ -9,6 +9,13 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.6",
+    title: "Sign-in no longer waits on the favorites merge",
+    items: [
+      "Fixed a hang: signing in with many on-device favorites made the sign-in button wait while each one uploaded. The merge now runs in the background.",
+    ],
+  },
+  {
     version: "v5.2.5",
     title: "Real profiles, author discovery and favorites before sign-in",
     items: [

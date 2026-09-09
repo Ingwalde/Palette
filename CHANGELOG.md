@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.2.6 — Sign-in no longer waits on the favorites merge
+
+- **Fixed:** signing in with a long list of on-device favorites made the sign-in button hang while
+  each one uploaded. The merge now runs in the background, so login returns immediately and the
+  favorites fill in a moment later (server-side adds are idempotent, so nothing is duplicated).
+
 ## v5.2.5 — Real profiles, author discovery and favorites before sign-in
 
 - **Profile pages** — `/u/:handle` now has a proper header (avatar, palette count, member-since) and
