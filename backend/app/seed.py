@@ -3,7 +3,11 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .crud import create_many_if_empty, create_missing_default_palettes
+from .crud import (
+    create_many_if_empty,
+    create_missing_default_palettes,
+    update_changed_default_palettes,
+)
 from .schemas import PaletteCreate
 
 # Default starter palettes live in data (seed_palettes.json) rather than inline code, so
@@ -24,13 +28,16 @@ async def seed_default_palettes(db: AsyncSession) -> int:
     return await create_many_if_empty(db, DEFAULT_PALETTES)
 
 
-async def seed_missing_default_palettes(db: AsyncSession) -> int:
-    """Top up an already-seeded database with default palettes added since first run.
+async def seed_missing_default_palettes(db: AsyncSession) -> tuple[int, int]:
+    """Reconcile an already-seeded database with the seed file: add default palettes that are new,
+    and refresh the content of curator-owned ones whose colours/description/tags have drifted.
 
-    A no-op on a fresh database (everything was just inserted) and on one already carrying the
-    full catalogue; it only adds entries whose names are new.
+    A no-op on a fresh database (everything was just inserted) and when nothing has changed.
+    Returns (added, updated).
     """
-    return await create_missing_default_palettes(db, DEFAULT_PALETTES)
+    added = await create_missing_default_palettes(db, DEFAULT_PALETTES)
+    updated = await update_changed_default_palettes(db, DEFAULT_PALETTES)
+    return added, updated
 
 
 # Standard "what is this palette for" categories, seeded into the tag catalog as

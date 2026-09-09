@@ -69,6 +69,40 @@ async def test_create_missing_default_palettes_adds_only_new_names(db_session):
     )
 
 
+async def test_update_changed_default_palettes(db_session):
+    original = _palette("Keeper", colors=["#111111", "#222222"], tags=["a"])
+    assert await crud.create_many_if_empty(db_session, [original]) == 1
+
+    changed = schemas.PaletteCreate(
+        name="Keeper", description="new words", colors=["#111111", "#333333"], tags=["b"]
+    )
+    assert await crud.update_changed_default_palettes(db_session, [changed]) == 1
+    row = await crud.get_palette_by_slug(db_session, "keeper")
+    assert row is not None
+    assert row.colors == ["#111111", "#333333"]
+    assert row.description == "new words"
+    assert row.tags == ["b"]
+    # Idempotent: the same content is not re-written.
+    assert await crud.update_changed_default_palettes(db_session, [changed]) == 0
+
+
+async def test_update_changed_leaves_user_owned_palettes_alone(db_session):
+    user = await _user(db_session)
+    owned = await crud.create_palette(db_session, _palette("Mine", colors=["#000000", "#ffffff"]))
+    # Assign through the relationship so `owned.owner` is populated (setting owner_id alone leaves
+    # the identity-map object's owner unloaded — which is only a test artefact, not the real path).
+    owned.owner = user
+    await db_session.commit()
+
+    changed = schemas.PaletteCreate(name="Mine", colors=["#123456", "#654321"], tags=["x"])
+    # A user's palette that happens to share a default's name is never overwritten.
+    assert await crud.update_changed_default_palettes(db_session, [changed]) == 0
+    refreshed = await crud.get_palette_by_slug(db_session, "mine")
+    assert refreshed is not None
+    # Colours are stored upper-cased; the point is they are the originals, untouched.
+    assert refreshed.colors == ["#000000", "#FFFFFF"]
+
+
 async def _user(db, is_admin=False):
     return await crud.create_user(
         db,

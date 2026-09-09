@@ -75,7 +75,7 @@ describe("PaletteCard", () => {
                 palette={{
                   ...palette,
                   owner_handle: "alice",
-                  owner_avatar: "data:image/png;base64,AAAA",
+                  owner_has_avatar: true,
                 }}
               />
             </MemoryRouter>
@@ -83,9 +83,11 @@ describe("PaletteCard", () => {
         </AuthProvider>
       </QueryClientProvider>,
     );
-    expect(screen.getByText("@alice")).toBeInTheDocument();
-    // The avatar renders as an image (decorative, so empty alt).
-    expect(document.querySelector('img[src^="data:image/png"]')).not.toBeNull();
+    // The @handle links to the owner's public palettes.
+    const link = screen.getByRole("link", { name: "@alice" });
+    expect(link).toHaveAttribute("href", "/u/alice");
+    // The avatar loads from the cacheable endpoint, not an inline data URL.
+    expect(document.querySelector('img[src$="/users/alice/avatar"]')).not.toBeNull();
   });
 
   it("does not crash when owner_handle is missing (older fixtures)", () => {

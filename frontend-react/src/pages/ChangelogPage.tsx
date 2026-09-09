@@ -9,6 +9,16 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.4",
+    title: "Profile links, lighter avatars and self-healing loads",
+    items: [
+      "A card's @handle byline now links to that person's public palettes at /u/:handle.",
+      "Owner avatars load from a cacheable endpoint instead of being embedded in every list response, keeping the feed light.",
+      "Editing a default palette in the seed file now updates the live palette on deploy (a user's palette that shares a name is never touched).",
+      "A tab left open across a deploy reloads once to pick up the new build instead of erroring.",
+    ],
+  },
+  {
     version: "v5.2.3",
     title: "Card bylines, an animated theme switch and tidier filters",
     items: [

@@ -138,11 +138,12 @@ class Palette(Base):
         return self.owner.username if self.owner is not None else CURATOR_HANDLE
 
     @property
-    def owner_avatar(self) -> str | None:
-        """The owner's avatar (a data: URL) for the byline on the card, or None — for a seed
-        palette (curator-owned or not yet backfilled) as well as a user who set no photo. The
-        owner relationship is selectin-loaded, so this is safe to read during serialization."""
-        return self.owner.avatar if self.owner is not None else None
+    def owner_has_avatar(self) -> bool:
+        """Whether the owner has a profile photo — so the card byline knows to load it from
+        `/users/:handle/avatar` (a cacheable endpoint) rather than the list embedding every
+        avatar's data URL inline. False for a seed palette or an owner with no photo. The owner
+        relationship is selectin-loaded, so this is safe to read during serialization."""
+        return bool(self.owner is not None and self.owner.avatar)
 
 
 class Tag(Base):

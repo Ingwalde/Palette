@@ -275,3 +275,27 @@ async def test_curated_sort_puts_featured_first(client, db_session):
 
     items = (await client.get("/api/v1/palettes", params={"sort": "curated"})).json()["items"]
     assert items[0]["name"] == "Featured One"
+
+
+async def test_owner_palette_listing_and_avatar_flag(client, db_session):
+    from app.security import hash_password
+
+    user = await crud.create_user(
+        db_session,
+        schemas.UserCreate(username="artist", email="artist@test.com", password="strong-password"),
+        hash_password("strong-password"),
+    )
+    palette = await _seed_public(db_session, name="Artist One", colors=["#010101"], tags=["x"])
+    palette.owner_id = user.id
+    await db_session.commit()
+
+    resp = await client.get("/api/v1/users/artist/palettes")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert [i["name"] for i in body["items"]] == ["Artist One"]
+    item = body["items"][0]
+    assert item["owner_handle"] == "artist"
+    # No photo set, so the byline falls back to the initial rather than the avatar endpoint.
+    assert item["owner_has_avatar"] is False
+    # A handle that owns nothing lists nothing.
+    assert (await client.get("/api/v1/users/nobody/palettes")).json()["total"] == 0

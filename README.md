@@ -370,7 +370,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v5.2.3
+v5.2.4
 ```
 
 ## License
