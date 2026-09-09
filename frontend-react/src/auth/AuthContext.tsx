@@ -52,16 +52,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: async (user) => {
+    onSuccess: (user) => {
       setUser(user);
-      // Carry over anything the visitor saved while logged out: add each to the account (ignoring
-      // ones already there), clear the device list, then let the favorites query refetch.
+      // Carry over anything the visitor saved while logged out. Done in the background (not
+      // awaited) so login resolves immediately — otherwise mutateAsync would wait on every add and
+      // the sign-in button would hang while a long guest list uploads. Server-side adds are
+      // idempotent, so a failure or a re-login cannot duplicate a favorite; the list is cleared and
+      // the query refetched once the adds settle.
       const guests = getGuestFavorites();
-      if (guests.length > 0) {
-        await Promise.allSettled(guests.map((p) => addFavorite(p.slug)));
+      if (guests.length === 0) return;
+      void Promise.allSettled(guests.map((p) => addFavorite(p.slug))).then(() => {
         clearGuestFavorites();
         queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
-      }
+      });
     },
   });
   // Registration creates the account but does not start a session (the verification email
