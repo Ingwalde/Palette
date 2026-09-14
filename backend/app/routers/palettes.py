@@ -22,15 +22,22 @@ async def read_palettes(
         default=None, description="Search by name, description, slug or tag"
     ),
     tag: str | None = Query(default=None, description="Filter by tag"),
+    color_count: int | None = Query(default=None, ge=1, le=8, description="Exact number of colors"),
     sort: str = Query(default="default", pattern="^(default|az|za|new|popular|curated)$"),
     limit: int = Query(default=100, ge=1, le=500, description="Max results to return"),
     offset: int = Query(default=0, ge=0, description="Number of results to skip"),
     db: AsyncSession = Depends(get_db),
 ):
     items = await crud.get_palettes(
-        db=db, search=search, tag=tag, sort=sort, limit=limit, offset=offset
+        db=db,
+        search=search,
+        tag=tag,
+        sort=sort,
+        limit=limit,
+        offset=offset,
+        color_count=color_count,
     )
-    total = await crud.count_palettes(db=db, search=search, tag=tag)
+    total = await crud.count_palettes(db=db, search=search, tag=tag, color_count=color_count)
     response.headers["X-Total-Count"] = str(total)
     # Returned as a dict; FastAPI serialises it through the PaletteList response_model.
     return {"items": items, "total": total, "limit": limit, "offset": offset}

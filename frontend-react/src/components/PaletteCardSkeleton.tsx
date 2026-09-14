@@ -6,9 +6,9 @@ import * as styles from "./PaletteCardSkeleton.css";
 export function PaletteCardSkeleton() {
   return (
     <div className={styles.card} aria-hidden="true">
+      <div className={styles.swatches} />
       <div className={styles.title} />
       <div className={styles.line} />
-      <div className={styles.swatches} />
       <div className={styles.footer} />
     </div>
   );

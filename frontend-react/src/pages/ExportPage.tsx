@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../auth/AuthContext";
+import { getPalette } from "../api/palettes";
+import { request } from "../lib/http";
+import { CURATOR_HANDLE } from "../lib/constants";
 import { usePalettes, useFavorites } from "../api/hooks";
 import { useDebounce } from "../lib/useDebounce";
 import { useToast } from "../components/toast/ToastProvider";
@@ -51,6 +56,9 @@ export function ExportPage() {
     ? (formatParam as ExportFormat)
     : "css";
   const selectedSlug = params.get("slug") ?? "";
+  const selectedHandle = params.get("handle") ?? "";
+  const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
 
   const [searchInput, setSearchInput] = useState("");
   const { showToast } = useToast();
@@ -69,22 +77,29 @@ export function ExportPage() {
     );
   };
 
-  const setSource = (value: string) =>
-    patchParams({ source: value, ...(value !== "single" ? { slug: null } : {}) });
+  const setSource = (value: string) => patchParams({ source: value });
   const setFormat = (value: ExportFormat) => patchParams({ format: value });
-  const setSelectedSlug = (slug: string) => patchParams({ slug: slug || null });
 
   const singleMode = source === "single";
 
-  // Keep the search box showing the selected palette's name when arriving from a deep link.
-  const { data: selectedForName } = usePalettes(
-    selectedSlug ? { search: selectedSlug, limit: 8 } : { limit: 1 },
-  );
+  // Fetch the exact visibility-checked resource. A picker sample is not a source of identity:
+  // deep links and private owner palettes must work even when absent from public search results.
+  const {
+    data: selected,
+    isLoading: selectedLoading,
+    isError: selectedError,
+  } = useQuery({
+    queryKey: ["export-palette", user?.id ?? "guest", selectedHandle, selectedSlug],
+    queryFn: () =>
+      selectedHandle
+        ? getPalette(selectedHandle, selectedSlug)
+        : request<Palette>(`/palettes/${encodeURIComponent(selectedSlug)}`),
+    enabled: singleMode && !!selectedSlug,
+    retry: false,
+  });
   useEffect(() => {
-    if (!selectedSlug) return;
-    const match = selectedForName?.items.find((p) => p.slug === selectedSlug);
-    if (match) setSearchInput((prev) => (prev ? prev : match.name));
-  }, [selectedSlug, selectedForName]);
+    if (selected) setSearchInput((prev) => prev || selected.name);
+  }, [selected]);
   const query = useDebounce(searchInput.trim(), 180);
 
   // Search server-side rather than filtering a first-200 slice on the client: a match that sat
@@ -97,10 +112,9 @@ export function ExportPage() {
   const { data: favorites } = useFavorites();
 
   const selectedPalettes: Palette[] = useMemo(() => {
-    if (source === "favorites") return favorites ?? [];
-    const found = pickerResults.find((p) => p.slug === selectedSlug);
-    return found ? [found] : [];
-  }, [source, favorites, pickerResults, selectedSlug]);
+    if (source === "favorites") return isAuthenticated ? (favorites ?? []) : [];
+    return selected && !selectedError ? [selected] : [];
+  }, [source, favorites, isAuthenticated, selected, selectedError]);
 
   const isPng = format === "png";
 
@@ -122,33 +136,37 @@ export function ExportPage() {
     [isPng, selectedPalettes, singleMode],
   );
 
-  const selectedName = pickerResults.find((p) => p.slug === selectedSlug)?.name;
+  const selectedName = selected?.name;
   const pickerStatus = selectedName
     ? `Selected: ${selectedName}`
     : "Choose one palette to export.";
 
   const onPickPalette = (palette: Palette) => {
-    setSelectedSlug(palette.slug);
+    patchParams({ slug: palette.slug, handle: palette.owner_handle || CURATOR_HANDLE });
     setSearchInput(palette.name);
   };
 
-  const onCopy = () => {
-    if (selectedPalettes.length === 0) return showToast("Nothing to copy yet");
-    void copyToClipboard(textOutput);
-    showToast("Export result copied");
+  const onCopy = async () => {
+    if (selectedPalettes.length === 0) return;
+    try {
+      await copyToClipboard(textOutput);
+      showToast("Export result copied");
+    } catch {
+      showToast("Could not copy to the clipboard", "error");
+    }
   };
 
   const onDownload = () => {
     if (isPng) {
       if (!pngDataUrl) return showToast("No palettes to export");
       downloadDataUrl(pngDataUrl, getExportFilename(selectedPalettes, "png"));
-      showToast("PNG image downloaded");
+      showToast("PNG download started");
       return;
     }
     if (selectedPalettes.length === 0) return showToast("Nothing to download yet");
     const ext = EXT[format as TextFormat];
     downloadTextFile(textOutput, getExportFilename(selectedPalettes, ext));
-    showToast("Export file downloaded");
+    showToast("File download started");
   };
 
   const caption =
@@ -196,7 +214,6 @@ export function ExportPage() {
                     value={searchInput}
                     onChange={(e) => {
                       setSearchInput(e.target.value);
-                      setSelectedSlug("");
                     }}
                   />
                   <button
@@ -205,7 +222,6 @@ export function ExportPage() {
                     aria-label="Clear search"
                     onClick={() => {
                       setSearchInput("");
-                      setSelectedSlug("");
                     }}
                   ></button>
                 </span>
@@ -216,9 +232,9 @@ export function ExportPage() {
                   ? null
                   : pickerResults.map((palette) => (
                       <button
-                        key={palette.slug}
+                        key={palette.id}
                         type="button"
-                        className={`${styles.pickerOption}${palette.slug === selectedSlug ? ` ${styles.pickerOptionSelected}` : ""}`}
+                        className={`${styles.pickerOption}${palette.slug === selectedSlug && palette.owner_handle === selectedHandle ? ` ${styles.pickerOptionSelected}` : ""}`}
                         onClick={() => onPickPalette(palette)}
                       >
                         <span className={styles.pickerOptionInfo}>
@@ -237,11 +253,27 @@ export function ExportPage() {
                     ))}
               </div>
               <p className={styles.pickerStatus}>
-                {pickerResults.length === 0 ? "No palettes found." : pickerStatus}
+                {selectedLoading
+                  ? "Loading selected palette…"
+                  : selectedError
+                    ? "This palette is unavailable or you do not have access."
+                    : selectedName
+                      ? pickerStatus
+                      : pickerResults.length === 0
+                        ? "No palettes found."
+                        : pickerStatus}
               </p>
             </div>
           )}
 
+          {!singleMode && !isAuthenticated && (
+            <p className={ui.muted}>
+              Log in to export your favorites.{" "}
+              <Link to="/login" state={{ from: location }}>
+                Log in / Create account
+              </Link>
+            </p>
+          )}
           <label className={ui.field}>
             <span>Format</span>
             <CustomSelect
@@ -259,18 +291,25 @@ export function ExportPage() {
                 className={buttonClass("primary")}
                 type="button"
                 onClick={onDownload}
+                disabled={selectedPalettes.length === 0}
               >
                 Download PNG
               </button>
             ) : (
               <>
-                <button className={buttonClass("primary")} type="button" onClick={onCopy}>
+                <button
+                  className={buttonClass("primary")}
+                  type="button"
+                  onClick={() => void onCopy()}
+                  disabled={selectedPalettes.length === 0}
+                >
                   Copy result
                 </button>
                 <button
                   className={buttonClass("secondary")}
                   type="button"
                   onClick={onDownload}
+                  disabled={selectedPalettes.length === 0}
                 >
                   Download file
                 </button>

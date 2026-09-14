@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigationType } from "react-router-dom";
 import * as ui from "../styles/ui.css";
 
 /**
@@ -21,17 +21,20 @@ import * as ui from "../styles/ui.css";
  * including the skip link, whose entire purpose is to be the first thing reachable.
  */
 export function RouteAnnouncer({ mainId }: { mainId: string }) {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
+  const navigationType = useNavigationType();
   const [message, setMessage] = useState("");
-  const firstRender = useRef(true);
+  const previousPath = useRef(pathname);
 
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
+    if (previousPath.current === pathname) return;
+    previousPath.current = pathname;
 
-    document.getElementById(mainId)?.focus();
+    // Let the catalogue restore its saved scroll position while still moving keyboard focus.
+    document.getElementById(mainId)?.focus({
+      preventScroll:
+        pathname === "/" && (navigationType === "POP" || !!state?.restoreCatalog),
+    });
 
     // Read after paint: the new route renders in the same commit as this effect, so the title
     // and heading below belong to the page being left if they are read any earlier.
@@ -40,7 +43,7 @@ export function RouteAnnouncer({ mainId }: { mainId: string }) {
       setMessage(`${heading || document.title} — page loaded`);
     });
     return () => cancelAnimationFrame(id);
-  }, [pathname, mainId]);
+  }, [pathname, mainId, navigationType, state]);
 
   return (
     <div

@@ -47,11 +47,6 @@ const DARK = {
 export const heroWrap = style({
   containerType: "inline-size",
   containerName: "heroEd",
-  // Fill the first screen so the catalogue's search station always starts just below the fold — on
-  // a fresh load the visitor sees only the hero, and a small scroll reveals the tools. `svh` keeps
-  // this honest on mobile (where the URL bar changes the viewport); the offset is the sticky
-  // header's flow height plus its top margin.
-  minHeight: "calc(100svh - 92px)",
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
@@ -60,11 +55,11 @@ export const heroWrap = style({
 export const hero = style({
   vars: LIGHT,
   color: text,
-  padding: "42px 46px 31px",
+  padding: "32px 24px 20px",
   fontFamily: '"Poppins", system-ui, sans-serif',
   "@container": {
-    "heroEd (max-width: 760px)": { padding: "34px 30px 25px" },
-    "heroEd (max-width: 620px)": { padding: "31px 25px 22px" },
+    "heroEd (max-width: 760px)": { padding: "28px 16px 18px" },
+    "heroEd (max-width: 620px)": { padding: "22px 4px 16px" },
   },
 });
 globalStyle(`:root:not([data-theme="light"]) ${hero}`, {
@@ -280,13 +275,14 @@ export const chipHex = style({
 
 // --- under-hero row -------------------------------------------------------------------------
 export const bottom = style({
-  marginTop: "52px",
+  marginTop: "24px",
   paddingTop: "15px",
   borderTop: `1px solid ${line}`,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: "12px",
+  flexWrap: "wrap",
   "@container": {
     "heroEd (max-width: 620px)": { marginTop: "28px", flexWrap: "wrap" },
   },
@@ -319,7 +315,7 @@ export const bottomLabel = style({
     "&:focus-visible": { outline: `2px solid ${ink}`, outlineOffset: "2px" },
   },
   "@container": {
-    "heroEd (max-width: 620px)": { display: "none" },
+    "heroEd (max-width: 620px)": { minHeight: "36px" },
   },
 });
 

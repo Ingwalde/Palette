@@ -60,13 +60,13 @@ test("navigating to Login shows both auth forms", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
 });
 
-test("favorites shows a logged-out visitor their on-device list with a log-in offer", async ({
-  page,
-}) => {
+test("favorites explains that saving requires an account", async ({ page }) => {
   await page.goto("/favorites");
-  // No login wall: an empty on-device list with a Log in call-to-action.
-  await expect(page.getByRole("heading", { name: /no favorites yet/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Log in" })).toBeVisible();
+  // Guests can browse but must sign in before saving a collection.
+  await expect(
+    page.getByRole("heading", { name: /keep your favorites together/i }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Log in / Create account" })).toBeVisible();
 });
 
 test("changelog renders version history", async ({ page }) => {

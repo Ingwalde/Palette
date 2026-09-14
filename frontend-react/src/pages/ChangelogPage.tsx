@@ -9,6 +9,18 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.7",
+    title: "Clearer discovery and account-only saving",
+    items: [
+      "Color-first cards with larger swatches, compact author details, Copy all and expandable linked tags.",
+      "Save requires an account. After login, your requested palette is saved and you return to where you were. Registration keeps the request through email verification.",
+      "Combine an exact color count (1–8), tags, search and sorting. Click an active tag to clear it or reset all filters together.",
+      "A shorter editorial hero, an Explore palettes cue on mobile, and navigation and theme controls for everyone.",
+      "Simpler Save and Export actions on palette details; secondary actions live in menus. Favorites has a clear login and empty state.",
+      "Export links open the exact selected palette, including your private palettes, and keep that selection while you change formats or search.",
+    ],
+  },
+  {
     version: "v5.2.6",
     title: "Sign-in no longer waits on the favorites merge",
     items: [

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -53,12 +53,12 @@ function renderCard() {
 }
 
 describe("PaletteCard", () => {
-  it("renders the name, description, tags and computed contrast", () => {
+  it("renders colors, title, linked tags and the author without contrast clutter", () => {
     renderCard();
     expect(screen.getByRole("heading", { name: "Sea Breeze" })).toBeInTheDocument();
-    expect(screen.getByText("Fresh blue and green.")).toBeInTheDocument();
+    expect(screen.queryByText("Fresh blue and green.")).not.toBeInTheDocument();
     expect(screen.getByText("#cold")).toBeInTheDocument();
-    expect(screen.getByText(/Excellent contrast · 21:1/)).toBeInTheDocument();
+    expect(screen.queryByText(/Excellent contrast/)).not.toBeInTheDocument();
     // A curator-owned palette is bylined with the brand, not "by palette".
     expect(screen.getByText("Palette")).toBeInTheDocument();
   });
@@ -111,11 +111,13 @@ describe("PaletteCard", () => {
     expect(screen.getByText("Palette")).toBeInTheDocument();
   });
 
-  it("names the contrast pair in the badge and links to the table", () => {
+  it("links tags to the catalogue filter", () => {
     renderCard();
-    const badge = screen.getByRole("link", { name: /Excellent contrast/i });
-    expect(badge).toHaveAccessibleName(/#000000 and #FFFFFF/);
-    expect(badge).toHaveAttribute("href", "/u/palette/sea-breeze#contrast");
+    expect(screen.getByRole("link", { name: "#cold" })).toHaveAttribute(
+      "href",
+      "/?tag=cold#find",
+    );
+    expect(screen.queryByRole("link", { name: /contrast/i })).not.toBeInTheDocument();
   });
 
   it("copies all colors (toast confirms)", async () => {
@@ -125,14 +127,18 @@ describe("PaletteCard", () => {
     expect(await screen.findByText("2 colors copied")).toBeInTheDocument();
   });
 
-  it("saves a logged-out visitor's favorite on this device (no redirect)", async () => {
+  it("takes a guest to login without saving an on-device favorite", async () => {
     const user = userEvent.setup();
     renderCard();
     expect(screen.getByTestId("loc")).toHaveTextContent("/");
-    await user.click(screen.getByRole("button", { name: /Toggle favorite/i }));
-    // Kept locally and acknowledged, rather than bounced to the login page.
-    expect(await screen.findByText("Saved on this device")).toBeInTheDocument();
-    expect(screen.getByTestId("loc")).toHaveTextContent("/");
+    const save = screen.getByRole("button", { name: "Save Sea Breeze" });
+    await waitFor(() => expect(save).toBeEnabled());
+    await user.click(save);
+    expect(screen.getByTestId("loc")).toHaveTextContent("/login");
+    expect(localStorage.getItem("palette:guest-favorites")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("palette:pending-save")!).slug).toBe(
+      "sea-breeze",
+    );
   });
   it("says so when the clipboard refuses the write", async () => {
     // writeText rejects on a denied permission, an unfocused document or an insecure origin.

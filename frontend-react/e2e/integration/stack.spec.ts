@@ -107,10 +107,7 @@ test("a signed-in user can save and unsave a palette", async ({ page }) => {
   const firstCard = page.getByRole("article").first();
   const name = (await firstCard.getByRole("heading").innerText()).trim();
 
-  // The control carries aria-label="Toggle favorite", which replaces its visible "♡ Save" text
-  // as the accessible name, and reports state through aria-pressed rather than by relabelling
-  // itself. Asserting the attribute checks the state a screen reader is actually told.
-  const toggle = firstCard.getByRole("button", { name: "Toggle favorite" });
+  const toggle = firstCard.getByRole("button", { name: /^(Save|Unsave) / });
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
@@ -119,7 +116,10 @@ test("a signed-in user can save and unsave a palette", async ({ page }) => {
   await page.goto("/favorites");
   await expect(page.getByRole("heading", { name })).toBeVisible();
 
-  await page.getByRole("button", { name: "Toggle favorite" }).first().click();
+  await page
+    .getByRole("button", { name: /^Unsave / })
+    .first()
+    .click();
   await expect(page.getByRole("heading", { name })).toBeHidden();
 });
 

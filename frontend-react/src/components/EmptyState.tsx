@@ -5,7 +5,7 @@ import * as styles from "./EmptyState.css";
 // An action is either a link (navigate somewhere) or a button (do something in place, like
 // retrying a failed load) — never both.
 type EmptyStateAction = { label: string } & (
-  { to: string; onClick?: never } | { onClick: () => void; to?: never }
+  { to: string; state?: unknown; onClick?: never } | { onClick: () => void; to?: never }
 );
 
 interface EmptyStateProps {
@@ -21,7 +21,11 @@ export function EmptyState({ title, text, action }: EmptyStateProps) {
       <p>{text}</p>
       {action &&
         (action.to !== undefined ? (
-          <Link className={`${buttonClass("primary")} ${styles.action}`} to={action.to}>
+          <Link
+            className={`${buttonClass("primary")} ${styles.action}`}
+            to={action.to}
+            state={action.state}
+          >
             {action.label}
           </Link>
         ) : (

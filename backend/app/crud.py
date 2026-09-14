@@ -109,7 +109,7 @@ def _like_pattern(search: str) -> str:
 
 
 def _filtered_palettes_stmt(
-    search: str | None, tag: str | None, owner: str | None = None
+    search: str | None, tag: str | None, owner: str | None = None, color_count: int | None = None
 ) -> Select:
     # The public list is the community feed: only published, un-removed palettes. Private drafts
     # and moderation-removed palettes never appear here — the owner sees a private one through
@@ -137,6 +137,9 @@ def _filtered_palettes_stmt(
             )
         )
 
+    if color_count is not None:
+        stmt = stmt.where(func.jsonb_array_length(models.Palette.colors) == color_count)
+
     if tag:
         tag_value = tag.strip().lower().replace("#", "")
         # JSONB containment (@>) uses the GIN index: palettes whose tags include the value.
@@ -153,8 +156,9 @@ async def get_palettes(
     limit: int | None = None,
     offset: int = 0,
     owner: str | None = None,
+    color_count: int | None = None,
 ) -> list[models.Palette]:
-    stmt = _filtered_palettes_stmt(search, tag, owner)
+    stmt = _filtered_palettes_stmt(search, tag, owner, color_count)
 
     if sort == "az":
         stmt = stmt.order_by(func.lower(models.Palette.name).asc())
@@ -196,8 +200,11 @@ async def count_palettes(
     search: str | None = None,
     tag: str | None = None,
     owner: str | None = None,
+    color_count: int | None = None,
 ) -> int:
-    stmt = select(func.count()).select_from(_filtered_palettes_stmt(search, tag, owner).subquery())
+    stmt = select(func.count()).select_from(
+        _filtered_palettes_stmt(search, tag, owner, color_count).subquery()
+    )
     return await db.scalar(stmt) or 0
 
 

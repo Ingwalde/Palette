@@ -74,9 +74,10 @@ describe("optimistic favorite toggle", () => {
     vi.mocked(favoritesApi.addFavorite).mockReturnValueOnce(new Promise(() => {}));
 
     renderCard();
-    const button = await screen.findByRole("button", { name: /Toggle favorite/i });
+    const button = await screen.findByRole("button", { name: /Save Sea Breeze/i });
     expect(button).toHaveTextContent("Save");
 
+    await waitFor(() => expect(button).toBeEnabled());
     await user.click(button);
     expect(button).toHaveTextContent("Saved");
     expect(favoritesApi.addFavorite).toHaveBeenCalledWith("sea-breeze");
@@ -87,7 +88,8 @@ describe("optimistic favorite toggle", () => {
     vi.mocked(favoritesApi.addFavorite).mockRejectedValueOnce(new Error("nope"));
 
     renderCard();
-    const button = await screen.findByRole("button", { name: /Toggle favorite/i });
+    const button = await screen.findByRole("button", { name: /Save Sea Breeze/i });
+    await waitFor(() => expect(button).toBeEnabled());
     await user.click(button);
 
     // The optimistic flip is reverted once the server rejects, so the card stops claiming a

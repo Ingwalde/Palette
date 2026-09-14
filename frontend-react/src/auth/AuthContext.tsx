@@ -1,9 +1,7 @@
 import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "../api/auth";
-import { addFavorite } from "../api/favorites";
 import { queryKeys } from "../api/queryKeys";
-import { clearGuestFavorites, getGuestFavorites } from "../lib/guestFavorites";
 import { ApiError, setUnauthorizedHandler } from "../lib/http";
 import type { LoginPayload, MessageResponse, RegisterPayload, User } from "../types/api";
 
@@ -54,17 +52,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: authApi.login,
     onSuccess: (user) => {
       setUser(user);
-      // Carry over anything the visitor saved while logged out. Done in the background (not
-      // awaited) so login resolves immediately — otherwise mutateAsync would wait on every add and
-      // the sign-in button would hang while a long guest list uploads. Server-side adds are
-      // idempotent, so a failure or a re-login cannot duplicate a favorite; the list is cleared and
-      // the query refetched once the adds settle.
-      const guests = getGuestFavorites();
-      if (guests.length === 0) return;
-      void Promise.allSettled(guests.map((p) => addFavorite(p.slug))).then(() => {
-        clearGuestFavorites();
-        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
-      });
     },
   });
   // Registration creates the account but does not start a session (the verification email

@@ -135,6 +135,7 @@ export interface MessageResponse {
 
 // Query params for the paginated palette list.
 export interface PaletteListParams {
+  color_count?: number;
   search?: string;
   tag?: string;
   // "az"/"za" are the admin list's; "new"/"popular"/"curated" are the community feed's.

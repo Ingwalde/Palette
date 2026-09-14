@@ -13,8 +13,8 @@ export const heroActions = style({
 // The editorial hero (components/HeroEditorial) already spaces itself; the toolbar just needs a
 // little air above the framed search panel that follows it.
 export const toolbarSection = style({
-  padding: "24px 0 36px",
-  // The hero's "Observe" cue jumps here (the tools just below the fold), not all the way to the
+  padding: "12px 0 30px",
+  // The hero's "Explore palettes" cue jumps here (the tools just below the fold), not all the way to the
   // catalogue — so offset the landing from the sticky header.
   scrollMarginTop: "96px",
 });
@@ -34,7 +34,7 @@ export const searchPanel = style({
   },
 });
 
-// The search field grows; the two selects hold a fixed size on the right and wrap under the field
+// The search field grows; the three selects hold a fixed size on the right and wrap under the field
 // on a phone. (The old grid put three controls in a two-column track, dropping the format select
 // onto its own full-width row.)
 export const toolbarRow = style({
@@ -51,14 +51,18 @@ export const searchGrow = style({
 
 export const toolbarControls = style({
   display: "grid",
-  // Prefer 200/160 (wide enough for "Most popular" and "OKLCH" in full), but let the tracks shrink
+  // Prefer comfortable widths for the count, sort and format, but let the tracks shrink
   // rather than overflow the panel — a fixed 200/160 pushed past the rounded frame on a narrow
   // window, dragging the tag divider out with it. minmax(0, …) keeps everything inside the card.
-  gridTemplateColumns: "minmax(0, 200px) minmax(0, 160px)",
+  gridTemplateColumns: "minmax(0, 140px) minmax(0, 170px) minmax(0, 130px)",
   gap: "10px",
   minWidth: 0,
   "@media": {
-    "(max-width: 680px)": { gridTemplateColumns: "1fr 1fr", width: "100%" },
+    "(max-width: 680px)": {
+      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+      width: "100%",
+    },
+    "(max-width: 440px)": { gridTemplateColumns: "minmax(0, 1fr)" },
   },
 });
 

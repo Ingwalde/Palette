@@ -54,8 +54,15 @@ Optional query parameters:
 ```text
 search — search by name, description, slug or tags
 tag    — filter by tag
-sort   — default | az | za
+color_count — exact number of colors (integer 1–8)
+sort   — default | az | za | new | popular | curated
+limit  — page size (1–500, default 100)
+offset — number of results to skip (default 0)
 ```
+
+The color-count filter combines with search and tags before pagination. Both `total` and
+`X-Total-Count` count the filtered public results; private or removed palettes remain excluded.
+Invalid counts return `422`.
 
 Examples:
 
@@ -63,7 +70,7 @@ Examples:
 GET /api/v1/palettes?search=dark
 GET /api/v1/palettes?tag=nature
 GET /api/v1/palettes?sort=az
-GET /api/v1/palettes?search=blue&tag=cold&sort=az
+GET /api/v1/palettes?search=blue&tag=cold&color_count=4&sort=az
 ```
 
 ---

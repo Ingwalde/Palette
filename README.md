@@ -161,7 +161,7 @@ flowchart LR
 
 - Versioned API under `/api/v1`; public palette API, auth API, favorites API, tag catalog.
 - Paginated palette list (`{ items, total, limit, offset }` + `X-Total-Count`), with SQL-side
-  search, tag filtering and sorting; `colors`/`tags` as JSONB with a GIN index on `tags`.
+  search, tag filtering, exact color counts (1–8) and sorting; `colors`/`tags` as JSONB with a GIN index on `tags`.
 - RFC 7807 `application/problem+json` error responses; Pydantic v2 validation.
 - Alembic migrations (safe adoption of a pre-Alembic database on startup); typed configuration via
   `pydantic-settings`; automatic seeding and first-admin creation from `.env`.
@@ -184,11 +184,17 @@ flowchart LR
 
 - React Router client-side navigation with a sliding tab indicator that measures and follows the
   active link.
-- Search by name, description, slug and tags; tag filtering and sorting; staggered card animations.
+- Search by name, description, slug and tags; combine tags, exact color counts (1–8) and sorting.
+- Color-first palette cards with per-color copy, Copy all, linked tags and account-only Save.
+- Guests who press Save return to their previous page after login; only that requested palette is
+  saved. Registration preserves the request through email verification for up to 24 hours.
+  Older on-device collections are no longer imported automatically.
+- Mobile navigation and theme switching are available to guests and signed-in users.
 - Save/remove favorites tied to the logged-in user; account page with password change; admin-only
   navigation hidden from guests.
 - Admin palette manager with a dynamic HEX-row colour editor and chip-based tag editing.
 - Export a selected palette as CSS, JSON or a standalone PNG palette card, with live preview.
+  Detail-page export links preserve the owner and slug, including private palettes you can access.
 - Accessible touches: skip-to-content link, visible focus states, ARIA-labelled controls, toggle
   state exposed via `aria-pressed`; audited by axe in CI. Works over the LAN via a dynamic API base.
 - Styling is **vanilla-extract** — every rule scoped to the component or page that owns it, with
@@ -370,7 +376,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v5.2.6
+v5.2.7
 ```
 
 ## License

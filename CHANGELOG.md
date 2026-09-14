@@ -1,5 +1,29 @@
 # Changelog
 
+## v5.2.7 — Clearer discovery and account-only saving
+
+- Rebuilt shared palette cards with larger color strips, a compact author row, Save, Copy all,
+  and two linked tags with an accessible disclosure for the rest. Contrast tools stay on the
+  detail page. Swatches reveal the value on hover, keyboard focus or copying.
+- Saving requires an account. A guest's Save remembers one request for up to 24 hours, including
+  the return URL. After login it saves that palette once and restores the catalogue context.
+  Registration keeps the request through email verification. Failed saves show an error;
+  Continue browsing cancels the request. Previous on-device collections are not auto-imported.
+- Added the exact color-count filter (1–8, matching the palette schema), combined with search,
+  tags and sorting on the server before pagination. Filter links and browser Back retain context;
+  clicking the active tag clears it, and Reset filters clears the full combination.
+- Shortened the editorial hero and made Explore palettes visible on mobile. Copy palette follows
+  the current HEX/RGB/HSL/OKLCH preference. Random 2–6-color scenes remain stable on re-renders.
+- Guests now have mobile navigation and theme controls. Action disclosures close with Escape,
+  restore keyboard focus, and keep secondary or destructive actions out of the primary row.
+- Simplified palette details around Save and Export; Copy formats and Report use disclosures.
+  Favorites has an account gate, an actionable empty state and Clear under Manage collection.
+- Export loads the exact owner/slug resource from detail links, independently of public picker
+  search. It preserves selection across format changes and prevents exporting unavailable data.
+- Favorites caches are scoped to the account; copying reports success only after the clipboard
+  operation completes. Added regression coverage for save/registration return, filter history,
+  scoped export and server-side count/pagination behavior.
+
 ## v5.2.6 — Sign-in no longer waits on the favorites merge
 
 - **Fixed:** signing in with a long list of on-device favorites made the sign-in button hang while

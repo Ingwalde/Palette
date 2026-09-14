@@ -6,23 +6,25 @@ import * as styles from "./Layout.css";
 interface MobileMenuProps {
   isAdmin: boolean;
   username: string;
+  isAuthenticated?: boolean;
   avatarUrl?: string | null;
 }
 
-/**
- * The phone-only account menu. Only shown to a signed-in user: the avatar is the trigger, and
- * tapping it opens the full set of tabs (a guest sees a plain Login link in the header instead).
- * The whole nav collapses in here because it does not fit a narrow header — Home lives on the logo
- * too, but is repeated here for reach.
- */
-export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
+/** Mobile navigation is available to every visitor; account links depend on the session. */
+export function MobileMenu({
+  isAdmin,
+  username,
+  avatarUrl,
+  isAuthenticated = true,
+}: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
 
   // Close on navigation.
-  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => setOpen(false), [location.key]);
 
   // Close on Escape or a press outside the menu. `pointerdown` (not `mousedown`) so a tap on a bare
   // area of the page closes it on touch too — iOS Safari does not fire mouse events on elements
@@ -30,7 +32,10 @@ export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     const onDown = (e: Event) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
@@ -49,16 +54,35 @@ export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
       : styles.mobileMenuItem;
 
   return (
-    <div className={styles.mobileMenuRoot} ref={rootRef}>
+    <div
+      className={styles.mobileMenuRoot}
+      ref={rootRef}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false);
+      }}
+    >
       <button
         type="button"
         className={styles.avatarButton}
-        aria-label={`Account menu, ${username}`}
+        ref={triggerRef}
+        aria-label={isAuthenticated ? `Account menu, ${username}` : "Open navigation"}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
       >
-        {avatarUrl ? (
+        {!isAuthenticated ? (
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        ) : avatarUrl ? (
           <img className={styles.avatarImage} src={avatarUrl} alt="" />
         ) : (
           username.charAt(0).toUpperCase()
@@ -70,7 +94,7 @@ export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
       <nav
         id={panelId}
         className={styles.mobileMenuPanel}
-        aria-label="Account"
+        aria-label={isAuthenticated ? "Account" : "Mobile navigation"}
         hidden={!open}
         // Close as soon as a link is chosen, even when it points at the current route (where the
         // navigation effect would not fire). The theme buttons are not links, so they stay open.
@@ -79,7 +103,7 @@ export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
         }}
       >
         <NavLink to="/" end className={itemClass}>
-          Home
+          Browse
         </NavLink>
         <NavLink to="/favorites" className={itemClass}>
           Favorites
@@ -87,24 +111,37 @@ export function MobileMenu({ isAdmin, username, avatarUrl }: MobileMenuProps) {
         <NavLink to="/export" className={itemClass}>
           Export
         </NavLink>
-        <NavLink
-          to="/palettes/new"
-          className={({ isActive }) =>
-            isActive || location.pathname === "/import"
-              ? `${styles.mobileMenuItem} ${styles.mobileMenuItemActive}`
-              : styles.mobileMenuItem
-          }
-        >
-          Create
-        </NavLink>
+        {isAuthenticated && (
+          <NavLink
+            to="/palettes/new"
+            className={({ isActive }) =>
+              isActive || location.pathname === "/import"
+                ? `${styles.mobileMenuItem} ${styles.mobileMenuItemActive}`
+                : styles.mobileMenuItem
+            }
+          >
+            Create
+          </NavLink>
+        )}
+        {isAuthenticated && (
+          <NavLink to="/palettes/mine" className={itemClass}>
+            Your palettes
+          </NavLink>
+        )}
         {isAdmin && (
           <NavLink to="/admin" className={itemClass}>
             Admin
           </NavLink>
         )}
-        <NavLink to="/profile" className={itemClass}>
-          Account
-        </NavLink>
+        {isAuthenticated ? (
+          <NavLink to="/profile" className={itemClass}>
+            Account
+          </NavLink>
+        ) : (
+          <NavLink to="/login" state={{ from: location }} className={itemClass}>
+            Login / Create account
+          </NavLink>
+        )}
         <div className={styles.mobileMenuDivider} />
         <ThemeToggle />
       </nav>

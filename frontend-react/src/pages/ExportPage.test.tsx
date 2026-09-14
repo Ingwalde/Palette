@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import * as palettesApi from "../api/palettes";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,6 +17,20 @@ vi.mock("../api/auth", () => ({
   logoutEverywhere: vi.fn(),
 }));
 vi.mock("../api/palettes", () => ({
+  getPalette: vi.fn(() =>
+    Promise.resolve({
+      id: 1,
+      slug: "sea-breeze",
+      owner_handle: "palette",
+      visibility: "public",
+      name: "Sea Breeze",
+      description: "Fresh.",
+      colors: ["#006D77", "#83C5BE"],
+      tags: ["cold"],
+      created_at: "",
+      updated_at: "",
+    }),
+  ),
   listPalettes: vi.fn(() =>
     Promise.resolve({
       items: [
@@ -117,7 +132,7 @@ describe("ExportPage", () => {
     await pickSeaBreeze(user);
     await screen.findByText(/--sea-breeze-1/);
     await user.click(screen.getByRole("button", { name: "Download file" }));
-    expect(await screen.findByText("Export file downloaded")).toBeInTheDocument();
+    expect(await screen.findByText("File download started")).toBeInTheDocument();
   });
 
   it("prompts for favorites when the source is Favorites (logged out)", async () => {
@@ -127,4 +142,36 @@ describe("ExportPage", () => {
     await user.click(screen.getByRole("option", { name: "Favorites only" }));
     expect(await screen.findByText(/No palettes selected/i)).toBeInTheDocument();
   });
+});
+
+it("exports a scoped deep link missing from public search and preserves it when searching or changing format", async () => {
+  vi.mocked(palettesApi.listPalettes).mockResolvedValueOnce({
+    items: [],
+    total: 0,
+    limit: 3,
+    offset: 0,
+  });
+  const u = userEvent.setup();
+  renderExport("/export?source=single&handle=ann&slug=sea-breeze&format=json");
+  expect(await screen.findByText(/"slug": "sea-breeze"/)).toBeInTheDocument();
+  expect(palettesApi.getPalette).toHaveBeenCalledWith("ann", "sea-breeze");
+  await u.clear(screen.getByRole("searchbox"));
+  await u.type(screen.getByRole("searchbox"), "another palette");
+  await u.click(screen.getByRole("button", { name: "Export format" }));
+  await u.click(screen.getByRole("option", { name: "CSS variables" }));
+  expect(await screen.findByText(/--sea-breeze-1/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Download file" })).toBeEnabled();
+});
+
+it("does not export a same-named search result when the scoped palette is unavailable", async () => {
+  vi.mocked(palettesApi.getPalette).mockRejectedValueOnce(new ApiError("Not found", 404));
+  renderExport("/export?source=single&handle=wrong-owner&slug=sea-breeze");
+  expect(
+    await screen.findByText(/unavailable or you do not have access/),
+  ).toBeInTheDocument();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Copy result" })).toBeDisabled(),
+  );
+  expect(screen.getByRole("button", { name: "Download file" })).toBeDisabled();
+  expect(screen.queryByText(/--sea-breeze-1/)).not.toBeInTheDocument();
 });
