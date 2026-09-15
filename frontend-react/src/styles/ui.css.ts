@@ -108,10 +108,10 @@ const controlFocus = {
   boxShadow: `0 0 0 4px ${vars.color.focus}`,
 } as const;
 
-// Placeholder styled to match the page: Poppins, muted warm tone, lighter while focused.
+// Keep the muted colour opaque so hints remain readable, including while focused.
 const placeholder = {
   color: vars.color.muted,
-  opacity: 0.7,
+  opacity: 1,
   fontWeight: 400,
   fontSize: "0.9rem",
   letterSpacing: "0.01em",
@@ -125,7 +125,6 @@ export const input = style({
   selectors: {
     "&:focus": controlFocus,
     "&::placeholder": placeholder,
-    "&:focus::placeholder": { opacity: 0.55 },
   },
 });
 
@@ -138,7 +137,6 @@ export const textarea = style({
   selectors: {
     "&:focus": controlFocus,
     "&::placeholder": placeholder,
-    "&:focus::placeholder": { opacity: 0.55 },
   },
 });
 
@@ -205,7 +203,6 @@ globalStyle(`${searchField} input`, {
 
 globalStyle(`${searchField} input:focus`, controlFocus);
 globalStyle(`${searchField} input::placeholder`, placeholder);
-globalStyle(`${searchField} input:focus::placeholder`, { opacity: 0.55 });
 
 // Room on the right so the text never runs under the clear button, and the button itself only
 // appears once something is typed. Written as globalStyle because both rules cross from the

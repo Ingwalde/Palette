@@ -4,6 +4,7 @@ import { usePalettesInfinite, useTags } from "../api/hooks";
 import { COLOR_COUNTS, readColorCount } from "../lib/catalogParams";
 import { useCatalogScroll } from "../lib/useCatalogScroll";
 import { useDebounce } from "../lib/useDebounce";
+import { useSearchPlaceholder } from "../lib/useSearchPlaceholder";
 import { HeroEditorial } from "../components/HeroEditorial";
 import { PaletteCard } from "../components/PaletteCard";
 import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
@@ -49,6 +50,7 @@ function readSort(raw: string | null): FeedSort {
 }
 
 export function HomePage() {
+  const searchPlaceholder = useSearchPlaceholder();
   // The query string is the source of truth, so a filtered catalogue is a shareable link and
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
@@ -199,7 +201,7 @@ export function HomePage() {
               <input
                 id="searchInput"
                 type="search"
-                placeholder="Search by name, description or tag..."
+                {...searchPlaceholder}
                 autoComplete="off"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
