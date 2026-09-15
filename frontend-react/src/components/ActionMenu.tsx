@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { buttonClass } from "../styles/ui";
 import * as styles from "./ActionMenu.css";
 
@@ -7,7 +14,40 @@ export function ActionMenu({ label, children }: { label: string; children: React
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const id = useId();
+  useLayoutEffect(() => {
+    if (!open || !root.current || !panel.current) return;
+    const container = root.current;
+    const menu = panel.current;
+    const position = () => {
+      const viewport = window.visualViewport;
+      const start = (viewport?.offsetLeft ?? 0) + 12;
+      const end =
+        (viewport?.offsetLeft ?? 0) +
+        (viewport?.width ?? document.documentElement.clientWidth) -
+        12;
+      menu.style.maxWidth = `${Math.max(0, end - start)}px`;
+      const anchor = container.getBoundingClientRect();
+      const width = menu.getBoundingClientRect().width;
+      const left = Math.max(start, Math.min(anchor.left, end - width));
+      menu.style.left = `${left - anchor.left}px`;
+    };
+    position();
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(position);
+    observer?.observe(container);
+    observer?.observe(menu);
+    window.addEventListener("resize", position);
+    window.visualViewport?.addEventListener("resize", position);
+    window.visualViewport?.addEventListener("scroll", position);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", position);
+      window.visualViewport?.removeEventListener("resize", position);
+      window.visualViewport?.removeEventListener("scroll", position);
+    };
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const outside = (e: PointerEvent) => {
@@ -47,6 +87,7 @@ export function ActionMenu({ label, children }: { label: string; children: React
       </button>
       <div
         id={id}
+        ref={panel}
         className={styles.panel}
         hidden={!open}
         onClick={(e) => {

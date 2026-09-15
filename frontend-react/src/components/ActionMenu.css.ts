@@ -30,10 +30,11 @@ export const chevron = style({
 });
 export const panel = style({
   position: "absolute",
-  right: 0,
+  left: 0,
   top: "calc(100% + 6px)",
   zIndex: 30,
-  minWidth: "180px",
+  width: "max-content",
+  minWidth: 0,
   maxWidth: "calc(100vw - 40px)",
   padding: "6px",
   border: `1px solid ${vars.color.border}`,
@@ -55,6 +56,8 @@ globalStyle(`${panel} > button, ${panel} > a`, {
   color: vars.color.text,
   background: "transparent",
   textDecoration: "none",
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
 });
 globalStyle(`${panel} > button:hover, ${panel} > a:hover`, {
   background: vars.color.primarySoft,
