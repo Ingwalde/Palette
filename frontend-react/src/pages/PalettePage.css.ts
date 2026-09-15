@@ -76,7 +76,7 @@ export const simBar = style({
 export const simLabel = style({
   fontSize: "0.85rem",
   fontWeight: 600,
-  color: vars.color.muted,
+  color: vars.color.text,
 });
 
 // The choices reflow according to available space, including enlarged text.
@@ -106,16 +106,15 @@ export const simOption = style({
   minHeight: "44px",
   whiteSpace: "normal",
   overflowWrap: "anywhere",
-  color: vars.color.muted,
+  color: vars.color.text,
   background: "transparent",
-  transition: "color 200ms ease",
   selectors: {
     "&:hover": { color: vars.color.text },
-    // Keep the selected background attached to its button when choices wrap.
-    '&[aria-pressed="true"]': {
-      color: vars.color.text,
-      background: vars.color.surface,
-      boxShadow: vars.shadow.soft,
+    // The selected state needs a distinct surface in both themes, including on touch screens.
+    '&[aria-pressed="true"], &[aria-pressed="true"]:hover': {
+      color: vars.color.onPrimary,
+      background: vars.color.primary,
+      fontWeight: 700,
     },
   },
 });
