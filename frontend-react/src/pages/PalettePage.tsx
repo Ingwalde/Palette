@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { usePalette, usePalettes } from "../api/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,29 +46,9 @@ export function PalettePage() {
   const [forking, setForking] = useState(false);
   // Colour-vision simulation is an inspection mode over the swatches — local, never persisted.
   const [sim, setSim] = useState("none");
-  const simOptionsRef = useRef<HTMLDivElement>(null);
 
   const { data: palette, isLoading, error } = usePalette(handle, slug);
   const { saved, pending: saving, toggle: onSave } = useSavePalette(palette);
-
-  // Slide the thumb to sit exactly under the active choice by measuring that button, rather than
-  // assuming four equal columns — the labels differ in width ("None" vs "Deuteranopia"), so a fixed
-  // quarter-width thumb drifted off the label it was meant to mark. Re-measure on selection, resize
-  // and once the webfont has loaded (which changes the label widths).
-  useLayoutEffect(() => {
-    const el = simOptionsRef.current;
-    if (!el) return;
-    const move = () => {
-      const active = el.querySelector<HTMLElement>('[aria-pressed="true"]');
-      if (!active) return;
-      el.style.setProperty("--sim-x", `${active.offsetLeft}px`);
-      el.style.setProperty("--sim-w", `${active.offsetWidth}px`);
-    };
-    move();
-    window.addEventListener("resize", move);
-    document.fonts?.ready.then(move).catch(() => {});
-    return () => window.removeEventListener("resize", move);
-  }, [sim, palette]);
 
   // The "similar" query keys off the first tag; it runs regardless, but the section only renders
   // when there is a tag and at least one other palette to show.
@@ -240,14 +220,7 @@ export function PalettePage() {
       <section className={`${ui.section} ${styles.colorsSection}`} aria-label="Colors">
         <div className={styles.simBar} role="group" aria-label="Color vision simulation">
           <span className={styles.simLabel}>Color vision</span>
-          <div
-            className={styles.simOptions}
-            ref={simOptionsRef}
-            style={{ "--sim-count": simChoices.length } as CSSProperties}
-          >
-            {/* The thumb glides under the active choice; the labels only change colour, so nothing
-                inverts mid-slide. */}
-            <span className={styles.simThumb} aria-hidden="true" />
+          <div className={styles.simOptions}>
             {simChoices.map((choice) => (
               <button
                 key={choice}

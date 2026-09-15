@@ -79,36 +79,17 @@ export const simLabel = style({
   color: vars.color.muted,
 });
 
+// The choices reflow according to available space, including enlarged text.
 export const simOptions = style({
-  position: "relative",
   display: "grid",
-  gridTemplateColumns: "repeat(var(--sim-count), 1fr)",
-  padding: "3px",
-  borderRadius: "999px",
+  width: "min(100%, 36rem)",
+  minWidth: 0,
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 8rem), 1fr))",
+  gap: "4px",
+  padding: "4px",
+  borderRadius: "18px",
   border: `1px solid ${vars.color.border}`,
   background: vars.color.surfaceStrong,
-});
-
-// The gliding thumb that sits under the active choice. Its position and width are measured from the
-// active button in JS (see PalettePage) and written into --sim-x / --sim-w, so it tracks labels of
-// different widths instead of assuming equal columns. Only position and width animate — the labels
-// just change colour, so nothing inverts mid-slide.
-export const simThumb = style({
-  position: "absolute",
-  top: "3px",
-  bottom: "3px",
-  left: 0,
-  width: "var(--sim-w, 0px)",
-  borderRadius: "999px",
-  background: vars.color.surface,
-  boxShadow: vars.shadow.soft,
-  transform: "translateX(var(--sim-x, 3px))",
-  transition:
-    "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), width 260ms cubic-bezier(0.22, 1, 0.36, 1)",
-  pointerEvents: "none",
-  "@media": {
-    "(prefers-reduced-motion: reduce)": { transition: "none" },
-  },
 });
 
 export const simOption = style({
@@ -121,14 +102,21 @@ export const simOption = style({
   fontSize: "0.8rem",
   fontWeight: 600,
   fontFamily: "inherit",
-  whiteSpace: "nowrap",
+  minWidth: 0,
+  minHeight: "44px",
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
   color: vars.color.muted,
   background: "transparent",
   transition: "color 200ms ease",
   selectors: {
     "&:hover": { color: vars.color.text },
-    // The active label rides the surface thumb — text colour, never an inverted pill.
-    '&[aria-pressed="true"]': { color: vars.color.text },
+    // Keep the selected background attached to its button when choices wrap.
+    '&[aria-pressed="true"]': {
+      color: vars.color.text,
+      background: vars.color.surface,
+      boxShadow: vars.shadow.soft,
+    },
   },
 });
 
