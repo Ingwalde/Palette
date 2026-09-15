@@ -37,12 +37,13 @@ export function ActionMenu({ label, children }: { label: string; children: React
       <button
         type="button"
         ref={trigger}
-        className={buttonClass("ghost")}
+        className={`${buttonClass("ghost")} ${styles.trigger}`}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
       >
-        {label} <span aria-hidden="true">⌄</span>
+        <span>{label}</span>
+        <span className={styles.chevron} aria-hidden="true" />
       </button>
       <div
         id={id}
