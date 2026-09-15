@@ -33,6 +33,7 @@ export const panel = style({
 export const panelActions = style({
   display: "grid",
   gap: "10px",
+  marginBottom: "20px",
 });
 
 export const result = style({
