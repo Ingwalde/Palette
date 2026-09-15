@@ -1,4 +1,7 @@
 import { useState, type CSSProperties } from "react";
+import { copyToClipboard, formatColor } from "../lib/color";
+import { useColorFormat } from "./ColorFormatContext";
+import { useToast } from "./toast/ToastProvider";
 import * as ui from "../styles/ui.css";
 import * as styles from "./HeroEditorial.css";
 import { createHeroScene, TEMPLATES, type HeroScene } from "./heroScene";
@@ -73,7 +76,7 @@ function Artwork({ scene }: { scene: HeroScene }) {
  * The homepage hero — the approved "Editorial" composition (02). On every visit it picks, at
  * random and independently, a colour count (2–6), a palette of that size, and one of the two
  * approved artworks for that count. The real header, navigation, auth and the catalogue below are
- * untouched; the "Observe" cue scrolls to the search station just below the fold (`#find`), and
+ * untouched; the "Explore palettes" cue scrolls to the search station below the hero (`#find`), and
  * "Another combination" re-rolls all three choices. Ordinary re-renders, theme changes, resize and
  * catalogue work keep the current scene; only a fresh visit or the button changes it.
  */
@@ -82,6 +85,16 @@ export function HeroEditorial() {
   // new visit re-rolls; ordinary re-renders and theme changes reuse the stored scene.
   const [scene, setScene] = useState<HeroScene>(() => createHeroScene(Math.random));
   const [announcement, setAnnouncement] = useState("");
+  const { format } = useColorFormat();
+  const { showToast } = useToast();
+  const copyPalette = async () => {
+    try {
+      await copyToClipboard(scene.colors.map((c) => formatColor(c, format)).join(", "));
+      showToast("Palette copied");
+    } catch {
+      showToast("Could not copy to the clipboard", "error");
+    }
+  };
 
   const cycle = () => {
     const next = createHeroScene(Math.random);
@@ -144,8 +157,15 @@ export function HeroEditorial() {
             ))}
           </div>
           <a className={styles.bottomLabel} href="#find">
-            Observe {ChevronsDown}
+            Explore palettes {ChevronsDown}
           </a>
+          <button
+            type="button"
+            className={styles.shuffle}
+            onClick={() => void copyPalette()}
+          >
+            Copy palette
+          </button>
           <button type="button" className={styles.shuffle} onClick={cycle}>
             {ShuffleIcon} Another combination
           </button>

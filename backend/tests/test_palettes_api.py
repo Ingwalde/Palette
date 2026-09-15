@@ -299,3 +299,43 @@ async def test_owner_palette_listing_and_avatar_flag(client, db_session):
     assert item["owner_has_avatar"] is False
     # A handle that does not exist is a not-found, not an empty listing.
     assert (await client.get("/api/v1/users/nobody/palettes")).status_code == 404
+
+
+async def test_color_count_filters_before_pagination_and_count(client, db_session):
+    colors = ["#123456", "#abcdef"]
+    for name in ("Coast A", "Coast B", "Coast C"):
+        await _seed_public(db_session, name=name, colors=colors, tags=["cold"])
+    await _seed_public(db_session, name="Coast One", colors=colors[:1], tags=["cold"])
+    await _seed_public(db_session, name="Coast Warm", colors=colors, tags=["warm"])
+    await _seed_public(db_session, name="Forest", colors=colors, tags=["cold"])
+    await crud.create_palette(
+        db_session, schemas.PaletteCreate(name="Coast Private", colors=colors, tags=["cold"])
+    )
+    removed = await _seed_public(db_session, name="Coast Removed", colors=colors, tags=["cold"])
+    removed.status = "removed"
+    await db_session.commit()
+    params = {
+        "search": "coast",
+        "tag": "cold",
+        "color_count": 2,
+        "sort": "az",
+        "limit": 1,
+        "offset": 1,
+    }
+    response = await client.get("/api/v1/palettes", params=params)
+    assert response.status_code == 200
+    assert response.json()["total"] == 3
+    assert response.headers["X-Total-Count"] == "3"
+    assert [p["name"] for p in response.json()["items"]] == ["Coast B"]
+
+
+async def test_color_count_accepts_schema_bounds_and_rejects_invalid_values(client, db_session):
+    for count in (1, 8):
+        await _seed_public(db_session, name=f"Count {count}", colors=["#123456"] * count)
+        response = await client.get("/api/v1/palettes", params={"color_count": count})
+        assert response.status_code == 200
+        assert response.json()["total"] == 1
+        assert len(response.json()["items"][0]["colors"]) == count
+    for invalid in (0, 9, -1, "abc", "2.5"):
+        response = await client.get("/api/v1/palettes", params={"color_count": invalid})
+        assert response.status_code == 422

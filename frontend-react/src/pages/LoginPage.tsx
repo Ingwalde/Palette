@@ -1,5 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate, type Location } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "../api/queryKeys";
+import { clearSaveIntent, completeSaveIntent, readSaveIntent } from "../lib/saveIntent";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
 import { PasswordField } from "../components/PasswordField";
@@ -17,7 +20,33 @@ export function LoginPage() {
   // Where a guest was sent from (e.g. pressing Save on a card) so they return there after signing
   // in. Default to the profile page, the app's normal login landing.
   const from = (location.state as { from?: Location } | null)?.from;
-  const target = from ?? "/profile";
+  const [intent] = useState(readSaveIntent);
+  const target = from ?? intent?.returnTo ?? "/profile";
+  const queryClient = useQueryClient();
+  const completing = useRef(false);
+  const [finishing, setFinishing] = useState(false);
+  const finishLogin = useCallback(async () => {
+    if (completing.current) return;
+    completing.current = true;
+    setFinishing(true);
+    if (intent) {
+      try {
+        await completeSaveIntent(intent);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+        showToast(`${intent.name} saved to favorites`);
+      } catch {
+        clearSaveIntent(intent.id);
+        showToast(
+          "You're logged in, but the palette wasn't saved. Please try Save again.",
+          "error",
+        );
+      }
+    }
+    navigate(target, {
+      replace: true,
+      state: { ...(from?.state ?? intent?.returnState ?? {}), restoreCatalog: true },
+    });
+  }, [intent, queryClient, showToast, navigate, target, from]);
 
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -30,8 +59,8 @@ export function LoginPage() {
 
   // Already signed in → nothing to do here.
   useEffect(() => {
-    if (isAuthenticated) navigate(target, { replace: true });
-  }, [isAuthenticated, navigate, target]);
+    if (isAuthenticated) void finishLogin();
+  }, [isAuthenticated, finishLogin]);
 
   const errorMessage = (error: unknown) =>
     error instanceof ApiError ? error.message : "Something went wrong";
@@ -43,7 +72,7 @@ export function LoginPage() {
       await login({ username: loginUsername.trim(), password: loginPassword });
       setLoginPassword("");
       showToast("Logged in");
-      navigate(target, { replace: true });
+      await finishLogin();
     } catch (error) {
       showToast(errorMessage(error), "error");
     } finally {
@@ -83,9 +112,20 @@ export function LoginPage() {
         <p className={ui.eyebrow}>Authentication</p>
         <h1>Login to Palette</h1>
         <p>
-          Use username, email and password authentication. Admin access is connected to
-          the admin role.
+          {intent
+            ? `Log in or create an account to save “${intent.name}”. We'll save it and take you back after you log in.`
+            : "Keep your favorite colors together, wherever inspiration finds you."}
         </p>
+        {intent && (
+          <Link
+            className={buttonClass("ghost")}
+            to={target}
+            state={{ ...(from?.state ?? intent.returnState ?? {}), restoreCatalog: true }}
+            onClick={() => clearSaveIntent(intent.id)}
+          >
+            Continue browsing
+          </Link>
+        )}
       </section>
 
       <section className={`${ui.section} ${auth.layout}`}>
@@ -93,9 +133,7 @@ export function LoginPage() {
           <div>
             <p className={ui.eyebrow}>Existing account</p>
             <h2>Login</h2>
-            <p className={ui.muted}>
-              For local admin access, use the admin user from backend/.env.
-            </p>
+            <p className={ui.muted}>Welcome back. Your saved palettes are waiting.</p>
           </div>
 
           <label className={ui.field}>
@@ -119,8 +157,12 @@ export function LoginPage() {
           />
 
           <div className={ui.formActions}>
-            <button className={buttonClass("primary")} type="submit" disabled={loggingIn}>
-              {loggingIn ? "Logging in..." : "Login"}
+            <button
+              className={buttonClass("primary")}
+              type="submit"
+              disabled={loggingIn || finishing}
+            >
+              {finishing ? "Taking you back…" : loggingIn ? "Logging in..." : "Login"}
             </button>
           </div>
 
@@ -134,8 +176,8 @@ export function LoginPage() {
             <p className={ui.eyebrow}>New account</p>
             <h2>Create account</h2>
             <p className={ui.muted}>
-              New users are created without admin rights. Admin users are created from
-              backend settings.
+              Build a collection of colors you love. Verify your email, then log in to get
+              started.
             </p>
           </div>
 

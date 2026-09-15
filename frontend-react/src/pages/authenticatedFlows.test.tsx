@@ -66,8 +66,8 @@ describe("PaletteCard (signed in)", () => {
     const user = userEvent.setup();
     wrap(<PaletteCard palette={palette} />);
     // Wait for the favorites query to resolve so the card shows the saved state.
-    expect(await screen.findByText("♥ Saved")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Toggle favorite/i }));
+    expect(await screen.findByText("Saved")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Unsave Sea Breeze/i }));
     expect(favoritesApi.removeFavorite).toHaveBeenCalledWith("sea-breeze");
     expect(await screen.findByText("Removed from favorites")).toBeInTheDocument();
   });
@@ -80,6 +80,7 @@ describe("FavoritesPage (signed in)", () => {
     expect(await screen.findByText("1 saved palette")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Sea Breeze" })).toBeInTheDocument();
 
+    await user.click(screen.getByRole("button", { name: /Manage collection/ }));
     const clear = screen.getByRole("button", { name: "Clear favorites" });
     expect(clear).toBeEnabled();
     await user.click(clear);

@@ -1,223 +1,204 @@
-import { globalStyle, keyframes, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
 
-const cardIn = keyframes({
-  from: { opacity: 0, transform: "translateY(12px) scale(0.98)" },
-  to: { opacity: 1, transform: "translateY(0) scale(1)" },
-});
-
 export const card = style({
-  position: "relative",
   display: "flex",
   flexDirection: "column",
-  gap: "18px",
-  minHeight: "100%",
-  padding: "18px",
+  minWidth: 0,
   border: `1px solid ${vars.color.border}`,
-  borderRadius: vars.radius.lg,
-  background: vars.color.surfaceGlass,
-  boxShadow: vars.shadow.soft,
+  borderRadius: "18px",
+  background: vars.color.surface,
   overflow: "hidden",
-  animation: `${cardIn} 560ms cubic-bezier(0.22, 1, 0.36, 1) both`,
-  selectors: {
-    // A gentle cascade so results ripple in as you search, flat past the eighth card.
-    "&:nth-child(1)": { animationDelay: "0ms" },
-    "&:nth-child(2)": { animationDelay: "65ms" },
-    "&:nth-child(3)": { animationDelay: "130ms" },
-    "&:nth-child(4)": { animationDelay: "195ms" },
-    "&:nth-child(5)": { animationDelay: "260ms" },
-    "&:nth-child(6)": { animationDelay: "325ms" },
-    "&:nth-child(7)": { animationDelay: "390ms" },
-    "&:nth-child(8)": { animationDelay: "455ms" },
-    "&:nth-child(n + 9)": { animationDelay: "500ms" },
+  transition: "border-color 180ms ease, box-shadow 180ms ease",
+  ":hover": {
+    borderColor: vars.color.muted,
+    boxShadow: "0 5px 20px rgba(30, 32, 25, 0.06)",
   },
-  "@media": {
-    "(prefers-reduced-motion: reduce)": { animation: "none" },
+  "@media": { "(prefers-reduced-motion: reduce)": { transition: "none" } },
+});
+export const colors = style({
+  display: "flex",
+  position: "relative",
+  height: "176px",
+  overflow: "hidden",
+  "@media": { "(max-width: 680px)": { height: "160px" } },
+});
+export const swatch = style({
+  flex: "1 1 0",
+  minWidth: 0,
+  border: 0,
+  padding: 0,
+  background: "var(--swatch-color)",
+  cursor: "copy",
+  WebkitTapHighlightColor: "transparent",
+  ":focus-visible": {
+    outline: "3px solid white",
+    outlineOffset: "-5px",
+    boxShadow: "inset 0 0 0 2px #292d28",
   },
 });
-
+export const colorLabel = style({
+  position: "absolute",
+  left: "50%",
+  bottom: "12px",
+  transform: "translateX(-50%)",
+  maxWidth: "calc(100% - 20px)",
+  padding: "6px 10px",
+  borderRadius: "8px",
+  color: "#fff",
+  background: "rgba(25, 27, 23, 0.92)",
+  fontSize: "0.72rem",
+  fontWeight: 500,
+  textAlign: "center",
+  overflowWrap: "anywhere",
+  pointerEvents: "none",
+});
+export const body = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  padding: "16px 18px 12px",
+  flex: 1,
+});
 export const header = style({
   display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "14px",
-});
-
-export const title = style({
-  margin: "0 0 6px",
-  fontSize: "1.18rem",
-  letterSpacing: "-0.04em",
-});
-
-export const titleLink = style({
-  color: "inherit",
-  textDecoration: "none",
-  transition: vars.motion.transition,
-  ":hover": { color: vars.color.muted },
-  // A visible target for keyboard focus that does not shift layout.
-  ":focus-visible": { textDecoration: "underline" },
-});
-
-export const meta = style({
-  margin: 0,
-  color: vars.color.muted,
-  fontSize: "0.9rem",
-});
-
-export const colors = style({
-  display: "grid",
-  gridAutoFlow: "column",
-  gridAutoColumns: "1fr",
-  minHeight: "130px",
-  overflow: "hidden",
-  borderRadius: "20px",
-  border: `1px solid ${vars.color.border}`,
-  "@media": {
-    // Shorter on phones. The rule lived in pages.css under the 680px breakpoint.
-    "(max-width: 680px)": { minHeight: "110px" },
-  },
-});
-
-/**
- * The hex label is an ::after fed by data-color, and the fill comes from the inline
- * --swatch-color custom property, so both of those names have to survive the move.
- */
-export const swatch = style({
-  position: "relative",
-  border: 0,
-  background: "var(--swatch-color)",
-  WebkitTapHighlightColor: "transparent",
-  selectors: {
-    "&::after": {
-      content: "attr(data-color)",
-      position: "absolute",
-      left: "50%",
-      bottom: "10px",
-      transform: "translate(-50%, 10px)",
-      padding: "5px 8px",
-      borderRadius: "999px",
-      color: "#fff",
-      background: "rgba(0, 0, 0, 0.48)",
-      fontSize: "0.72rem",
-      fontWeight: 700,
-      opacity: 0,
-      transition:
-        "opacity 260ms cubic-bezier(0.22, 1, 0.36, 1), transform 260ms cubic-bezier(0.22, 1, 0.36, 1)",
-    },
-    "&:hover::after, &:focus-visible::after": {
-      transform: "translate(-50%, 0)",
-      opacity: 1,
-    },
-  },
-});
-
-/**
- * Set when a tap reveals the hex.
- *
- * Declared after `swatch` on purpose: this rule and the base `&::after` have identical
- * specificity, so the later one wins and a revealed swatch keeps its label. Reordering these
- * two declarations would silently hide it again.
- */
-export const swatchRevealed = style({
-  selectors: {
-    "&::after": {
-      transform: "translate(-50%, 0)",
-      opacity: 1,
-    },
-  },
-});
-
-// On touch devices hover "sticks", so suppress the hover reveal — but only while the swatch
-// has not been explicitly revealed by a tap. The :not() carries enough specificity to beat
-// the hover rule above without touching the revealed one.
-globalStyle(`${swatch}:not(${swatchRevealed}):hover::after`, {
-  "@media": {
-    "(hover: none)": {
-      transform: "translate(-50%, 10px)",
-      opacity: 0,
-    },
-  },
-});
-
-export const tags = style({
-  display: "flex",
-  flexWrap: "wrap",
-  gap: "8px",
-});
-
-export const footer = style({
-  display: "flex",
   alignItems: "center",
+  gap: "12px",
   justifyContent: "space-between",
-  flexWrap: "wrap",
-  gap: "10px 12px",
-  marginTop: "auto",
 });
-
-export const contrastBadge = style({
+export const title = style({
+  margin: 0,
+  minWidth: 0,
+  fontSize: "1.03rem",
+  fontWeight: 600,
+  letterSpacing: "-0.035em",
+  lineHeight: 1.4,
+});
+export const titleLink = style({
+  color: vars.color.text,
+  textDecoration: "none",
+  overflowWrap: "anywhere",
+  ":hover": { textDecoration: "underline", textUnderlineOffset: "4px" },
+});
+export const save = style({
   display: "inline-flex",
   alignItems: "center",
-  minHeight: "34px",
-  padding: "0 12px",
+  justifyContent: "center",
+  gap: "6px",
+  minHeight: "36px",
+  flexShrink: 0,
+  padding: "0 11px",
   borderRadius: "999px",
+  border: `1px solid ${vars.color.border}`,
+  background: "transparent",
   color: vars.color.text,
-  background: vars.color.primarySoft,
-  fontSize: "0.82rem",
-  fontWeight: 700,
-  whiteSpace: "nowrap",
-  // It links to the contrast table on the palette page now.
-  textDecoration: "none",
-  transition: vars.motion.transition,
-  ":hover": { background: vars.color.surfaceStrong },
+  fontSize: "0.74rem",
+  fontWeight: 500,
+  ":hover": { background: vars.color.primarySoft },
+  ":disabled": { opacity: 0.6, cursor: "wait" },
 });
-
-// The author byline, at the very bottom of the card: a small avatar and the owner's handle.
+export const saved = style({
+  color: vars.color.onPrimary,
+  background: vars.color.primary,
+  borderColor: vars.color.primary,
+  ":hover": { background: vars.color.primary, opacity: 0.9 },
+});
 export const authorRow = style({
   display: "flex",
   alignItems: "center",
-  gap: "8px",
-  paddingTop: "14px",
-  borderTop: `1px solid ${vars.color.border}`,
+  gap: "6px",
+  minWidth: 0,
 });
-
-// Avatar image (a user who set a photo).
 export const authorAvatar = style({
-  width: "24px",
-  height: "24px",
+  width: "18px",
+  height: "18px",
   flexShrink: 0,
   borderRadius: "50%",
   objectFit: "cover",
 });
-
-// Fallback avatar: the curator brand mark, or a user's initial, on the accent.
 export const authorMark = style({
   display: "grid",
   placeItems: "center",
-  width: "24px",
-  height: "24px",
+  width: "18px",
+  height: "18px",
   flexShrink: 0,
   borderRadius: "50%",
-  color: vars.color.onPrimary,
-  background: vars.color.primary,
-  fontSize: "0.72rem",
-  fontWeight: 700,
-});
-
-export const authorName = style({
-  color: vars.color.text,
-  fontSize: "0.82rem",
+  color: vars.color.muted,
+  background: vars.color.surfaceStrong,
+  fontSize: "0.62rem",
   fontWeight: 600,
 });
-
-// A user byline links to their public palettes; the curator byline stays plain text.
-export const authorLink = style({
-  color: vars.color.text,
-  fontSize: "0.82rem",
-  fontWeight: 600,
+export const authorName = style({ color: vars.color.muted, fontSize: "0.73rem" });
+export const authorLink = style([
+  authorName,
+  {
+    textDecoration: "none",
+    overflowWrap: "anywhere",
+    ":hover": { textDecoration: "underline" },
+  },
+]);
+export const colorCount = style({
+  color: vars.color.muted,
+  fontSize: "0.68rem",
+  marginLeft: "auto",
+  flexShrink: 0,
+});
+export const footer = style({
+  display: "flex",
+  flexWrap: "wrap",
+  alignItems: "center",
+  gap: "4px 8px",
+  marginTop: "auto",
+  paddingTop: "9px",
+  borderTop: `1px solid ${vars.color.border}`,
+});
+export const tags = style({
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: "4px 7px",
+  minWidth: 0,
+  flex: "1 1 0",
+});
+export const tag = style({
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: "30px",
+  fontSize: "0.69rem",
+  color: vars.color.muted,
   textDecoration: "none",
-  transition: vars.motion.transition,
-  selectors: {
-    "&:hover": { color: vars.color.muted, textDecoration: "underline" },
-    "&:focus-visible": { textDecoration: "underline" },
+  overflowWrap: "anywhere",
+  ":hover": {
+    color: vars.color.text,
+    textDecoration: "underline",
+    textUnderlineOffset: "3px",
   },
 });
+export const moreTags = style([
+  tag,
+  {
+    justifyContent: "center",
+    minWidth: "30px",
+    padding: "0 5px",
+    border: 0,
+    borderRadius: "6px",
+    background: vars.color.surfaceStrong,
+  },
+]);
+export const copy = style({
+  display: "inline-flex",
+  gap: "5px",
+  alignItems: "center",
+  minHeight: "34px",
+  padding: "0 0 0 4px",
+  background: "transparent",
+  color: vars.color.muted,
+  border: 0,
+  fontSize: "0.69rem",
+  flexShrink: 0,
+  ":hover": { color: vars.color.text },
+});
+export const extraTags = style([
+  tags,
+  { paddingTop: "3px", flex: "none", selectors: { "&[hidden]": { display: "none" } } },
+]);

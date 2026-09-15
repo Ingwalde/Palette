@@ -59,7 +59,7 @@ export function Layout() {
         <nav className={styles.nav} aria-label="Main navigation" ref={navRef}>
           <span className={styles.navIndicator} aria-hidden="true" />
           <NavLink to="/" end className={linkClass}>
-            Home
+            Browse
           </NavLink>
           <NavLink to="/favorites" className={linkClass}>
             Favorites
@@ -111,25 +111,13 @@ export function Layout() {
           <ThemeToggle />
         </div>
 
-        {/* Phone header: a signed-in user gets the avatar that opens the menu; a guest just gets
-            a Login link. */}
         <div className={styles.mobileActions}>
-          {isAuthenticated ? (
-            <MobileMenu
-              isAdmin={isAdmin}
-              username={user?.username ?? "?"}
-              avatarUrl={user?.avatar}
-            />
-          ) : (
-            <NavLink
-              to="/login"
-              className={({ isActive }) =>
-                `${styles.navLink} ${styles.navButton}${isActive ? ` ${styles.navLinkActive}` : ""}`
-              }
-            >
-              Login
-            </NavLink>
-          )}
+          <MobileMenu
+            isAdmin={isAdmin}
+            isAuthenticated={isAuthenticated}
+            username={user?.username ?? ""}
+            avatarUrl={user?.avatar}
+          />
         </div>
       </header>
 
@@ -139,7 +127,9 @@ export function Layout() {
         {/* The boundary sits inside <main>, not around the whole shell, so a route chunk
             arriving never blanks the header, nav and footer the user is already looking at. */}
         <Suspense fallback={<RouteFallback />}>
-          <Outlet />
+          <div key={location.pathname} className={styles.pageTransition}>
+            <Outlet />
+          </div>
         </Suspense>
       </main>
 
@@ -148,7 +138,7 @@ export function Layout() {
       <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>
           <div className={styles.footerContent}>
-            <p className={styles.footerEyebrow}>Palette v5.2</p>
+            <p className={styles.footerEyebrow}>Palette v5.2.7</p>
             <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.

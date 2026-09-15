@@ -112,7 +112,7 @@ describe("PalettePage", () => {
     expect(screen.getByText("Fresh blue and green.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "#cold" })).toHaveAttribute(
       "href",
-      "/?tag=cold",
+      "/?tag=cold#find",
     );
     const blocks = screen.getAllByRole("button", { name: /^Copy #/ });
     expect(blocks).toHaveLength(4);
@@ -142,7 +142,8 @@ describe("PalettePage", () => {
   it("sends a signed-out visitor to login when forking", async () => {
     const u = userEvent.setup();
     renderPage();
-    await u.click(await screen.findByRole("button", { name: "Fork" }));
+    await u.click(await screen.findByRole("button", { name: "More" }));
+    await u.click(screen.getByRole("button", { name: "Edit a copy" }));
     expect(screen.getByTestId("loc")).toHaveTextContent("/login");
   });
 
@@ -164,7 +165,8 @@ describe("PalettePage", () => {
     });
     const u = userEvent.setup();
     renderPage();
-    await u.click(await screen.findByRole("button", { name: "Fork" }));
+    await u.click(await screen.findByRole("button", { name: "More" }));
+    await u.click(screen.getByRole("button", { name: "Edit a copy" }));
     await waitFor(() => expect(palettesApi.forkPalette).toHaveBeenCalledWith(1));
     await waitFor(() =>
       expect(screen.getByTestId("loc")).toHaveTextContent("/u/ann/sea-breeze-2/edit"),
@@ -185,7 +187,8 @@ describe("PalettePage", () => {
   it("sends a signed-out visitor to login when reporting", async () => {
     const u = userEvent.setup();
     renderPage();
-    await u.click(await screen.findByRole("button", { name: "Report" }));
+    await u.click(await screen.findByRole("button", { name: "More" }));
+    await u.click(screen.getByRole("button", { name: "Report palette" }));
     await waitFor(() => expect(screen.getByTestId("loc")).toHaveTextContent("/login"));
   });
 
@@ -201,7 +204,8 @@ describe("PalettePage", () => {
     });
     const u = userEvent.setup();
     renderPage();
-    await u.click(await screen.findByRole("button", { name: "Report" }));
+    await u.click(await screen.findByRole("button", { name: "More" }));
+    await u.click(screen.getByRole("button", { name: "Report palette" }));
     const dialog = await screen.findByRole("dialog");
     await u.click(within(dialog).getByRole("button", { name: "Report" }));
     await waitFor(() =>
@@ -218,7 +222,12 @@ describe("PalettePage", () => {
     });
     renderPage();
     await screen.findByRole("heading", { name: "Sea Breeze" });
-    expect(screen.queryByRole("button", { name: "Report" })).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "More" }));
+    expect(screen.getByRole("button", { name: "Edit a copy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Report palette" }),
+    ).not.toBeInTheDocument();
   });
 
   it("simulates color vision over the swatches without changing copied values", async () => {

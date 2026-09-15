@@ -1,103 +1,89 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { Link, useLocation } from "react-router-dom";
 import type { Palette } from "../types/api";
 import { palettePath } from "../lib/palettePath";
+import { tagPath } from "../lib/catalogParams";
 import { CURATOR_HANDLE } from "../lib/constants";
 import { API_BASE_URL } from "../lib/apiBase";
-import {
-  copyToClipboard,
-  formatColor,
-  formatContrastRatio,
-  getPaletteContrastStatus,
-} from "../lib/color";
+import { copyToClipboard, formatColor } from "../lib/color";
 import { useColorFormat } from "./ColorFormatContext";
-import { useAuth } from "../auth/AuthContext";
-import { useFavorites, useToggleFavorite } from "../api/hooks";
+import { useSavePalette } from "./useSavePalette";
 import { useToast } from "./toast/ToastProvider";
-import { ApiError } from "../lib/http";
 import * as styles from "./PaletteCard.css";
-import * as ui from "../styles/ui.css";
-import { buttonClass } from "../styles/ui";
 
 export function PaletteCard({ palette }: { palette: Palette }) {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
   const { format } = useColorFormat();
-  const { data: favorites } = useFavorites();
-  const toggleFavorite = useToggleFavorite();
+  const { saved, pending, toggle } = useSavePalette(palette);
   const { showToast } = useToast();
-  const [revealed, setRevealed] = useState<string | null>(null);
-  // Holds the 1800 ms reveal timer so unmounting mid-reveal clears it instead of leaving a
-  // setState to fire against a component that is gone.
+  const [activeColor, setActiveColor] = useState<string | null>(null);
+  const [copiedColor, setCopiedColor] = useState<string | null>(null);
+  const [showTags, setShowTags] = useState(false);
+  const tagsId = useId();
   const revealTimer = useRef<number>(0);
   useEffect(() => () => window.clearTimeout(revealTimer.current), []);
-
-  const contrast = useMemo(
-    () => getPaletteContrastStatus(palette.colors),
-    [palette.colors],
-  );
-  const saved = useMemo(
-    () => (favorites ?? []).some((p) => p.slug === palette.slug),
-    [favorites, palette.slug],
-  );
-  // Seed palettes are owned by the curator account; show the brand mark and "Palette" for them
-  // rather than an "@palette" handle. Fall back to the curator when a handle is missing (older
-  // fixtures omit it) so the byline never reads an undefined.
   const handle = palette.owner_handle || CURATOR_HANDLE;
   const isCurator = handle === CURATOR_HANDLE;
+  const visibleColor = activeColor ?? copiedColor;
 
-  // navigator.clipboard.writeText rejects when the write is refused — a permission the user
-  // declined, a page that lost focus, an insecure origin. Both call sites got that wrong in
-  // opposite directions: copying a swatch awaited the promise and so showed nothing at all
-  // while raising an unhandled rejection into the error reporter, and copying the name did not
-  // await it and so announced success either way. Neither told the user the truth.
   const copy = async (text: string, success: string) => {
     try {
       await copyToClipboard(text);
       showToast(success);
+      return true;
     } catch {
       showToast("Could not copy to the clipboard", "error");
+      return false;
     }
   };
-
   const copyColor = async (color: string) => {
-    setRevealed(color);
-    window.clearTimeout(revealTimer.current);
-    revealTimer.current = window.setTimeout(
-      () => setRevealed((c) => (c === color ? null : c)),
-      1800,
-    );
     const shown = formatColor(color, format);
-    await copy(shown, `${shown} copied`);
+    if (await copy(shown, `${shown} copied`)) {
+      setCopiedColor(color);
+      window.clearTimeout(revealTimer.current);
+      revealTimer.current = window.setTimeout(() => setCopiedColor(null), 1800);
+    }
   };
-
-  const onToggleFavorite = () => {
-    // Logged out, the save is kept on this device and merged into the account on sign-in, so a
-    // visitor can build a list before they have one — no redirect, no lost click.
-    toggleFavorite.mutate(
-      { slug: palette.slug, saved, palette },
-      {
-        onSuccess: () =>
-          showToast(
-            saved
-              ? "Removed from favorites"
-              : isAuthenticated
-                ? "Added to favorites"
-                : "Saved on this device",
-          ),
-        onError: (error) =>
-          showToast(
-            error instanceof ApiError ? error.message : "Something went wrong",
-            "error",
-          ),
-      },
-    );
-  };
-
+  const renderTag = (tag: string) => (
+    <Link
+      key={tag}
+      to={tagPath(tag, location.pathname, location.search)}
+      className={styles.tag}
+    >
+      #{tag}
+    </Link>
+  );
   return (
     <article className={styles.card} data-palette-id={palette.slug}>
-      <div className={styles.header}>
-        <div>
+      <div
+        className={styles.colors}
+        role="group"
+        aria-label={`${palette.name} colors`}
+        onMouseLeave={() => setActiveColor(null)}
+      >
+        {palette.colors.map((color, i) => (
+          <button
+            key={`${color}-${i}`}
+            type="button"
+            className={styles.swatch}
+            style={{ "--swatch-color": color } as CSSProperties}
+            data-color={formatColor(color, format)}
+            aria-label={`Copy ${formatColor(color, format)}`}
+            onMouseEnter={() => setActiveColor(color)}
+            onFocus={() => setActiveColor(color)}
+            onBlur={() => setActiveColor(null)}
+            onClick={() => void copyColor(color)}
+          />
+        ))}
+        {visibleColor && (
+          <span className={styles.colorLabel} aria-hidden="true">
+            {formatColor(visibleColor, format)}
+            {visibleColor === copiedColor ? " · Copied" : ""}
+          </span>
+        )}
+      </div>
+      <div className={styles.body}>
+        <div className={styles.header}>
           <h3 className={styles.title}>
             <Link
               to={palettePath(palette)}
@@ -107,91 +93,97 @@ export function PaletteCard({ palette }: { palette: Palette }) {
               {palette.name}
             </Link>
           </h3>
-          <p className={styles.meta}>{palette.description}</p>
-        </div>
-        <button
-          type="button"
-          className={`${buttonClass("ghost")}${saved ? ` ${ui.buttonVariant.saved}` : ""}`}
-          aria-label="Toggle favorite"
-          aria-pressed={saved}
-          disabled={toggleFavorite.isPending}
-          onClick={onToggleFavorite}
-        >
-          {saved ? "♥ Saved" : "♡ Save"}
-        </button>
-      </div>
-
-      <div className={styles.colors} role="group" aria-label={`${palette.name} colors`}>
-        {palette.colors.map((color, i) => (
           <button
-            key={`${color}-${i}`}
             type="button"
-            className={`${styles.swatch}${revealed === color ? ` ${styles.swatchRevealed}` : ""}`}
-            style={{ "--swatch-color": color } as CSSProperties}
-            data-color={formatColor(color, format)}
-            aria-label={`Copy ${formatColor(color, format)}`}
-            onClick={() => void copyColor(color)}
-          />
-        ))}
-      </div>
-
-      <div className={styles.tags}>
-        {palette.tags.map((tag) => (
-          <span key={tag} className={ui.tag}>
-            #{tag}
+            className={`${styles.save}${saved ? ` ${styles.saved}` : ""}`}
+            aria-label={`${saved ? "Unsave" : "Save"} ${palette.name}`}
+            aria-pressed={saved}
+            disabled={pending}
+            onClick={toggle}
+          >
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill={saved ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" />
+            </svg>
+            {saved ? "Saved" : "Save"}
+          </button>
+        </div>
+        <div className={styles.authorRow}>
+          {!isCurator && palette.owner_has_avatar ? (
+            <img
+              className={styles.authorAvatar}
+              src={`${API_BASE_URL}/users/${encodeURIComponent(handle)}/avatar`}
+              alt=""
+              loading="lazy"
+            />
+          ) : (
+            <span className={styles.authorMark} aria-hidden="true">
+              {isCurator ? "P" : handle.charAt(0).toUpperCase()}
+            </span>
+          )}
+          {isCurator ? (
+            <span className={styles.authorName}>Palette</span>
+          ) : (
+            <Link className={styles.authorLink} to={`/u/${encodeURIComponent(handle)}`}>
+              @{handle}
+            </Link>
+          )}
+          <span className={styles.colorCount}>
+            {palette.colors.length} {palette.colors.length === 1 ? "color" : "colors"}
           </span>
-        ))}
-      </div>
-
-      <div className={styles.footer}>
-        <Link
-          to={`${palettePath(palette)}#contrast`}
-          className={styles.contrastBadge}
-          title={`Between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors.`}
-        >
-          {contrast.label} · {formatContrastRatio(contrast.ratio)}:1
-          <span className={ui.visuallyHidden}>
-            {` — between ${contrast.darkest} and ${contrast.lightest}, the darkest and lightest colors`}
-          </span>
-        </Link>
-        <button
-          type="button"
-          className={buttonClass("ghost")}
-          onClick={() =>
-            void copy(
-              palette.colors.join(", "),
-              `${palette.colors.length} color${palette.colors.length === 1 ? "" : "s"} copied`,
-            )
-          }
-        >
-          Copy all
-        </button>
-      </div>
-
-      <div className={styles.authorRow}>
-        {isCurator ? (
-          <span className={styles.authorMark} aria-hidden="true">
-            P
-          </span>
-        ) : palette.owner_has_avatar ? (
-          <img
-            className={styles.authorAvatar}
-            src={`${API_BASE_URL}/users/${encodeURIComponent(handle)}/avatar`}
-            alt=""
-            loading="lazy"
-          />
-        ) : (
-          <span className={styles.authorMark} aria-hidden="true">
-            {handle.charAt(0).toUpperCase()}
-          </span>
-        )}
-        {isCurator ? (
-          <span className={styles.authorName}>Palette</span>
-        ) : (
-          // A user's byline links to their public palettes.
-          <Link className={styles.authorLink} to={`/u/${encodeURIComponent(handle)}`}>
-            @{handle}
-          </Link>
+        </div>
+        <div className={styles.footer}>
+          <div className={styles.tags}>
+            {palette.tags.slice(0, 2).map(renderTag)}
+            {palette.tags.length > 2 && (
+              <button
+                type="button"
+                className={styles.moreTags}
+                aria-label={`${showTags ? "Hide" : "Show"} more tags for ${palette.name}`}
+                aria-expanded={showTags}
+                aria-controls={tagsId}
+                onClick={() => setShowTags((v) => !v)}
+              >
+                {showTags ? "Less" : `+${palette.tags.length - 2}`}
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            className={styles.copy}
+            onClick={() =>
+              void copy(
+                palette.colors.map((c) => formatColor(c, format)).join(", "),
+                `${palette.colors.length} ${palette.colors.length === 1 ? "color" : "colors"} copied`,
+              )
+            }
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              aria-hidden="true"
+            >
+              <rect x="8" y="8" width="12" height="12" rx="2" />
+              <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" />
+            </svg>
+            Copy all
+          </button>
+        </div>
+        {palette.tags.length > 2 && (
+          <div id={tagsId} className={styles.extraTags} hidden={!showTags}>
+            {palette.tags.slice(2).map(renderTag)}
+          </div>
         )}
       </div>
     </article>

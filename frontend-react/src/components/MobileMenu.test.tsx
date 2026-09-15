@@ -33,7 +33,7 @@ describe("MobileMenu", () => {
     await u.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     const menu = screen.getByRole("navigation", { name: "Account" });
-    for (const name of ["Home", "Favorites", "Export", "Create", "Admin", "Account"]) {
+    for (const name of ["Browse", "Favorites", "Export", "Create", "Admin", "Account"]) {
       expect(within(menu).getByRole("link", { name })).toBeInTheDocument();
     }
     expect(within(menu).getByRole("group", { name: "Theme" })).toBeInTheDocument();
@@ -79,4 +79,25 @@ describe("MobileMenu", () => {
     await u.keyboard("{Escape}");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
+});
+
+it("gives guests keyboard-accessible navigation and theme controls", async () => {
+  const u = userEvent.setup();
+  render(
+    <ThemeProvider>
+      <MemoryRouter>
+        <MobileMenu isAdmin={false} username="" isAuthenticated={false} />
+      </MemoryRouter>
+    </ThemeProvider>,
+  );
+  const trigger = screen.getByRole("button", { name: "Open navigation" });
+  await u.click(trigger);
+  const menu = within(screen.getByRole("navigation", { name: "Mobile navigation" }));
+  for (const name of ["Browse", "Favorites", "Export", "Login / Create account"])
+    expect(menu.getByRole("link", { name })).toBeInTheDocument();
+  expect(menu.getByRole("group", { name: "Theme" })).toBeInTheDocument();
+  expect(menu.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+  await u.keyboard("{Escape}");
+  expect(trigger).toHaveAttribute("aria-expanded", "false");
+  expect(trigger).toHaveFocus();
 });

@@ -1,9 +1,12 @@
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { usePalette, usePalettes, useFavorites, useToggleFavorite } from "../api/hooks";
+import { usePalette, usePalettes } from "../api/hooks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthContext";
 import { useToast } from "../components/toast/ToastProvider";
+import { useSavePalette } from "../components/useSavePalette";
+import { ActionMenu } from "../components/ActionMenu";
+import { tagPath } from "../lib/catalogParams";
 import { PaletteCard } from "../components/PaletteCard";
 import { EmptyState } from "../components/EmptyState";
 import { ApiError } from "../lib/http";
@@ -39,34 +42,13 @@ export function PalettePage() {
   const { isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
   const { confirm } = useModal();
-  const { format } = useColorFormat();
-  const { data: favorites } = useFavorites();
-  const toggleFavorite = useToggleFavorite();
+  const { format, setFormat } = useColorFormat();
   const [forking, setForking] = useState(false);
   // Colour-vision simulation is an inspection mode over the swatches — local, never persisted.
   const [sim, setSim] = useState("none");
-  const simOptionsRef = useRef<HTMLDivElement>(null);
 
   const { data: palette, isLoading, error } = usePalette(handle, slug);
-
-  // Slide the thumb to sit exactly under the active choice by measuring that button, rather than
-  // assuming four equal columns — the labels differ in width ("None" vs "Deuteranopia"), so a fixed
-  // quarter-width thumb drifted off the label it was meant to mark. Re-measure on selection, resize
-  // and once the webfont has loaded (which changes the label widths).
-  useLayoutEffect(() => {
-    const el = simOptionsRef.current;
-    if (!el) return;
-    const move = () => {
-      const active = el.querySelector<HTMLElement>('[aria-pressed="true"]');
-      if (!active) return;
-      el.style.setProperty("--sim-x", `${active.offsetLeft}px`);
-      el.style.setProperty("--sim-w", `${active.offsetWidth}px`);
-    };
-    move();
-    window.addEventListener("resize", move);
-    document.fonts?.ready.then(move).catch(() => {});
-    return () => window.removeEventListener("resize", move);
-  }, [sim, palette]);
+  const { saved, pending: saving, toggle: onSave } = useSavePalette(palette);
 
   // The "similar" query keys off the first tag; it runs regardless, but the section only renders
   // when there is a tag and at least one other palette to show.
@@ -129,7 +111,6 @@ export function PalettePage() {
     );
   }
 
-  const saved = (favorites ?? []).some((p) => p.slug === palette.slug);
   const ownerLabel =
     palette.owner_handle === CURATOR_HANDLE ? "Palette" : palette.owner_handle;
   const similarPalettes = (similar?.items ?? [])
@@ -146,26 +127,6 @@ export function PalettePage() {
     } catch {
       showToast("Could not copy to the clipboard", "error");
     }
-  };
-
-  const onSave = () => {
-    // Logged out, the save is kept on this device and merged into the account on sign-in (same as
-    // a card's heart), so the detail page never dead-ends a guest.
-    toggleFavorite.mutate(
-      { slug: palette.slug, saved, palette },
-      {
-        onSuccess: () =>
-          showToast(
-            saved
-              ? "Removed from favorites"
-              : isAuthenticated
-                ? "Added to favorites"
-                : "Saved on this device",
-          ),
-        onError: (e) =>
-          showToast(e instanceof ApiError ? e.message : "Something went wrong", "error"),
-      },
-    );
   };
 
   const onShare = () =>
@@ -201,7 +162,7 @@ export function PalettePage() {
     setForking(true);
     try {
       const copy = await forkPalette(palette.id);
-      showToast("Forked to your palettes");
+      showToast("Copy created in your palettes");
       queryClient.invalidateQueries({ queryKey: ["palettes"] });
       navigate(`${palettePath(copy)}/edit`);
     } catch (e) {
@@ -213,7 +174,7 @@ export function PalettePage() {
   return (
     <>
       <section className={`${ui.section} ${styles.head}`}>
-        <Link to={backTo} className={styles.backLink}>
+        <Link to={backTo} state={{ restoreCatalog: true }} className={styles.backLink}>
           ← All palettes
         </Link>
 
@@ -244,7 +205,11 @@ export function PalettePage() {
         {palette.tags.length > 0 && (
           <div className={styles.tags}>
             {palette.tags.map((tag) => (
-              <Link key={tag} to={`/?tag=${encodeURIComponent(tag)}`} className={ui.tag}>
+              <Link
+                key={tag}
+                to={tagPath(tag, location.pathname, location.search)}
+                className={ui.tag}
+              >
                 #{tag}
               </Link>
             ))}
@@ -255,14 +220,7 @@ export function PalettePage() {
       <section className={`${ui.section} ${styles.colorsSection}`} aria-label="Colors">
         <div className={styles.simBar} role="group" aria-label="Color vision simulation">
           <span className={styles.simLabel}>Color vision</span>
-          <div
-            className={styles.simOptions}
-            ref={simOptionsRef}
-            style={{ "--sim-count": simChoices.length } as CSSProperties}
-          >
-            {/* The thumb glides under the active choice; the labels only change colour, so nothing
-                inverts mid-slide. */}
-            <span className={styles.simThumb} aria-hidden="true" />
+          <div className={styles.simOptions}>
             {simChoices.map((choice) => (
               <button
                 key={choice}
@@ -319,47 +277,56 @@ export function PalettePage() {
             type="button"
             className={`${buttonClass("primary")}${saved ? ` ${ui.buttonVariant.saved}` : ""}`}
             aria-pressed={saved}
-            disabled={toggleFavorite.isPending}
+            disabled={saving}
             onClick={onSave}
           >
             {saved ? "♥ Saved" : "♡ Save"}
           </button>
-          <button
-            type="button"
+          <Link
             className={buttonClass("secondary")}
-            onClick={() => void copyValue(palette.colors.join(", "), "All colors copied")}
+            to={`/export?${new URLSearchParams({ source: "single", handle: palette.owner_handle || CURATOR_HANDLE, slug: palette.slug })}`}
           >
-            Copy all
-          </button>
-          <button
-            type="button"
-            className={buttonClass("secondary")}
-            onClick={() =>
-              void copyValue(generateExportText([palette], "css"), "CSS copied")
-            }
-          >
-            Copy CSS
-          </button>
-          <button
-            type="button"
-            className={buttonClass("secondary")}
-            disabled={forking}
-            onClick={() => void onFork()}
-          >
-            {forking ? "Forking…" : "Fork"}
-          </button>
-          <button type="button" className={buttonClass("ghost")} onClick={onShare}>
-            Share
-          </button>
-          {!isOwner && (
+            Export palette
+          </Link>
+          <ActionMenu label={`Copy ${format.toUpperCase()}`}>
+            {(["hex", "rgb", "hsl", "oklch"] as const).map((choice) => (
+              <button
+                key={choice}
+                type="button"
+                onClick={() => {
+                  setFormat(choice);
+                  void copyValue(
+                    palette.colors.map((c) => formatColor(c, choice)).join(", "),
+                    `${choice.toUpperCase()} colors copied`,
+                  );
+                }}
+              >
+                Copy all as {choice.toUpperCase()}
+              </button>
+            ))}
             <button
               type="button"
-              className={buttonClass("ghost")}
-              onClick={() => void onReport()}
+              onClick={() =>
+                void copyValue(generateExportText([palette], "css"), "CSS copied")
+              }
             >
-              Report
+              Copy CSS variables
             </button>
-          )}
+          </ActionMenu>
+          <ActionMenu label="More">
+            <button type="button" disabled={forking} onClick={() => void onFork()}>
+              {forking ? "Creating copy…" : "Edit a copy"}
+            </button>
+            <button type="button" onClick={onShare}>
+              Copy link
+            </button>
+            {!isOwner && <hr />}
+            {!isOwner && (
+              <button type="button" onClick={() => void onReport()}>
+                Report palette
+              </button>
+            )}
+          </ActionMenu>
         </div>
       </section>
 

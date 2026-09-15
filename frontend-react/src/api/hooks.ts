@@ -9,11 +9,6 @@ import { listTags } from "./tags";
 import { listFavorites, addFavorite, removeFavorite, clearFavorites } from "./favorites";
 import { queryKeys } from "./queryKeys";
 import { useAuth } from "../auth/AuthContext";
-import {
-  clearGuestFavorites,
-  getGuestFavorites,
-  toggleGuestFavorite,
-} from "../lib/guestFavorites";
 import type { Palette, PaletteList, PaletteListParams } from "../types/api";
 
 // The home grid pages in 24 at a time — a multiple of the three-column grid, so the last row is
@@ -109,43 +104,35 @@ export function useTags() {
   });
 }
 
-// The favorites cache key is split by auth state: the server list and the on-device guest list are
-// genuinely different data, and keying them apart makes React Query refetch the moment auth flips
-// (same-key/different-queryFn would keep serving the stale one). Both start with `queryKeys.favorites`,
-// so an invalidate or teardown on that prefix still clears both.
-function favoritesKey(isAuthenticated: boolean) {
-  return [...queryKeys.favorites, isAuthenticated ? "user" : "guest"] as const;
+// Keep a separate disabled guest key so a sign-out cannot expose a cached account collection.
+function favoritesKey(userId: number | undefined) {
+  return [...queryKeys.favorites, userId ?? "guest"] as const;
 }
 
-// Favorites: the signed-in user's from the server, or the logged-out visitor's from this device.
 export function useFavorites() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   return useQuery({
-    queryKey: favoritesKey(isAuthenticated),
-    queryFn: isAuthenticated ? listFavorites : async () => getGuestFavorites(),
+    queryKey: favoritesKey(user?.id),
+    queryFn: listFavorites,
+    enabled: isAuthenticated,
     staleTime: 30_000,
   });
 }
 
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
-  const key = favoritesKey(isAuthenticated);
+  const { isAuthenticated, user } = useAuth();
+  const key = favoritesKey(user?.id);
   return useMutation({
     mutationFn: async ({
       slug,
       saved,
-      palette,
     }: {
       slug: string;
       saved: boolean;
       palette?: Palette;
     }) => {
-      // Logged out: keep it on this device (merged into the account on sign-in).
-      if (!isAuthenticated) {
-        if (palette) toggleGuestFavorite(palette, saved);
-        return;
-      }
+      if (!isAuthenticated) throw new Error("Log in to save palettes");
       return saved ? removeFavorite(slug) : addFavorite(slug);
     },
     // Flip the heart before the round trip. The favorites list is the single source the card
@@ -153,6 +140,7 @@ export function useToggleFavorite() {
     // at once; the request then confirms it. The `palette` argument is what a re-add needs to
     // put the row back — remove/add both return void, so the cache cannot recover it otherwise.
     onMutate: async ({ slug, saved, palette }) => {
+      if (!isAuthenticated) return undefined;
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<Palette[]>(key);
       queryClient.setQueryData<Palette[]>(key, (current = []) =>
@@ -167,23 +155,23 @@ export function useToggleFavorite() {
     // Put the real state back on failure: an optimistic flip that the server rejected must not
     // stick, or the card would claim a save that did not happen.
     onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(key, context.previous);
+      if (context) queryClient.setQueryData(key, context.previous ?? []);
     },
     // Reconcile with the server either way — order and any fields the optimistic copy lacked.
-    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSettled: () => {
+      if (isAuthenticated) void queryClient.invalidateQueries({ queryKey: key });
+    },
   });
 }
 
 export function useClearFavorites() {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   return useMutation({
-    mutationFn: isAuthenticated
-      ? clearFavorites
-      : async () => {
-          clearGuestFavorites();
-        },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: favoritesKey(isAuthenticated) }),
+    mutationFn: async () => {
+      if (!isAuthenticated) throw new Error("Log in to manage favorites");
+      return clearFavorites();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: favoritesKey(user?.id) }),
   });
 }

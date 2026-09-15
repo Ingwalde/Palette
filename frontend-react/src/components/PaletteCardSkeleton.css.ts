@@ -10,10 +10,11 @@ export const card = style({
   display: "flex",
   flexDirection: "column",
   gap: "14px",
-  padding: "20px",
+  padding: "0 0 18px",
   border: `1px solid ${vars.color.border}`,
   borderRadius: vars.radius.lg,
-  background: vars.color.surfaceGlass,
+  background: vars.color.surface,
+  overflow: "hidden",
 });
 
 const bar = style({
@@ -27,7 +28,7 @@ const bar = style({
   },
 });
 
-export const title = style([bar, { width: "55%", height: "20px" }]);
-export const line = style([bar, { width: "80%", height: "12px" }]);
-export const swatches = style([bar, { width: "100%", height: "120px" }]);
-export const footer = style([bar, { width: "40%", height: "14px" }]);
+export const title = style([bar, { width: "55%", height: "20px", marginLeft: "18px" }]);
+export const line = style([bar, { width: "80%", height: "12px", marginLeft: "18px" }]);
+export const swatches = style([bar, { width: "100%", height: "176px" }]);
+export const footer = style([bar, { width: "40%", height: "14px", marginLeft: "18px" }]);

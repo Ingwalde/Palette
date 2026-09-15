@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { usePalettesInfinite, useTags } from "../api/hooks";
+import { COLOR_COUNTS, readColorCount } from "../lib/catalogParams";
+import { useCatalogScroll } from "../lib/useCatalogScroll";
 import { useDebounce } from "../lib/useDebounce";
+import { useSearchPlaceholder } from "../lib/useSearchPlaceholder";
 import { HeroEditorial } from "../components/HeroEditorial";
 import { PaletteCard } from "../components/PaletteCard";
 import { PaletteCardSkeletonGrid } from "../components/PaletteCardSkeleton";
@@ -27,6 +30,14 @@ const SORT_OPTIONS = [
   { value: "curated", label: "Curated" },
 ];
 
+const COUNT_OPTIONS = [
+  { value: "all", label: "Any count" },
+  ...COLOR_COUNTS.map((n) => ({
+    value: String(n),
+    label: `${n} color${n === 1 ? "" : "s"}`,
+  })),
+];
+
 const FORMAT_OPTIONS = [
   { value: "hex", label: "HEX" },
   { value: "rgb", label: "RGB" },
@@ -39,6 +50,7 @@ function readSort(raw: string | null): FeedSort {
 }
 
 export function HomePage() {
+  const searchPlaceholder = useSearchPlaceholder();
   // The query string is the source of truth, so a filtered catalogue is a shareable link and
   // Back restores the previous filter. `q` is the applied search; the input keeps a local `draft`
   // so it does not lag a keystroke behind the debounce.
@@ -47,16 +59,21 @@ export function HomePage() {
   const tag = params.get("tag") ?? "all";
   const rawSort = params.get("sort");
   const sort = readSort(rawSort);
+  const rawColorCount = params.get("color_count");
+  const colorCount = readColorCount(rawColorCount);
+  useCatalogScroll();
 
   const { format, setFormat } = useColorFormat();
 
-  const [draft, setDraft] = useState(q);
+  // The draft belongs to a URL query. Reset it during render on external navigation so a stale
+  // debounce cannot overwrite Back/Forward with the query from the page we just left.
+  const [searchState, setSearchState] = useState({ q, draft: q });
+  if (searchState.q !== q) setSearchState({ q, draft: q });
+  const draft = searchState.q === q ? searchState.draft : q;
+  const setDraft = (value: string) => setSearchState({ q, draft: value });
   const debounced = useDebounce(draft.trim(), 250);
-
-  // draft → URL. `replace` so typing ten characters leaves one history entry, not ten. The
-  // equality guard is what stops this and the URL→draft effect below from feeding each other.
   useEffect(() => {
-    if (debounced === q) return;
+    if (debounced === q || debounced !== draft.trim()) return;
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -66,35 +83,33 @@ export function HomePage() {
       },
       { replace: true },
     );
-  }, [debounced, q, setParams]);
-
-  // URL → draft. Covers Back, an external link and a reload; guarded so it does not clobber what
-  // the user is mid-typing.
-  useEffect(() => {
-    setDraft((prev) => (prev.trim() === q ? prev : q));
-  }, [q]);
+  }, [debounced, draft, q, setParams]);
 
   // A sort outside the known set (a hand-edited or stale URL) falls back to the default and is
   // stripped, so `/?sort=%3Cscript%3E` does not linger in the address bar.
   useEffect(() => {
-    if (rawSort !== null && rawSort !== "popular" && rawSort !== "curated") {
+    const invalidSort =
+      rawSort !== null && rawSort !== "popular" && rawSort !== "curated";
+    const invalidCount = rawColorCount !== null && colorCount === undefined;
+    if (invalidSort || invalidCount) {
       setParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          next.delete("sort");
+          if (invalidSort) next.delete("sort");
+          if (invalidCount) next.delete("color_count");
           return next;
         },
         { replace: true },
       );
     }
-  }, [rawSort, setParams]);
+  }, [rawSort, rawColorCount, colorCount, setParams]);
 
   // Clicking a tag or changing the sort is ordinary navigation (not `replace`), so Back returns
   // the previous filter.
   const selectTag = (name: string) =>
     setParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (name === "all") next.delete("tag");
+      if (name === "all" || name === tag) next.delete("tag");
       else next.set("tag", name);
       return next;
     });
@@ -162,6 +177,7 @@ export function HomePage() {
     search: q || undefined,
     tag: tag === "all" ? undefined : tag,
     sort,
+    color_count: colorCount,
   });
   const palettes = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data]);
   const total = data?.pages[0]?.total ?? 0;
@@ -185,7 +201,7 @@ export function HomePage() {
               <input
                 id="searchInput"
                 type="search"
-                placeholder="Search by name, description or tag..."
+                {...searchPlaceholder}
                 autoComplete="off"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -199,6 +215,19 @@ export function HomePage() {
             </label>
 
             <div className={styles.toolbarControls}>
+              <CustomSelect
+                options={COUNT_OPTIONS}
+                value={colorCount ? String(colorCount) : "all"}
+                ariaLabel="Number of colors"
+                onChange={(value) =>
+                  setParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (value === "all") next.delete("color_count");
+                    else next.set("color_count", value);
+                    return next;
+                  })
+                }
+              />
               <CustomSelect
                 options={SORT_OPTIONS}
                 value={sort}
@@ -230,6 +259,18 @@ export function HomePage() {
               All
             </button>
             {visibleTags.map(tagChip)}
+            {(q || tag !== "all" || colorCount || sort !== "new") && (
+              <button
+                type="button"
+                className={styles.moreTags}
+                onClick={() => {
+                  setParams({});
+                  setDraft("");
+                }}
+              >
+                Reset filters
+              </button>
+            )}
 
             {overflowTags.length > 0 && (
               <button

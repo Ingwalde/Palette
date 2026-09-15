@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, afterEach, vi } from "vitest";
+import { ToastProvider } from "./toast/ToastProvider";
 import { HeroEditorial } from "./HeroEditorial";
 
 // The hero calls Math.random three times per scene (count, family, variant). Drive it so the first
@@ -20,10 +21,14 @@ const FIRST = [0.5, 0.1, 0.1];
 const SECOND = [0.7, 0.5, 0.9];
 
 describe("HeroEditorial", () => {
-  it("points Observe at the search station just below the fold", () => {
+  it("points Explore palettes at the search station", () => {
     mockRandom(...FIRST);
-    render(<HeroEditorial />);
-    expect(screen.getByRole("link", { name: /observe/i })).toHaveAttribute(
+    render(
+      <ToastProvider>
+        <HeroEditorial />
+      </ToastProvider>,
+    );
+    expect(screen.getByRole("link", { name: /explore palettes/i })).toHaveAttribute(
       "href",
       "#find",
     );
@@ -31,7 +36,11 @@ describe("HeroEditorial", () => {
 
   it("shows the random scene on first paint — palette name, N swatches and the accent chip", () => {
     mockRandom(...FIRST);
-    render(<HeroEditorial />);
+    render(
+      <ToastProvider>
+        <HeroEditorial />
+      </ToastProvider>,
+    );
 
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
 
@@ -48,7 +57,11 @@ describe("HeroEditorial", () => {
   it("re-rolls count, palette and artwork on Another combination and announces it", async () => {
     const user = userEvent.setup();
     mockRandom(...FIRST, ...SECOND);
-    render(<HeroEditorial />);
+    render(
+      <ToastProvider>
+        <HeroEditorial />
+      </ToastProvider>,
+    );
 
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
     expect(
@@ -66,16 +79,26 @@ describe("HeroEditorial", () => {
     });
     expect(swatches.querySelectorAll("span")).toHaveLength(5);
 
-    const status = await screen.findByRole("status");
+    const status = screen
+      .getAllByRole("status")
+      .find((el) => el.textContent?.includes("Sea & sky palette"))!;
     expect(status.textContent).toMatch(/Sea & sky palette, 5 colours\./);
   });
 
   it("keeps the scene across an ordinary re-render", () => {
     mockRandom(...FIRST);
-    const { rerender } = render(<HeroEditorial />);
+    const { rerender } = render(
+      <ToastProvider>
+        <HeroEditorial />
+      </ToastProvider>,
+    );
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
     // A parent re-render must not re-roll the scene (Math.random is exhausted after the first).
-    rerender(<HeroEditorial />);
+    rerender(
+      <ToastProvider>
+        <HeroEditorial />
+      </ToastProvider>,
+    );
     expect(screen.getByText("Earth & air")).toBeInTheDocument();
   });
 });
