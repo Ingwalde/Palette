@@ -5,6 +5,7 @@ const PHONE = "(max-width: 680px)";
 const NARROW = "(max-width: 820px)";
 
 export const header = style({
+  color: vars.color.text,
   position: "sticky",
   top: 0,
   zIndex: 20,
@@ -43,6 +44,9 @@ export const headerBare = style({
 });
 
 export const logo = style({
+  color: vars.color.text,
+  whiteSpace: "nowrap",
+  flexShrink: 0,
   display: "inline-flex",
   alignItems: "center",
   gap: "10px",
