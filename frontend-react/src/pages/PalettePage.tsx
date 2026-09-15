@@ -313,24 +313,20 @@ export function PalettePage() {
               Copy CSS variables
             </button>
           </ActionMenu>
-          <button
-            type="button"
-            className={buttonClass("secondary")}
-            disabled={forking}
-            onClick={() => void onFork()}
-          >
-            {forking ? "Creating copy…" : "Edit a copy"}
-          </button>
-          <button type="button" className={buttonClass("ghost")} onClick={onShare}>
-            Share
-          </button>
-          {!isOwner && (
-            <ActionMenu label="More actions">
+          <ActionMenu label="More">
+            <button type="button" disabled={forking} onClick={() => void onFork()}>
+              {forking ? "Creating copy…" : "Edit a copy"}
+            </button>
+            <button type="button" onClick={onShare}>
+              Copy link
+            </button>
+            {!isOwner && <hr />}
+            {!isOwner && (
               <button type="button" onClick={() => void onReport()}>
                 Report palette
               </button>
-            </ActionMenu>
-          )}
+            )}
+          </ActionMenu>
         </div>
       </section>
 

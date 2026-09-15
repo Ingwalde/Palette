@@ -32,3 +32,14 @@ globalStyle(`${panel} > button, ${panel} > a`, {
 globalStyle(`${panel} > button:hover, ${panel} > a:hover`, {
   background: vars.color.primarySoft,
 });
+
+// Separate reporting from the everyday palette actions.
+globalStyle(`${panel} > hr`, {
+  border: 0,
+  borderTop: `1px solid ${vars.color.border}`,
+  margin: "6px 8px",
+});
+globalStyle(`${panel} > button:disabled`, {
+  opacity: 0.6,
+  cursor: "wait",
+});
