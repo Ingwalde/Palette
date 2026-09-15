@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { PaletteEditorPage } from "./PaletteEditorPage";
 import { AuthProvider } from "../auth/AuthContext";
+import { ModalProvider } from "../components/modal/ModalProvider";
 import { ToastProvider } from "../components/toast/ToastProvider";
 import { ApiError } from "../lib/http";
 import type { Palette, User } from "../types/api";
@@ -66,15 +67,17 @@ function renderAt(path: string) {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
-          <MemoryRouter initialEntries={[path]}>
-            <Routes>
-              <Route path="/palettes/new" element={<PaletteEditorPage />} />
-              <Route path="/u/:handle/:slug/edit" element={<PaletteEditorPage />} />
-              <Route path="/u/:handle/:slug" element={<div>PALETTE PAGE</div>} />
-              <Route path="/login" element={<div>LOGIN</div>} />
-            </Routes>
-            <LocationProbe />
-          </MemoryRouter>
+          <ModalProvider>
+            <MemoryRouter initialEntries={[path]}>
+              <Routes>
+                <Route path="/palettes/new" element={<PaletteEditorPage />} />
+                <Route path="/u/:handle/:slug/edit" element={<PaletteEditorPage />} />
+                <Route path="/u/:handle/:slug" element={<div>PALETTE PAGE</div>} />
+                <Route path="/login" element={<div>LOGIN</div>} />
+              </Routes>
+              <LocationProbe />
+            </MemoryRouter>
+          </ModalProvider>
         </ToastProvider>
       </AuthProvider>
     </QueryClientProvider>,

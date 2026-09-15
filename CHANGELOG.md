@@ -1,5 +1,14 @@
 # Changelog
 
+## v5.2.8 — Export and editing workflows
+
+- Compact selected-palette summary and Change action; Image/Code format groups.
+- SVG and PNG image previews, contextual downloads, generation/error states and MIME types.
+- Live palette preview, accessible color reordering, inline validation and focused errors.
+- Dirty state guards for browser reload and internal navigation; optional description matches API.
+- Separate admin palette editor, compact list, preserved search/page and focused return.
+- Existing public/account privacy rules and all export formats are preserved.
+
 ## v5.2.7 — Clearer discovery and account-only saving
 
 - Rebuilt shared palette cards with larger color strips, a compact author row, Save, Copy all,

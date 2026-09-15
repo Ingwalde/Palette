@@ -9,6 +9,7 @@ export const editor = style({
 export const row = style({
   display: "flex",
   alignItems: "center",
+  flexWrap: "wrap",
   gap: "10px",
 });
 
@@ -52,7 +53,9 @@ globalStyle(`${picker}::-moz-color-swatch`, {
 
 /** Sits alongside the shared input. */
 export const hex = style({
-  flex: "1 1 auto",
+  flex: "1 1 110px",
+  minWidth: 0,
+  width: "110px",
   textTransform: "uppercase",
 });
 
@@ -68,3 +71,29 @@ export const footer = style({
   gap: "12px",
   marginTop: "8px",
 });
+
+export const fields = style({
+  display: "grid",
+  gap: "20px",
+  minWidth: 0,
+  margin: 0,
+  padding: 0,
+  border: 0,
+});
+export const preview = style({
+  display: "flex",
+  height: "120px",
+  borderRadius: "16px",
+  overflow: "hidden",
+  background:
+    "repeating-linear-gradient(45deg, transparent, transparent 8px, #8883 8px, #8883 16px)",
+});
+globalStyle(`${preview} > span`, {
+  flex: 1,
+  minWidth: 0,
+  display: "grid",
+  placeItems: "center",
+  overflowWrap: "anywhere",
+});
+export const reorder = style({ display: "flex", gap: "4px" });
+export const error = style({ flexBasis: "100%" });

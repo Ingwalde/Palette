@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -103,6 +104,27 @@ const MODE_LABEL: Record<Mode, string> = {
 
 function AdminPanel({ username }: { username: string }) {
   const [mode, setMode] = useState<Mode>("palettes");
+  const { confirm } = useModal();
+  const [dirty, setDirty] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [offset, setOffset] = useState(0);
+  const changeMode = async (next: Mode) => {
+    if (next === mode) return;
+    if (
+      dirty &&
+      !(await confirm({
+        title: "Discard changes?",
+        message: "Your palette has unsaved changes.",
+        confirmLabel: "Discard changes",
+        cancelLabel: "Stay",
+        danger: true,
+      }))
+    )
+      return;
+    setDirty(false);
+    setMode(next);
+    tabRefs.current[next]?.focus();
+  };
   const tabRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({});
 
   // Arrow keys move between tabs and select as they go, which is the behaviour the tablist
@@ -121,8 +143,7 @@ function AdminPanel({ username }: { username: string }) {
     }
     if (!next) return;
     e.preventDefault();
-    setMode(next);
-    tabRefs.current[next]?.focus();
+    void changeMode(next);
   };
 
   return (
@@ -167,7 +188,7 @@ function AdminPanel({ username }: { username: string }) {
                 aria-controls={`admin-panel-${value}`}
                 aria-selected={mode === value}
                 tabIndex={mode === value ? 0 : -1}
-                onClick={() => setMode(value)}
+                onClick={() => void changeMode(value)}
               >
                 {MODE_LABEL[value]}
               </button>
@@ -182,7 +203,13 @@ function AdminPanel({ username }: { username: string }) {
           tabIndex={-1}
         >
           {mode === "palettes" ? (
-            <PalettesView />
+            <PalettesView
+              searchInput={searchInput}
+              setSearchInput={setSearchInput}
+              offset={offset}
+              setOffset={setOffset}
+              onDirtyChange={setDirty}
+            />
           ) : mode === "tags" ? (
             <TagsView />
           ) : (
@@ -196,7 +223,19 @@ function AdminPanel({ username }: { username: string }) {
 
 /* ------------------------------- Palettes view ------------------------------ */
 
-function PalettesView() {
+function PalettesView({
+  searchInput,
+  setSearchInput,
+  offset,
+  setOffset,
+  onDirtyChange,
+}: {
+  searchInput: string;
+  setSearchInput: (value: string) => void;
+  offset: number;
+  setOffset: React.Dispatch<React.SetStateAction<number>>;
+  onDirtyChange: (value: boolean) => void;
+}) {
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { confirm } = useModal();
@@ -206,11 +245,42 @@ function PalettesView() {
   const [editing, setEditing] = useState<Palette | null>(null);
   const [formNonce, setFormNonce] = useState(0);
 
-  const [searchInput, setSearchInput] = useState("");
-  const [offset, setOffset] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [deletePending, setDeletePending] = useState<number | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const formPanel = useRef<HTMLElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const savedScroll = useRef(0);
+  const updateDirty = useCallback(
+    (value: boolean) => {
+      setDirty(value);
+      onDirtyChange(value);
+    },
+    [onDirtyChange],
+  );
+  useEffect(() => {
+    if (formOpen) formPanel.current?.focus();
+  }, [formOpen, formNonce]);
+  const closePanel = () => {
+    setFormOpen(false);
+    setDirty(false);
+    onDirtyChange(false);
+    requestAnimationFrame(() => {
+      opener.current?.focus({ preventScroll: true });
+      window.scrollTo({ top: savedScroll.current, behavior: "instant" });
+    });
+  };
   const search = useDebounce(searchInput.trim(), 250);
 
-  useEffect(() => setOffset(0), [search]);
+  const previousSearch = useRef(search);
+  useEffect(() => {
+    if (previousSearch.current !== search) {
+      setOffset(0);
+      previousSearch.current = search;
+    }
+  }, [search, setOffset]);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["admin-palettes", search, offset],
@@ -221,8 +291,9 @@ function PalettesView() {
   const items = useMemo(() => data?.items ?? [], [data]);
 
   useEffect(() => {
-    if (!isLoading && items.length === 0 && offset > 0) setOffset(0);
-  }, [isLoading, items, offset]);
+    if (data && !isLoading && offset >= total && offset > 0)
+      setOffset(Math.max(0, (Math.ceil(total / PAGE_SIZE) - 1) * PAGE_SIZE));
+  }, [data, isLoading, total, offset, setOffset]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-palettes"] });
@@ -231,6 +302,7 @@ function PalettesView() {
   };
 
   const resetForm = () => {
+    closePanel();
     setEditing(null);
     setFormNonce((n) => n + 1);
   };
@@ -244,6 +316,7 @@ function PalettesView() {
   const onSave = async (values: PaletteFormValues) => {
     if (saving) return;
     setSaving(true);
+    setSaveError("");
     try {
       if (editing !== null) {
         await updatePalette(editing.id, values);
@@ -255,13 +328,33 @@ function PalettesView() {
       resetForm();
       invalidateAll();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setSaveError(errMsg(err));
     } finally {
       setSaving(false);
     }
   };
 
-  const onEdit = (palette: Palette) => {
+  const onEdit = async (palette: Palette | null) => {
+    if (saving) return;
+    if (
+      dirty &&
+      !(await confirm({
+        title: "Discard changes?",
+        message: "Your palette has unsaved changes.",
+        confirmLabel: "Discard changes",
+        cancelLabel: "Stay",
+        danger: true,
+      }))
+    )
+      return;
+    if (!formOpen) {
+      opener.current = document.activeElement as HTMLElement;
+      savedScroll.current = window.scrollY;
+    }
+    setFormOpen(true);
+    setDirty(false);
+    onDirtyChange(false);
+    setSaveError("");
     setEditing(palette);
     setFormNonce((n) => n + 1);
   };
@@ -273,13 +366,17 @@ function PalettesView() {
       confirmLabel: "Delete",
       danger: true,
     });
-    if (!ok) return;
+    if (!ok || deletePending !== null) return;
+    setDeletePending(palette.id);
+    setDeleteError("");
     try {
       await deletePalette(palette.id);
       showToast("Palette deleted");
       invalidateAll();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setDeleteError(errMsg(err));
+    } finally {
+      setDeletePending(null);
     }
   };
 
@@ -287,33 +384,44 @@ function PalettesView() {
   const currentPage = Math.floor(offset / PAGE_SIZE) + 1;
 
   return (
-    <div className={styles.view}>
-      <PaletteForm
-        key={editing ? `edit-${editing.id}` : `new-${formNonce}`}
-        initial={
-          editing
-            ? {
-                name: editing.name,
-                description: editing.description,
-                colors: editing.colors,
-                tags: editing.tags,
-              }
-            : undefined
-        }
-        submitLabel={editing ? "Update palette" : "Create palette"}
-        saving={saving}
-        onSubmit={onSave}
-        onCancel={editing ? resetForm : undefined}
-        cancelLabel="Cancel edit"
-        header={
-          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
-            <div>
-              <p className={ui.eyebrow}>Palette</p>
-              <h2>{editing ? "Edit palette" : "Add palette"}</h2>
-            </div>
-          </div>
-        }
-      />
+    <div className={`${styles.paletteWorkspace} ${formOpen ? styles.workspaceOpen : ""}`}>
+      {formOpen && (
+        <aside
+          ref={formPanel}
+          tabIndex={-1}
+          className={styles.editorPanel}
+          aria-label={editing ? "Edit palette" : "Add palette"}
+        >
+          <PaletteForm
+            key={`form-${formNonce}`}
+            initial={
+              editing
+                ? {
+                    name: editing.name,
+                    description: editing.description,
+                    colors: editing.colors,
+                    tags: editing.tags,
+                  }
+                : undefined
+            }
+            submitLabel={editing ? "Update palette" : "Create palette"}
+            saving={saving}
+            error={saveError}
+            onDirtyChange={updateDirty}
+            onSubmit={onSave}
+            onCancel={resetForm}
+            cancelLabel="Close editor"
+            header={
+              <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
+                <div>
+                  <p className={ui.eyebrow}>Palette</p>
+                  <h2>{editing ? "Edit palette" : "Add palette"}</h2>
+                </div>
+              </div>
+            }
+          />
+        </aside>
+      )}
 
       <section className={styles.list} aria-label="Palettes in the database">
         <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
@@ -330,6 +438,14 @@ function PalettesView() {
           </p>
         </div>
 
+        <button
+          type="button"
+          className={buttonClass("primary")}
+          onClick={() => void onEdit(null)}
+        >
+          New palette
+        </button>
+        {deleteError && <p role="alert">{deleteError}</p>}
         <label className={`${ui.searchField} ${styles.listSearch}`}>
           <span className={ui.visuallyHidden}>Search palettes</span>
           <input
@@ -351,7 +467,7 @@ function PalettesView() {
           {isError ? (
             <EmptyState
               title="Backend is not available"
-              text="Start the stack with: docker compose up"
+              text="Could not load palettes. Check your connection and try again."
             />
           ) : isLoading ? (
             <EmptyState
@@ -373,19 +489,23 @@ function PalettesView() {
                 <div className={styles.itemTop}>
                   <div>
                     <h3 className={styles.itemTitle}>{palette.name}</h3>
-                    <p className={styles.itemSlug}>/{palette.slug}</p>
+                    <p className={styles.itemSlug}>
+                      /{palette.slug} · {palette.visibility} · {palette.colors.length}{" "}
+                      colors
+                    </p>
                   </div>
                   <div className={styles.itemActions}>
                     <button
                       className={buttonClass("ghost")}
                       type="button"
-                      onClick={() => onEdit(palette)}
+                      onClick={() => void onEdit(palette)}
                     >
                       Edit
                     </button>
                     <button
                       className={buttonClass("danger")}
                       type="button"
+                      disabled={deletePending !== null || saving}
                       onClick={() => void onDelete(palette)}
                     >
                       Delete
@@ -443,6 +563,19 @@ const KIND_OPTIONS = [
 
 function TagsView() {
   const queryClient = useQueryClient();
+  const [pending, setPending] = useState(false);
+  const [operationError, setOperationError] = useState("");
+  const run = async (operation: () => Promise<void>) => {
+    if (pending) return;
+    setPending(true);
+    setOperationError("");
+    try {
+      await operation();
+    } finally {
+      setPending(false);
+    }
+  };
+
   const { showToast } = useToast();
   const { confirm, prompt } = useModal();
 
@@ -481,7 +614,7 @@ function TagsView() {
       setNewName("");
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     } finally {
       setAdding(false);
     }
@@ -492,7 +625,7 @@ function TagsView() {
       await updateTag(tag.name, { kind: tag.kind === "purpose" ? "free" : "purpose" });
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     }
   };
 
@@ -511,7 +644,7 @@ function TagsView() {
       showToast("Tag renamed");
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     }
   };
 
@@ -532,7 +665,7 @@ function TagsView() {
       showToast("Tag deleted");
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     }
   };
 
@@ -589,6 +722,8 @@ function TagsView() {
           </p>
         </div>
 
+        {operationError && <p role="alert">{operationError}</p>}
+        {pending && <p role="status">Updating…</p>}
         <div className={styles.items}>
           {isError ? (
             <EmptyState
@@ -624,21 +759,24 @@ function TagsView() {
                     <button
                       className={buttonClass("ghost")}
                       type="button"
-                      onClick={() => void onToggleKind(tag)}
+                      disabled={pending}
+                      onClick={() => void run(() => onToggleKind(tag))}
                     >
                       {tag.kind === "purpose" ? "Make tag" : "Make category"}
                     </button>
                     <button
                       className={buttonClass("ghost")}
                       type="button"
-                      onClick={() => void onRename(tag)}
+                      disabled={pending}
+                      onClick={() => void run(() => onRename(tag))}
                     >
                       Rename
                     </button>
                     <button
                       className={buttonClass("danger")}
                       type="button"
-                      onClick={() => void onDelete(tag)}
+                      disabled={pending}
+                      onClick={() => void run(() => onDelete(tag))}
                     >
                       Delete
                     </button>
@@ -681,6 +819,19 @@ function TagsView() {
 
 function ReportsView() {
   const queryClient = useQueryClient();
+  const [pending, setPending] = useState(false);
+  const [operationError, setOperationError] = useState("");
+  const run = async (operation: () => Promise<void>) => {
+    if (pending) return;
+    setPending(true);
+    setOperationError("");
+    try {
+      await operation();
+    } finally {
+      setPending(false);
+    }
+  };
+
   const { showToast } = useToast();
   const { confirm } = useModal();
 
@@ -709,7 +860,7 @@ function ReportsView() {
       showToast("Palette removed");
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     }
   };
 
@@ -719,7 +870,7 @@ function ReportsView() {
       showToast("Report dismissed");
       invalidate();
     } catch (err) {
-      showToast(errMsg(err), "error");
+      setOperationError(errMsg(err));
     }
   };
 
@@ -740,6 +891,8 @@ function ReportsView() {
           </p>
         </div>
 
+        {operationError && <p role="alert">{operationError}</p>}
+        {pending && <p role="status">Updating…</p>}
         <div className={styles.items}>
           {isError ? (
             <EmptyState
@@ -770,14 +923,16 @@ function ReportsView() {
                     <button
                       className={buttonClass("ghost")}
                       type="button"
-                      onClick={() => void onDismiss(report)}
+                      disabled={pending}
+                      onClick={() => void run(() => onDismiss(report))}
                     >
                       Dismiss
                     </button>
                     <button
                       className={buttonClass("danger")}
                       type="button"
-                      onClick={() => void onRemove(report)}
+                      disabled={pending}
+                      onClick={() => void run(() => onRemove(report))}
                     >
                       Remove palette
                     </button>

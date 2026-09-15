@@ -138,7 +138,7 @@ export function Layout() {
       <footer className={`${ui.section} ${styles.footer}`}>
         <div className={styles.footerPanel}>
           <div className={styles.footerContent}>
-            <p className={styles.footerEyebrow}>Palette v5.2.7</p>
+            <p className={styles.footerEyebrow}>Palette v5.2.8</p>
             <p className={styles.footerText}>
               A personal color workspace for finding palettes, saving favorites, managing
               a collection and exporting ready-to-use palette assets.

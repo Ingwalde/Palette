@@ -347,3 +347,29 @@ export const tagItemCount = style({
   color: vars.color.muted,
   fontSize: "0.84rem",
 });
+
+export const paletteWorkspace = style({
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gap: "24px",
+  alignItems: "start",
+});
+export const workspaceOpen = style({
+  gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 460px)",
+  "@media": { "(max-width: 1000px)": { gridTemplateColumns: "minmax(0, 1fr)" } },
+});
+export const editorPanel = style({
+  minWidth: 0,
+  gridColumn: 2,
+  gridRow: 1,
+  "@media": { "(max-width: 1000px)": { gridColumn: 1, gridRow: 1 } },
+});
+globalStyle(`${paletteWorkspace} > section`, { minWidth: 0 });
+globalStyle(`${paletteWorkspace} ${swatches}`, { height: "30px", marginTop: "8px" });
+globalStyle(`${paletteWorkspace} ${item}`, { padding: "12px 14px" });
+globalStyle(`${paletteWorkspace} ${itemTitle}`, {
+  fontSize: "1rem",
+  overflowWrap: "anywhere",
+});
+globalStyle(`${form} label`, { minWidth: 0 });
+globalStyle(`${form} input`, { minWidth: 0 });

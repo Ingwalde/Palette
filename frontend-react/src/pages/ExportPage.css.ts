@@ -8,12 +8,14 @@ export const layout = style({
   alignItems: "start",
   paddingBottom: "60px",
   "@media": {
-    "(max-width: 920px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 920px)": { gridTemplateColumns: "minmax(0, 1fr)" },
   },
 });
 
 /** Settings column. Sticks beside the preview until the layout collapses to one column. */
 export const panel = style({
+  minWidth: 0,
+  gridTemplateColumns: "minmax(0, 1fr)",
   position: "sticky",
   top: "104px",
   display: "grid",
@@ -120,7 +122,7 @@ export const pickerOption = style({
     },
   },
   "@media": {
-    "(max-width: 680px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 680px)": { gridTemplateColumns: "minmax(0, 1fr)" },
   },
 });
 
@@ -172,3 +174,46 @@ export const pickerStatus = style({
   fontSize: "0.9rem",
   fontWeight: 600,
 });
+
+export const selection = style({
+  display: "grid",
+  gap: "10px",
+  minWidth: 0,
+  overflowWrap: "anywhere",
+});
+export const selectedColors = style({
+  display: "flex",
+  height: "72px",
+  borderRadius: "12px",
+  overflow: "hidden",
+});
+globalStyle(`${selectedColors} span`, { flex: 1, minWidth: 0 });
+export const formatGroups = style({
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "4px",
+  padding: "4px",
+  borderRadius: "999px",
+  background: vars.color.surfaceStrong,
+});
+globalStyle(`${formatGroups} button`, {
+  minHeight: "44px",
+  border: 0,
+  borderRadius: "999px",
+  background: "transparent",
+  color: vars.color.text,
+  font: "inherit",
+  cursor: "pointer",
+});
+globalStyle(`${formatGroups} button[aria-pressed="true"]`, {
+  background: vars.color.primary,
+  color: vars.color.onPrimary,
+});
+export const empty = style({
+  padding: "32px 20px",
+  color: vars.color.muted,
+  border: `1px dashed ${vars.color.border}`,
+  borderRadius: vars.radius.md,
+});
+globalStyle(`${panel} label`, { minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)" });
+globalStyle(`${panel} input`, { minWidth: 0 });

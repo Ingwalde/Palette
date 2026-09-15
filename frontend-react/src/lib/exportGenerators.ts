@@ -88,7 +88,18 @@ export function getExportFilename(palettes: Palette[], extension: string): strin
 }
 
 export function downloadTextFile(content: string, filename: string): void {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  const extension = filename.split(".").pop();
+  const mime =
+    extension === "svg"
+      ? "image/svg+xml"
+      : extension === "json"
+        ? "application/json"
+        : extension === "css"
+          ? "text/css"
+          : extension === "js"
+            ? "text/javascript"
+            : "text/plain";
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
