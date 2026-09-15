@@ -96,6 +96,7 @@ export function MobileMenu({
         className={styles.mobileMenuPanel}
         aria-label={isAuthenticated ? "Account" : "Mobile navigation"}
         hidden={!open}
+        inert={!open}
         // Close as soon as a link is chosen, even when it points at the current route (where the
         // navigation effect would not fire). The theme buttons are not links, so they stay open.
         onClick={(e) => {

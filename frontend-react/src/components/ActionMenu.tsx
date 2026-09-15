@@ -90,6 +90,7 @@ export function ActionMenu({ label, children }: { label: string; children: React
         ref={panel}
         className={styles.panel}
         hidden={!open}
+        inert={!open}
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("button, a")) {
             setOpen(false);

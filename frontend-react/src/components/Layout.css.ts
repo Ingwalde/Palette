@@ -1,8 +1,18 @@
-import { globalStyle, style } from "@vanilla-extract/css";
+import { globalStyle, keyframes, style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
 
 const PHONE = "(max-width: 680px)";
 const NARROW = "(max-width: 820px)";
+
+const pageEnter = keyframes({
+  from: { opacity: 0, transform: "translateY(6px)" },
+  to: { opacity: 1, transform: "translateY(0)" },
+});
+export const pageTransition = style({
+  minWidth: 0,
+  animation: `${pageEnter} 240ms cubic-bezier(0.22, 1, 0.36, 1)`,
+  "@media": { "(prefers-reduced-motion: reduce)": { animation: "none" } },
+});
 
 export const header = style({
   color: vars.color.text,
@@ -444,6 +454,10 @@ export const mobileMenuIcon = style({
 });
 
 export const mobileMenuPanel = style({
+  opacity: 1,
+  visibility: "visible",
+  transform: "translateY(0)",
+  transition: "opacity 180ms ease, transform 180ms ease, visibility 180ms ease",
   position: "absolute",
   top: "calc(100% + 10px)",
   right: 0,
@@ -462,7 +476,13 @@ export const mobileMenuPanel = style({
   selectors: {
     // `display: flex` above beats the user-agent `[hidden] { display: none }`, so the panel would
     // stay visible even when closed (hidden={!open}). Hide it explicitly.
-    "&[hidden]": { display: "none" },
+    "&[hidden]": {
+      display: "flex",
+      opacity: 0,
+      visibility: "hidden",
+      pointerEvents: "none",
+      transform: "translateY(-4px)",
+    },
   },
 });
 

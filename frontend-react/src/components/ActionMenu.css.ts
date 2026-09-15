@@ -13,6 +13,7 @@ export const chevron = style({
   width: "14px",
   height: "14px",
   flexShrink: 0,
+  transition: "transform 180ms ease",
   "::before": {
     content: '""',
     position: "absolute",
@@ -41,7 +42,19 @@ export const panel = style({
   borderRadius: "14px",
   background: vars.color.surface,
   boxShadow: vars.shadow.soft,
-  selectors: { "&[hidden]": { display: "none" } },
+  opacity: 1,
+  visibility: "visible",
+  transform: "translateY(0)",
+  transition: "opacity 180ms ease, transform 180ms ease, visibility 180ms ease",
+  selectors: {
+    "&[hidden]": {
+      display: "block",
+      opacity: 0,
+      visibility: "hidden",
+      pointerEvents: "none",
+      transform: "translateY(-4px)",
+    },
+  },
 });
 globalStyle(`${panel} > button, ${panel} > a`, {
   display: "block",

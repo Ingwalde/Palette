@@ -127,7 +127,9 @@ export function Layout() {
         {/* The boundary sits inside <main>, not around the whole shell, so a route chunk
             arriving never blanks the header, nav and footer the user is already looking at. */}
         <Suspense fallback={<RouteFallback />}>
-          <Outlet />
+          <div key={location.pathname} className={styles.pageTransition}>
+            <Outlet />
+          </div>
         </Suspense>
       </main>
 

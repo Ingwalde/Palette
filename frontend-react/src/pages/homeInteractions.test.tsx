@@ -93,7 +93,7 @@ describe("HomePage interactions", () => {
   it("reads search and tag from the URL and applies them", async () => {
     renderHome(["/?q=sea&tag=cold"]);
     // The search field mirrors the URL immediately, without waiting on the debounce.
-    expect(screen.getByPlaceholderText(/Search by name/i)).toHaveValue("sea");
+    expect(screen.getByRole("searchbox", { name: "Search palettes" })).toHaveValue("sea");
     const chip = await screen.findByRole("button", { name: /#cold/ });
     expect(chip).toHaveAttribute("aria-pressed", "true");
     // The applied filter, not just the input, reaches the API.

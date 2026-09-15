@@ -132,3 +132,22 @@ globalStyle("::selection", {
   color: vars.color.onPrimary,
   background: vars.color.primary,
 });
+
+// Shared interaction rhythm; components can keep their more specific motion.
+globalStyle("button, a, input, textarea", {
+  transition:
+    "color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease",
+});
+globalStyle("body, header, footer", {
+  transition: "color 200ms ease, background-color 200ms ease, border-color 200ms ease",
+});
+// Also covers component-specific animations and pseudo-elements regardless of source order.
+globalStyle("*, *::before, *::after", {
+  "@media": {
+    "(prefers-reduced-motion: reduce)": {
+      animation: "none !important",
+      transition: "none !important",
+      scrollBehavior: "auto",
+    },
+  },
+});

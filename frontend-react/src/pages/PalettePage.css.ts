@@ -108,6 +108,7 @@ export const simOption = style({
   overflowWrap: "anywhere",
   color: vars.color.text,
   background: "transparent",
+  transition: "color 180ms ease, background-color 180ms ease",
   selectors: {
     "&:hover": { color: vars.color.text },
     // The selected state needs a distinct surface in both themes, including on touch screens.
