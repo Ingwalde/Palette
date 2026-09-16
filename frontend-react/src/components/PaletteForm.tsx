@@ -191,7 +191,11 @@ export function PaletteForm({
 
         <div className={ui.field}>
           <span>Colors · {colors.length} / 8</span>
-          <div className={colorEditor.preview} aria-label="Live palette preview">
+          <div
+            className={colorEditor.preview}
+            role="img"
+            aria-label="Live palette preview"
+          >
             {colors.map((color, i) => (
               <span
                 key={rowIds[i]}
