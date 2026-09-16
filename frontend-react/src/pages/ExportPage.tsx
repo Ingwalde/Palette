@@ -367,6 +367,11 @@ export function ExportPage() {
             </p>
           )}
           <div className={styles.formatGroups} role="group" aria-label="Export type">
+            <span
+              className={styles.formatIndicator}
+              style={{ transform: isImage ? "translateX(0)" : "translateX(100%)" }}
+              aria-hidden="true"
+            />
             <button type="button" aria-pressed={isImage} onClick={() => setFormat("png")}>
               Image
             </button>

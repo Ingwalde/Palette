@@ -190,14 +190,34 @@ export const selectedColors = style({
 });
 globalStyle(`${selectedColors} span`, { flex: 1, minWidth: 0 });
 export const formatGroups = style({
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: "4px",
+  position: "relative",
+  display: "flex",
   padding: "4px",
   borderRadius: "999px",
   background: vars.color.surfaceStrong,
 });
+// The sliding highlight behind the active option, mirroring the theme toggle and the admin
+// tabs so every segmented control moves the same way instead of snapping. One option wide
+// (half the track minus the padding); it translates by its own width to sit under Code.
+export const formatIndicator = style({
+  position: "absolute",
+  top: "4px",
+  bottom: "4px",
+  left: "4px",
+  width: "calc(50% - 4px)",
+  borderRadius: "999px",
+  background: vars.color.primary,
+  boxShadow: vars.shadow.soft,
+  transition: "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+  pointerEvents: "none",
+  "@media": {
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+});
 globalStyle(`${formatGroups} button`, {
+  position: "relative",
+  zIndex: 1,
+  flex: "1 1 0",
   minHeight: "44px",
   border: 0,
   borderRadius: "999px",
@@ -205,9 +225,10 @@ globalStyle(`${formatGroups} button`, {
   color: vars.color.text,
   font: "inherit",
   cursor: "pointer",
+  transition: `color ${vars.motion.transition}`,
 });
+// The colour flips to sit on the sliding highlight; the highlight itself is the moving part.
 globalStyle(`${formatGroups} button[aria-pressed="true"]`, {
-  background: vars.color.primary,
   color: vars.color.onPrimary,
 });
 export const empty = style({
