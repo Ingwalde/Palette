@@ -126,13 +126,14 @@ describe("AdminPage palettes", () => {
     expect(
       await screen.findByRole("heading", { name: "Nordic Frost" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("/nordic-frost")).toBeInTheDocument();
+    expect(screen.getByText(/\/nordic-frost/)).toBeInTheDocument();
   });
 
   it("creates a palette from the form", async () => {
     const user = userEvent.setup();
     renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("button", { name: "New palette" }));
 
     await user.type(screen.getByPlaceholderText("Nordic Blue"), "Sunset");
     await user.type(screen.getByPlaceholderText("Short description..."), "Warm tones");
@@ -150,6 +151,7 @@ describe("AdminPage palettes", () => {
     const user = userEvent.setup();
     renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("button", { name: "New palette" }));
 
     // Counted by the per-row colour picker's accessible name rather than a CSS class, which
     // is a generated hash now.
@@ -169,6 +171,7 @@ describe("AdminPage palettes", () => {
     const user = userEvent.setup();
     renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("button", { name: "New palette" }));
     const tagInput = screen.getByPlaceholderText("Type or pick a tag");
     await user.type(tagInput, "warm{Enter}");
     expect(screen.getByText("warm")).toBeInTheDocument();
@@ -201,6 +204,7 @@ describe("AdminPage tags", () => {
   async function goToTags(user: ReturnType<typeof userEvent.setup>) {
     renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("button", { name: "New palette" }));
     await user.click(screen.getByRole("tab", { name: "Tags" }));
     await screen.findByRole("heading", { name: "All tags" });
   }
@@ -258,8 +262,8 @@ describe("AdminPage list controls", () => {
     await screen.findByRole("heading", { name: "Nordic Frost" });
     await user.click(screen.getByRole("button", { name: "Edit" }));
     expect(screen.getByDisplayValue("Nordic Frost")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Cancel edit" }));
-    expect(screen.getByRole("heading", { name: "Add palette" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close editor" }));
+    expect(screen.queryByPlaceholderText("Nordic Blue")).not.toBeInTheDocument();
   });
 
   it("searches the palette list", async () => {
@@ -291,6 +295,7 @@ describe("AdminPage in-flight guard", () => {
     );
 
     renderAdmin();
+    await user.click(await screen.findByRole("button", { name: "New palette" }));
     await user.type(await screen.findByPlaceholderText("Nordic Blue"), "Ocean");
     await user.type(screen.getByPlaceholderText("Short description..."), "Blue.");
     const save = screen.getByRole("button", { name: "Create palette" });
@@ -308,6 +313,7 @@ describe("AdminPage reports", () => {
   async function goToReports(user: ReturnType<typeof userEvent.setup>) {
     renderAdmin();
     await screen.findByRole("heading", { name: "Admin panel" });
+    await user.click(screen.getByRole("button", { name: "New palette" }));
     await user.click(screen.getByRole("tab", { name: "Reports" }));
     await screen.findByRole("heading", { name: "Open reports" });
   }

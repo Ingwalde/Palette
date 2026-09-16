@@ -61,6 +61,9 @@ export function ExportPage() {
   const location = useLocation();
 
   const [searchInput, setSearchInput] = useState("");
+  const [changing, setChanging] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [operationError, setOperationError] = useState("");
   const { showToast } = useToast();
 
   const patchParams = (next: Record<string, string | null>) => {
@@ -73,7 +76,7 @@ export function ExportPage() {
         }
         return merged;
       },
-      { replace: true },
+      { replace: false },
     );
   };
 
@@ -104,12 +107,20 @@ export function ExportPage() {
 
   // Search server-side rather than filtering a first-200 slice on the client: a match that sat
   // beyond the slice used to report "no palettes found". An empty query shows a small sample.
-  const { data: paletteList } = usePalettes({
+  const {
+    data: paletteList,
+    isLoading: searchLoading,
+    isError: searchError,
+  } = usePalettes({
     search: query || undefined,
     limit: query ? 8 : 3,
   });
   const pickerResults = useMemo(() => paletteList?.items ?? [], [paletteList]);
-  const { data: favorites } = useFavorites();
+  const {
+    data: favorites,
+    isLoading: favoritesLoading,
+    isError: favoritesError,
+  } = useFavorites();
 
   const selectedPalettes: Palette[] = useMemo(() => {
     if (source === "favorites") return isAuthenticated ? (favorites ?? []) : [];
@@ -117,6 +128,7 @@ export function ExportPage() {
   }, [source, favorites, isAuthenticated, selected, selectedError]);
 
   const isPng = format === "png";
+  const isImage = isPng || format === "svg";
 
   const textOutput = useMemo(() => {
     if (isPng) return "";
@@ -128,13 +140,36 @@ export function ExportPage() {
     return generateExportText(selectedPalettes, format as TextFormat);
   }, [isPng, selectedPalettes, singleMode, format]);
 
-  const pngDataUrl = useMemo(
-    () =>
-      isPng && selectedPalettes.length > 0
-        ? generatePngDataUrl(selectedPalettes, singleMode)
-        : "",
-    [isPng, selectedPalettes, singleMode],
-  );
+  const [imageResult, setImageResult] = useState({ key: "", url: "", error: "" });
+  const imageKey = JSON.stringify([format, singleMode, selectedPalettes]);
+  useEffect(() => {
+    if (!isImage || selectedPalettes.length === 0) return;
+    const frame = requestAnimationFrame(() => {
+      try {
+        const url = isPng
+          ? generatePngDataUrl(selectedPalettes, singleMode)
+          : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(textOutput)}`;
+        if (!url) throw new Error("Image preview unavailable");
+        setImageResult({ key: imageKey, url, error: "" });
+      } catch {
+        setImageResult({
+          key: imageKey,
+          url: "",
+          error: "Could not generate this image. Try another format.",
+        });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [imageKey, isImage, isPng, selectedPalettes, singleMode, textOutput]);
+  const generating =
+    isImage && selectedPalettes.length > 0 && imageResult.key !== imageKey;
+  const pngDataUrl = imageResult.key === imageKey ? imageResult.url : "";
+  const generationError = imageResult.key === imageKey ? imageResult.error : "";
+  const ready =
+    selectedPalettes.length > 0 &&
+    !generating &&
+    !generationError &&
+    !(singleMode ? selectedError || selectedLoading : favoritesLoading || favoritesError);
 
   const selectedName = selected?.name;
   const pickerStatus = selectedName
@@ -144,35 +179,46 @@ export function ExportPage() {
   const onPickPalette = (palette: Palette) => {
     patchParams({ slug: palette.slug, handle: palette.owner_handle || CURATOR_HANDLE });
     setSearchInput(palette.name);
+    setChanging(false);
   };
 
   const onCopy = async () => {
-    if (selectedPalettes.length === 0) return;
+    if (!ready || busy) return;
+    setBusy(true);
+    setOperationError("");
     try {
       await copyToClipboard(textOutput);
       showToast("Export result copied");
     } catch {
-      showToast("Could not copy to the clipboard", "error");
+      setOperationError("Could not copy to the clipboard. Try downloading the file.");
+    } finally {
+      setBusy(false);
     }
   };
 
   const onDownload = () => {
-    if (isPng) {
-      if (!pngDataUrl) return showToast("No palettes to export");
-      downloadDataUrl(pngDataUrl, getExportFilename(selectedPalettes, "png"));
-      showToast("PNG download started");
-      return;
+    if (!ready || busy) return;
+    setBusy(true);
+    setOperationError("");
+    try {
+      if (isPng) downloadDataUrl(pngDataUrl, getExportFilename(selectedPalettes, "png"));
+      else
+        downloadTextFile(
+          textOutput,
+          getExportFilename(selectedPalettes, EXT[format as TextFormat]),
+        );
+      showToast("File download started");
+    } catch {
+      setOperationError("Could not start the download. Please try again.");
+    } finally {
+      setBusy(false);
     }
-    if (selectedPalettes.length === 0) return showToast("Nothing to download yet");
-    const ext = EXT[format as TextFormat];
-    downloadTextFile(textOutput, getExportFilename(selectedPalettes, ext));
-    showToast("File download started");
   };
 
   const caption =
     singleMode && selectedPalettes.length === 1
-      ? `Previewing selected palette card: ${selectedPalettes[0].name}. Click Download PNG to save the image.`
-      : `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Click Download PNG to save the image.`;
+      ? `Previewing selected palette card: ${selectedPalettes[0].name}. Use Download to export the image.`
+      : `Previewing ${selectedPalettes.length} palette${selectedPalettes.length === 1 ? "" : "s"}. Use Download to export the image.`;
 
   return (
     <>
@@ -201,7 +247,27 @@ export function ExportPage() {
             />
           </label>
 
-          {singleMode && (
+          {singleMode && selected && !changing && (
+            <div className={styles.selection}>
+              <div className={styles.selectedColors} aria-label="Selected palette colors">
+                {selected.colors.map((color, i) => (
+                  <span key={i} style={{ background: color }} />
+                ))}
+              </div>
+              <strong>{selected.name}</strong>
+              <small className={ui.muted}>
+                by {selected.owner_handle} · {selected.colors.length} colors
+              </small>
+              <button
+                type="button"
+                className={buttonClass("ghost")}
+                onClick={() => setChanging(true)}
+              >
+                Change palette
+              </button>
+            </div>
+          )}
+          {singleMode && (!selected || changing) && (
             <div className={styles.picker}>
               <label className={ui.field}>
                 <span>Search palette</span>
@@ -227,6 +293,17 @@ export function ExportPage() {
                 </span>
               </label>
 
+              {selected && (
+                <button
+                  type="button"
+                  className={buttonClass("ghost")}
+                  onClick={() => setChanging(false)}
+                >
+                  Keep selection
+                </button>
+              )}
+              {searchLoading && <p role="status">Searching…</p>}
+              {searchError && <p role="alert">Could not search palettes. Try again.</p>}
               <div className={styles.pickerResults} aria-live="polite">
                 {pickerResults.length === 0
                   ? null
@@ -274,26 +351,68 @@ export function ExportPage() {
               </Link>
             </p>
           )}
+          {!singleMode && isAuthenticated && (
+            <p role={favoritesError ? "alert" : "status"}>
+              {favoritesLoading
+                ? "Loading favorites…"
+                : favoritesError
+                  ? "Could not load favorites."
+                  : `${favorites?.length ?? 0} saved palettes`}
+              {!favoritesLoading && !favoritesError && !favorites?.length && (
+                <>
+                  {" "}
+                  · <Link to="/">Browse palettes</Link>
+                </>
+              )}
+            </p>
+          )}
+          <div className={styles.formatGroups} role="group" aria-label="Export type">
+            <span
+              className={styles.formatIndicator}
+              style={{ transform: isImage ? "translateX(0)" : "translateX(100%)" }}
+              aria-hidden="true"
+            />
+            <button type="button" aria-pressed={isImage} onClick={() => setFormat("png")}>
+              Image
+            </button>
+            <button
+              type="button"
+              aria-pressed={!isImage}
+              onClick={() => setFormat("css")}
+            >
+              Code
+            </button>
+          </div>
           <label className={ui.field}>
             <span>Format</span>
             <CustomSelect
-              options={FORMAT_OPTIONS}
+              options={FORMAT_OPTIONS.filter(
+                (o) => isImage === ["png", "svg"].includes(o.value),
+              )}
               value={format}
               onChange={(v) => setFormat(v as ExportFormat)}
               ariaLabel="Export format"
             />
           </label>
+        </aside>
 
+        <section className={styles.result} aria-labelledby="export-title">
+          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
+            <div>
+              <p className={ui.eyebrow}>Preview</p>
+              <h2 id="export-title">{isImage ? "Image preview" : "Generated output"}</h2>
+            </div>
+          </div>
           <div className={styles.panelActions}>
-            {isPng ? (
-              // PNG is a binary; there is nothing to copy, so download is the primary action.
+            {isImage ? (
+              // Image formats offer a download beside the visual preview.
               <button
                 className={buttonClass("primary")}
                 type="button"
                 onClick={onDownload}
-                disabled={selectedPalettes.length === 0}
+                disabled={!ready || busy}
               >
-                Download PNG
+                {generating ? "Generating…" : `Download ${format.toUpperCase()}`}
               </button>
             ) : (
               <>
@@ -301,39 +420,38 @@ export function ExportPage() {
                   className={buttonClass("primary")}
                   type="button"
                   onClick={() => void onCopy()}
-                  disabled={selectedPalettes.length === 0}
+                  disabled={!ready || busy}
                 >
-                  Copy result
+                  {busy ? "Copying…" : "Copy code"}
                 </button>
                 <button
                   className={buttonClass("secondary")}
                   type="button"
                   onClick={onDownload}
-                  disabled={selectedPalettes.length === 0}
+                  disabled={!ready || busy}
                 >
                   Download file
                 </button>
               </>
             )}
           </div>
-        </aside>
-
-        <section className={styles.result} aria-labelledby="export-title">
-          <div className={`${ui.sectionHeading} ${ui.sectionHeadingCompact}`}>
-            <div>
-              <p className={ui.eyebrow}>Preview</p>
-              <h2 id="export-title">Generated output</h2>
-            </div>
-          </div>
-
-          {isPng && pngDataUrl ? (
+          {operationError && <p role="alert">{operationError}</p>}
+          {generationError && <p role="alert">{generationError}</p>}
+          {generating && <p role="status">Generating image…</p>}
+          {selectedPalettes.length === 0 ? (
+            <p className={styles.empty}>Choose a palette to preview and export.</p>
+          ) : isImage && pngDataUrl ? (
             <div className={styles.imagePreview}>
               <div className={styles.imageFrame}>
-                <img id="exportPreviewImage" src={pngDataUrl} alt="PNG export preview" />
+                <img
+                  id="exportPreviewImage"
+                  src={pngDataUrl}
+                  alt={`${format.toUpperCase()} export preview`}
+                />
               </div>
               <p className={styles.imageCaption}>{caption}</p>
             </div>
-          ) : (
+          ) : isImage ? null : (
             <pre className={styles.codeOutput}>
               <code>
                 {isPng ? "Choose one palette to generate PNG preview." : textOutput}

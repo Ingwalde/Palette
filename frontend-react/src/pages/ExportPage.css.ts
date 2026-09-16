@@ -8,12 +8,14 @@ export const layout = style({
   alignItems: "start",
   paddingBottom: "60px",
   "@media": {
-    "(max-width: 920px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 920px)": { gridTemplateColumns: "minmax(0, 1fr)" },
   },
 });
 
 /** Settings column. Sticks beside the preview until the layout collapses to one column. */
 export const panel = style({
+  minWidth: 0,
+  gridTemplateColumns: "minmax(0, 1fr)",
   position: "sticky",
   top: "104px",
   display: "grid",
@@ -31,6 +33,7 @@ export const panel = style({
 export const panelActions = style({
   display: "grid",
   gap: "10px",
+  marginBottom: "20px",
 });
 
 export const result = style({
@@ -120,7 +123,7 @@ export const pickerOption = style({
     },
   },
   "@media": {
-    "(max-width: 680px)": { gridTemplateColumns: "1fr" },
+    "(max-width: 680px)": { gridTemplateColumns: "minmax(0, 1fr)" },
   },
 });
 
@@ -172,3 +175,67 @@ export const pickerStatus = style({
   fontSize: "0.9rem",
   fontWeight: 600,
 });
+
+export const selection = style({
+  display: "grid",
+  gap: "10px",
+  minWidth: 0,
+  overflowWrap: "anywhere",
+});
+export const selectedColors = style({
+  display: "flex",
+  height: "72px",
+  borderRadius: "12px",
+  overflow: "hidden",
+});
+globalStyle(`${selectedColors} span`, { flex: 1, minWidth: 0 });
+export const formatGroups = style({
+  position: "relative",
+  display: "flex",
+  padding: "4px",
+  borderRadius: "999px",
+  background: vars.color.surfaceStrong,
+});
+// The sliding highlight behind the active option, mirroring the theme toggle and the admin
+// tabs so every segmented control moves the same way instead of snapping. One option wide
+// (half the track minus the padding); it translates by its own width to sit under Code.
+export const formatIndicator = style({
+  position: "absolute",
+  top: "4px",
+  bottom: "4px",
+  left: "4px",
+  width: "calc(50% - 4px)",
+  borderRadius: "999px",
+  background: vars.color.primary,
+  boxShadow: vars.shadow.soft,
+  transition: "transform 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+  pointerEvents: "none",
+  "@media": {
+    "(prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+});
+globalStyle(`${formatGroups} button`, {
+  position: "relative",
+  zIndex: 1,
+  flex: "1 1 0",
+  minHeight: "44px",
+  border: 0,
+  borderRadius: "999px",
+  background: "transparent",
+  color: vars.color.text,
+  font: "inherit",
+  cursor: "pointer",
+  transition: `color ${vars.motion.transition}`,
+});
+// The colour flips to sit on the sliding highlight; the highlight itself is the moving part.
+globalStyle(`${formatGroups} button[aria-pressed="true"]`, {
+  color: vars.color.onPrimary,
+});
+export const empty = style({
+  padding: "32px 20px",
+  color: vars.color.muted,
+  border: `1px dashed ${vars.color.border}`,
+  borderRadius: vars.radius.md,
+});
+globalStyle(`${panel} label`, { minWidth: 0, gridTemplateColumns: "minmax(0, 1fr)" });
+globalStyle(`${panel} input`, { minWidth: 0 });

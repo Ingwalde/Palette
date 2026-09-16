@@ -376,7 +376,7 @@ produce and the tests it owes: [`docs/v5.0-plan.md`](docs/v5.0-plan.md).
 ## Version
 
 ```text
-v5.2.7
+v5.2.8
 ```
 
 ## License
@@ -386,3 +386,29 @@ this project for **noncommercial** purposes only. Commercial use is not permitte
 source-available license, not an OSI open-source license.
 
 Copyright 2026 Ingwald.
+
+
+### Export and editing workflows (5.2.8)
+
+Open **Export palette** from a palette to keep its exact owner/slug selection. The selected
+palette stays visible while **Change palette** opens search. **Image** groups PNG and SVG;
+**Code** groups CSS variables, CSS OKLCH, Tailwind configuration and JSON. Format/source changes
+live in the URL and support browser history. Image previews and downloads use the same generated
+content; code offers Copy code and Download file. Favorites exports use the authenticated
+account's complete favorites response. Guests can export public palettes, but cannot save favorites.
+
+The shared editor starts with a live color preview. Use the arrow buttons to reorder colors,
+including by keyboard or touch; up to 8 six-digit HEX colors and 12 tags are supported. Invalid
+HEX remains in the field and prevents saving until corrected. Names require 2–160 characters;
+description is optional (up to 1000 characters). Failed saves retain the draft. Unsaved edits
+prompt before internal navigation or closing an admin editor, and use the browser's standard
+reload/close warning where supported. This is not autosave or crash recovery.
+
+Admin **Palettes** opens with a compact list. **New palette** and **Edit** open a separate,
+nonmodal editor panel, which stacks above the list on narrow screens. Closing it returns focus
+to the initiating control. Search and pagination survive editing and tab switches. Tags and
+Reports retain their existing operations. Server authorization remains authoritative.
+
+Local frontend checks: `cd frontend-react`, then `npm ci`, `npm run build`, `npm run lint`,
+`npm run test:coverage`. Browser E2E/a11y and visual-baseline commands remain in package.json;
+run them with the project's test backend and review screenshot differences before accepting.

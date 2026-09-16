@@ -9,6 +9,16 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.8",
+    title: "Export, edit and manage with confidence",
+    items: [
+      "Compact export selection with Image/Code groups, SVG/PNG previews and contextual downloads.",
+      "Colors-first editing with live preview, accessible reordering and inline HEX validation.",
+      "Unsaved changes prompts, retryable save errors and one shared editor for account and admin workflows.",
+      "Compact admin palette list with a separate editor panel and preserved search context.",
+    ],
+  },
+  {
     version: "v5.2.7",
     title: "Clearer discovery and account-only saving",
     items: [

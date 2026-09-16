@@ -22,6 +22,7 @@ export function PaletteEditorPage() {
   const { showToast } = useToast();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // The image extractor hands off here with colours to seed a new palette (location state, so the
   // colours never touch the URL). Ignored in edit mode, where the palette's own colours win.
@@ -46,9 +47,10 @@ export function PaletteEditorPage() {
     queryClient.invalidateQueries({ queryKey: queryKeys.tags });
   };
 
-  const onSubmit = async (values: PaletteFormValues) => {
+  const onSubmit = async (values: PaletteFormValues, allowNavigation: () => void) => {
     if (saving) return;
     setSaving(true);
+    setSaveError("");
     try {
       const result =
         isEdit && palette
@@ -56,9 +58,12 @@ export function PaletteEditorPage() {
           : await createPalette(values);
       showToast(isEdit ? "Palette updated" : "Palette created");
       invalidate(result);
+      allowNavigation();
       navigate(palettePath(result));
     } catch (e) {
-      showToast(e instanceof ApiError ? e.message : "Something went wrong", "error");
+      setSaveError(
+        e instanceof ApiError ? e.message : "Something went wrong. Try again.",
+      );
       setSaving(false);
     }
   };
@@ -131,6 +136,7 @@ export function PaletteEditorPage() {
           }
           submitLabel={isEdit ? "Save changes" : "Create palette"}
           saving={saving}
+          error={saveError}
           onSubmit={onSubmit}
           onCancel={() => navigate(-1)}
         />

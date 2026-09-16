@@ -130,6 +130,9 @@ test("an admin can create a palette and a visitor can find it", async ({ page })
   await signIn(page, ADMIN_USER, ADMIN_PASSWORD);
   await page.goto("/admin");
 
+  // The 5.2.8 admin opens the editor in a separate non-modal panel rather than showing the
+  // create form inline, so the form fields only exist after New palette is clicked.
+  await page.getByRole("button", { name: "New palette" }).click();
   await page.getByLabel(/^name$/i).fill(palette);
   await page.getByLabel(/description/i).fill("Created by the integration suite.");
   await page.getByRole("button", { name: "Create palette" }).click();

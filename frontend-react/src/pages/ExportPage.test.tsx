@@ -86,7 +86,7 @@ describe("ExportPage", () => {
   it("prompts to choose a palette before anything is selected", async () => {
     renderExport();
     expect(
-      await screen.findByText(/Choose one palette to generate export/i),
+      await screen.findByText(/Choose a palette to preview and export/i),
     ).toBeInTheDocument();
   });
 
@@ -108,9 +108,8 @@ describe("ExportPage", () => {
   it("renders the PNG preview via the (mocked) canvas generator", async () => {
     const user = userEvent.setup();
     await pickSeaBreeze(user);
-    await user.click(screen.getByRole("button", { name: "Export format" }));
-    await user.click(screen.getByRole("option", { name: "PNG image" }));
-    expect(exportGenerators.generatePngDataUrl).toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Image" }));
+    await waitFor(() => expect(exportGenerators.generatePngDataUrl).toHaveBeenCalled());
     expect(await screen.findByAltText("PNG export preview")).toHaveAttribute(
       "src",
       "data:image/png;base64,MOCK",
@@ -121,7 +120,7 @@ describe("ExportPage", () => {
     const user = userEvent.setup();
     await pickSeaBreeze(user);
     await screen.findByText(/--sea-breeze-1/);
-    await user.click(screen.getByRole("button", { name: "Copy result" }));
+    await user.click(screen.getByRole("button", { name: "Copy code" }));
     expect(await screen.findByText("Export result copied")).toBeInTheDocument();
   });
 
@@ -140,7 +139,9 @@ describe("ExportPage", () => {
     renderExport();
     await user.click(await screen.findByRole("button", { name: "Palette source" }));
     await user.click(screen.getByRole("option", { name: "Favorites only" }));
-    expect(await screen.findByText(/No palettes selected/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Log in to export your favorites/i),
+    ).toBeInTheDocument();
   });
 });
 
@@ -155,6 +156,7 @@ it("exports a scoped deep link missing from public search and preserves it when 
   renderExport("/export?source=single&handle=ann&slug=sea-breeze&format=json");
   expect(await screen.findByText(/"slug": "sea-breeze"/)).toBeInTheDocument();
   expect(palettesApi.getPalette).toHaveBeenCalledWith("ann", "sea-breeze");
+  await u.click(screen.getByRole("button", { name: "Change palette" }));
   await u.clear(screen.getByRole("searchbox"));
   await u.type(screen.getByRole("searchbox"), "another palette");
   await u.click(screen.getByRole("button", { name: "Export format" }));
@@ -170,8 +172,25 @@ it("does not export a same-named search result when the scoped palette is unavai
     await screen.findByText(/unavailable or you do not have access/),
   ).toBeInTheDocument();
   await waitFor(() =>
-    expect(screen.getByRole("button", { name: "Copy result" })).toBeDisabled(),
+    expect(screen.getByRole("button", { name: "Copy code" })).toBeDisabled(),
   );
   expect(screen.getByRole("button", { name: "Download file" })).toBeDisabled();
   expect(screen.queryByText(/--sea-breeze-1/)).not.toBeInTheDocument();
+});
+
+it("previews the same SVG content used for download and keeps the chosen palette", async () => {
+  const download = vi
+    .spyOn(exportGenerators, "downloadTextFile")
+    .mockImplementation(() => {});
+  const u = userEvent.setup();
+  renderExport("/export?source=single&handle=palette&slug=sea-breeze&format=svg");
+  const preview = await screen.findByAltText("SVG export preview");
+  const content = decodeURIComponent(
+    preview.getAttribute("src")!.split(",").slice(1).join(","),
+  );
+  expect(content).toContain("#006D77");
+  await u.click(screen.getByRole("button", { name: "Download SVG" }));
+  expect(download).toHaveBeenCalledWith(content, "sea-breeze-palette.svg");
+  expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  download.mockRestore();
 });
