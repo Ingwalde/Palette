@@ -46,6 +46,11 @@ export const mode = style({
   border: `1px solid ${vars.color.border}`,
   borderRadius: "999px",
   background: vars.color.surface,
+  // On a 320px phone the three fixed-width tabs (3 × 104px) are wider than the screen and
+  // scrolled the page sideways. Let the strip fill the row and its tabs share the width instead.
+  "@media": {
+    "(max-width: 480px)": { display: "flex", width: "100%" },
+  },
 });
 
 /**
@@ -89,6 +94,10 @@ export const modeButton = style({
   fontWeight: 600,
   cursor: "pointer",
   transition: "color 200ms ease",
+  // Drop the 104px floor and tighten the padding on the narrowest phones so the three tabs fit.
+  "@media": {
+    "(max-width: 480px)": { minWidth: 0, padding: "9px 8px" },
+  },
 });
 
 export const modeButtonActive = style({

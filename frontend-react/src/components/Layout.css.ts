@@ -1,7 +1,12 @@
 import { globalStyle, keyframes, style } from "@vanilla-extract/css";
 import { vars } from "../styles/theme.css";
 
-const PHONE = "(max-width: 680px)";
+// The header switches to the compact (avatar + overflow menu) layout here. It is 900, not 680,
+// because the signed-in desktop nav (Browse · Favorites · Export · Create · Admin · account +
+// the theme toggle) is ~885px wide and overflowed the header on tablet widths (~768) before the
+// old 680 breakpoint ever kicked in. The guest nav is narrower and fit, but one breakpoint keeps
+// the header behaviour consistent for everyone and guarantees no horizontal scroll below it.
+const PHONE = "(max-width: 900px)";
 const NARROW = "(max-width: 820px)";
 
 const pageEnter = keyframes({
