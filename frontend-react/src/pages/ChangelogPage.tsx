@@ -9,6 +9,14 @@ interface Entry {
 
 const CHANGELOG: Entry[] = [
   {
+    version: "v5.2.9",
+    title: "Public health checks for uptime monitoring",
+    items: [
+      "Added proxy-reachable health endpoints under the API so an uptime monitor can tell whether the backend and database are actually up, not just the static site.",
+      "The public readiness probe reports only up/ready/degraded — never which dependency failed — and the frontend gets its own lightweight /healthz.",
+    ],
+  },
+  {
     version: "v5.2.8",
     title: "Export, edit and manage with confidence",
     items: [

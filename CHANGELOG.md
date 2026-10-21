@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.2.9 — Public health probes for uptime monitoring
+
+- Added proxy-reachable health endpoints: `GET /api/v1/health` (liveness) and
+  `GET /api/v1/health/ready` (database/Redis readiness). They live under the API prefix so a
+  monitor actually reaches the backend — `/health` is answered by the SPA with `200` HTML and
+  would mask a dead API or database.
+- The public readiness probe reports only `ready`/`degraded`, never which dependency failed, so
+  exposing it leaks nothing. The internal `/health/ready` keeps its per-dependency detail.
+- Added an nginx `/healthz` endpoint that returns a plain `ok` from the static site, so the
+  frontend can be monitored independently of the API.
+
 ## v5.2.8 — Export and editing workflows
 
 - Compact selected-palette summary and Change action; Image/Code format groups.

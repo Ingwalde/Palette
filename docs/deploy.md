@@ -116,3 +116,18 @@ and cookies all assume same-origin. To do it properly, give staging a subdomain 
    staging secrets (`sops secrets/staging.enc.env`), then re-decrypt to `backend/.env.staging`.
 
 Then staging behaves exactly like production (https, same-origin, secure cookies).
+
+## Uptime monitoring
+
+Two independent targets (e.g. UptimeRobot, 5-minute interval):
+
+- **Backend + database** — `https://palettes-app.com/api/v1/health/ready`, type **Keyword**, keyword
+  `ready`. Caddy routes `/api/*` to the backend, so this reaches it; the probe runs `SELECT 1` and a
+  Redis ping, returning `200 {"status":"ready"}` or `503 {"status":"degraded"}`. It reports only the
+  overall state, never which dependency failed, so it is safe to expose. (There is also
+  `/api/v1/health` for plain liveness.)
+- **Frontend** — `https://palettes-app.com/healthz`, Keyword `ok`. Served by nginx itself (`200
+  ok`), so it tells you the static site is up independently of the API.
+
+Do **not** monitor `/health` (without the `/api/v1` prefix): the SPA answers it with `200` HTML and
+would read as "up" even when the API or database is down.
