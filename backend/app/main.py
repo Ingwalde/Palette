@@ -114,8 +114,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Palette API",
-    description="Backend API for Palette v5.2.8 with auth, favorites, PostgreSQL and Docker.",
-    version="5.2.8",
+    description="Backend API for Palette v5.2.9 with auth, favorites, PostgreSQL and Docker.",
+    version="5.2.9",
     docs_url="/api/docs" if settings.enable_api_docs else None,
     redoc_url="/api/redoc" if settings.enable_api_docs else None,
     openapi_url="/api/openapi.json" if settings.enable_api_docs else None,
@@ -263,7 +263,7 @@ async def _validation_exception_handler(request, exc: RequestValidationError) ->
 async def root():
     return {
         "name": "Palette API",
-        "version": "5.2.8",
+        "version": "5.2.9",
         # Only advertise the docs where they exist. With enable_api_docs off — the production
         # default — /api/docs is a 404, so linking to it sent anyone following the root response
         # to a dead end.
@@ -291,9 +291,12 @@ def _get_readiness_redis():
     return _readiness_redis
 
 
-@app.get("/health/ready")
-async def readiness_check():
-    # Readiness: dependencies (database, and Redis when configured) are reachable.
+async def _readiness() -> tuple[bool, dict[str, str]]:
+    """Check that dependencies (database, and Redis when configured) are reachable.
+
+    Returns (ready, checks). The per-dependency `checks` are for the internal probe and ops; the
+    public probe reports only the overall state so it never advertises which subsystem is down.
+    """
     checks: dict[str, str] = {}
     ready = True
 
@@ -317,6 +320,30 @@ async def readiness_check():
             checks["redis"] = "error"
             ready = False
 
+    return ready, checks
+
+
+@app.get("/health/ready")
+async def readiness_check():
+    # Internal probe (container healthcheck, same-host ops): includes the per-dependency detail.
+    ready, checks = await _readiness()
     if not ready:
         return JSONResponse(status_code=503, content={"status": "not ready", "checks": checks})
     return {"status": "ready", "checks": checks}
+
+
+# Public, proxy-reachable health probes. Caddy routes /api/* to the backend and everything else to
+# the SPA — so a monitor pointed at /health gets 200 HTML from the SPA and never notices a dead API
+# or database. These live under the API prefix so they actually reach the backend, and they report
+# only liveness/readiness (no dependency names, versions or errors), so exposing them leaks nothing.
+@app.get(f"{API_PREFIX}/health")
+async def api_health_check():
+    return {"status": "ok"}
+
+
+@app.get(f"{API_PREFIX}/health/ready")
+async def api_readiness_check():
+    ready, _ = await _readiness()
+    if not ready:
+        return JSONResponse(status_code=503, content={"status": "degraded"})
+    return {"status": "ready"}
